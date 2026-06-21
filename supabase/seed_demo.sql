@@ -4,7 +4,7 @@
 -- immigration records, or medical diagnosis content in seed data.
 
 insert into public.dashboard_allowed_users (user_id, email)
-values ('VINSON_AUTH_USER_UUID', 'vinson@example.com')
+values ('VINSON_AUTH_USER_UUID', 'your-login-email@example.com')
 on conflict (user_id) do update set email = excluded.email;
 
 insert into public.english_focus_cards (

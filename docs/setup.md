@@ -29,14 +29,14 @@ When testing after app updates, reload once while online so the service worker c
 
 ```sql
 insert into public.dashboard_allowed_users (user_id, email)
-values ('VINSON_AUTH_USER_UUID', 'vinson@example.com')
+values ('VINSON_AUTH_USER_UUID', 'your-login-email@example.com')
 on conflict (user_id) do update set email = excluded.email;
 ```
 
 6. Confirm public dashboard tables have RLS enabled.
 7. Confirm the schema grants dashboard table access to the `authenticated` role. RLS policies still restrict rows to `auth.uid() = user_id` and the allowlist.
 8. Copy `app/config.sample.json` to `app/config.json`.
-9. Fill the Supabase project URL, anon key, and Vinson email.
+9. Fill the Supabase project URL and anon key.
 10. Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID` with Vinson's real Auth user UUID.
 
 Do not put the service role key in `config.json`.
@@ -61,10 +61,15 @@ Do not publish service role keys or passwords. The Supabase anon key is acceptab
 GitHub setup:
 
 1. Create a new GitHub repository for this dashboard.
-2. Push the contents of `05_personal-dashboard` as that repository root.
-3. In GitHub repository Settings -> Pages, choose GitHub Actions as the build/deploy source.
-4. Run the "Deploy Personal Dashboard PWA" workflow or push changes to `main`.
-5. Open the Pages URL in iPhone Safari and run the PWA test below.
+2. Add GitHub Actions repository secrets under Settings -> Secrets and variables -> Actions:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+3. Push the contents of `05_personal-dashboard` as that repository root.
+4. In GitHub repository Settings -> Pages, choose GitHub Actions as the build/deploy source.
+5. Run the "Deploy Personal Dashboard PWA" workflow or push changes to `main`.
+6. Open the Pages URL in iPhone Safari and run the PWA test below.
+
+The workflow generates `app/config.json` during deployment from repository secrets before uploading the `app/` artifact. Do not commit `app/config.json`. The config contains only the Supabase project URL and anon key; the login email is entered manually in the app.
 
 Do not use `/docs` as the Pages source for this project. Do not move the files in `app/` to the repository root.
 

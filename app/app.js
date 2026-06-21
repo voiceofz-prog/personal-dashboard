@@ -158,13 +158,6 @@ async function login(email, password) {
       false
     );
 
-    if (!isConfiguredVinsonEmail(result.user.email)) {
-      state.session = null;
-      localStorage.removeItem(TOKEN_KEY);
-      showToast("This dashboard is restricted to Vinson's account");
-      return;
-    }
-
     state.session = {
       access_token: result.access_token,
       refresh_token: result.refresh_token,
@@ -544,7 +537,7 @@ function renderSettings() {
 
   document.getElementById("setupState").innerHTML = [
     listCard("Supabase config", state.supabaseReady ? "config.json loaded" : "config.json missing; demo mode active", state.supabaseReady ? "Ready" : "Demo"),
-    listCard("Allowed account", configuredEmailLabel(), state.config?.vinsonEmail ? "Restricted" : "Unset"),
+    listCard("Access control", "Supabase Auth plus RLS allowlist", "Private"),
     listCard("Auth session", state.session ? "Active browser session" : "Not logged in", state.session ? "Ready" : "Waiting"),
     listCard("Offline cache", "Service worker app shell plus last successful dashboard data", "PWA")
   ].join("");
@@ -675,19 +668,6 @@ function problemCard(item) {
 
 function canUseCloud() {
   return Boolean(navigator.onLine && state.supabaseReady && state.session);
-}
-
-function isConfiguredVinsonEmail(email) {
-  const configured = state.config?.vinsonEmail;
-  if (!configured || configured === "vinson@example.com") return true;
-  return configured.toLowerCase() === String(email || "").toLowerCase();
-}
-
-function configuredEmailLabel() {
-  if (!state.config?.vinsonEmail || state.config.vinsonEmail === "vinson@example.com") {
-    return "Set vinsonEmail in config.json before real use.";
-  }
-  return state.config.vinsonEmail;
 }
 
 function dataSourceLabel(data) {
