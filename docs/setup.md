@@ -34,13 +34,16 @@ on conflict (user_id) do update set email = excluded.email;
 ```
 
 6. Confirm public dashboard tables have RLS enabled.
-7. Copy `app/config.sample.json` to `app/config.json`.
-8. Fill the Supabase project URL, anon key, and Vinson email.
-9. Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID` with Vinson's real Auth user UUID.
+7. Confirm the schema grants dashboard table access to the `authenticated` role. RLS policies still restrict rows to `auth.uid() = user_id` and the allowlist.
+8. Copy `app/config.sample.json` to `app/config.json`.
+9. Fill the Supabase project URL, anon key, and Vinson email.
+10. Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID` with Vinson's real Auth user UUID.
 
 Do not put the service role key in `config.json`.
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
+
+If an older copy of the schema was already run before the grant section existed, rerun the current `supabase/schema.sql` or run only the final `grant ... to authenticated` statements from that file in Supabase SQL Editor.
 
 ## 3. GitHub Pages Deployment
 

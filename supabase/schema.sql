@@ -257,3 +257,18 @@ create index if not exists english_self_checks_user_date_idx on public.english_s
 create index if not exists fitness_daily_entries_user_date_idx on public.fitness_daily_entries (user_id, entry_date desc);
 create index if not exists fitness_workouts_user_date_idx on public.fitness_workouts (user_id, workout_date desc);
 create index if not exists fitness_plan_targets_user_order_idx on public.fitness_plan_targets (user_id, sort_order);
+
+grant usage on schema public to authenticated;
+grant execute on function public.is_dashboard_user() to authenticated;
+grant select on public.dashboard_allowed_users to authenticated;
+grant select, insert, update, delete on
+  public.english_focus_cards,
+  public.english_sessions,
+  public.english_problem_tracker,
+  public.english_self_checks,
+  public.fitness_daily_entries,
+  public.fitness_workouts,
+  public.fitness_plan_targets,
+  public.fitness_weekly_reviews,
+  public.dashboard_tasks
+to authenticated;
