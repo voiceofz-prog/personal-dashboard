@@ -1,0 +1,841 @@
+const VERSION = "2026.06.21.4";
+const QUEUE_KEY = "jessica-dashboard-pending-v1";
+const TOKEN_KEY = "jessica-dashboard-session-v1";
+const DATA_CACHE_KEY = "jessica-dashboard-last-data-v1";
+
+const state = {
+  activeView: "home",
+  config: null,
+  session: null,
+  demoData: null,
+  data: null,
+  pending: loadQueue(),
+  supabaseReady: false,
+  lastSync: null,
+  lastError: null
+};
+
+const views = {
+  home: document.getElementById("homeView"),
+  english: document.getElementById("englishView"),
+  fitness: document.getElementById("fitnessView"),
+  settings: document.getElementById("settingsView")
+};
+
+const pageTitle = document.getElementById("pageTitle");
+const toast = document.getElementById("toast");
+
+init();
+
+async function init() {
+  setDefaultDates();
+  bindNavigation();
+  bindForms();
+  bindNetworkEvents();
+  await loadConfig();
+  await loadDashboardData();
+  restoreSession();
+  if (state.session) state.data = loadCachedData() || state.data;
+  await refreshDashboardData({ silent: true });
+  render();
+  registerServiceWorker();
+}
+
+function bindNavigation() {
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.view));
+  });
+  document.querySelectorAll("[data-jump]").forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.jump));
+  });
+}
+
+function bindForms() {
+  document.getElementById("fitnessForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = formToObject(event.target);
+    payload.bodyweight_kg = numberOrNull(payload.bodyweight_kg);
+    payload.sleep_hours = numberOrNull(payload.sleep_hours);
+    payload.energy_score = numberOrNull(payload.energy_score);
+    await saveRecord("fitness_daily_entries", payload);
+    event.target.reset();
+    setDefaultDates();
+  });
+
+  document.getElementById("englishCheckForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = formToObject(event.target);
+    payload.check_date = todayISO();
+    await saveRecord("english_self_checks", payload);
+    event.target.reset();
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const values = formToObject(event.target);
+    await login(values.email, values.password);
+  });
+
+  document.getElementById("logoutButton").addEventListener("click", logout);
+  document.getElementById("syncButton").addEventListener("click", async () => {
+    await syncPending();
+    await refreshDashboardData();
+  });
+  document.getElementById("refreshButton").addEventListener("click", () => refreshDashboardData());
+  document.getElementById("clearLocalButton").addEventListener("click", () => {
+    if (!state.pending.length) {
+      showToast("No pending records to clear");
+      return;
+    }
+    if (!window.confirm("Clear unsynced local records from this browser?")) return;
+    state.pending = [];
+    saveQueue();
+    render();
+    showToast("Local pending queue cleared");
+  });
+  document.getElementById("problemFilter").addEventListener("change", renderEnglish);
+}
+
+function bindNetworkEvents() {
+  window.addEventListener("online", async () => {
+    renderNetwork();
+    await syncPending();
+    await refreshDashboardData({ silent: true });
+  });
+  window.addEventListener("offline", renderNetwork);
+}
+
+async function loadConfig() {
+  try {
+    const response = await fetch("config.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("No config.json");
+    state.config = await response.json();
+    state.supabaseReady = Boolean(
+      state.config.supabaseUrl &&
+      state.config.supabaseAnonKey &&
+      !state.config.supabaseUrl.includes("YOUR_PROJECT_REF")
+    );
+  } catch (error) {
+    state.config = null;
+    state.supabaseReady = false;
+  }
+}
+
+async function loadDashboardData() {
+  try {
+    const response = await fetch("data/demo.json", { cache: "no-store" });
+    state.demoData = await response.json();
+  } catch (error) {
+    state.demoData = fallbackData();
+  }
+
+  state.data = clone(state.demoData);
+}
+
+function restoreSession() {
+  const raw = localStorage.getItem(TOKEN_KEY);
+  if (!raw) return;
+  try {
+    state.session = JSON.parse(raw);
+  } catch (error) {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+async function login(email, password) {
+  if (!state.supabaseReady) {
+    showToast("Add config.json before login");
+    return;
+  }
+
+  try {
+    const result = await supabaseFetch(
+      "/auth/v1/token?grant_type=password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password })
+      },
+      false
+    );
+
+    if (!isConfiguredVinsonEmail(result.user.email)) {
+      state.session = null;
+      localStorage.removeItem(TOKEN_KEY);
+      showToast("This dashboard is restricted to Vinson's account");
+      return;
+    }
+
+    state.session = {
+      access_token: result.access_token,
+      refresh_token: result.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + Number(result.expires_in || 3600),
+      user: result.user
+    };
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
+    showToast("Logged in");
+    await syncPending();
+    await refreshDashboardData({ silent: true });
+    render();
+  } catch (error) {
+    showToast(`Login failed: ${friendlyError(error)}`);
+  }
+}
+
+function logout() {
+  state.session = null;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(DATA_CACHE_KEY);
+  state.data = clone(state.demoData);
+  render();
+  showToast("Logged out");
+}
+
+async function refreshDashboardData(options = {}) {
+  if (!canUseCloud()) {
+    render();
+    return;
+  }
+
+  try {
+    await refreshAccessTokenIfNeeded();
+    const liveRows = await fetchLiveRows();
+    state.data = buildDashboardData(liveRows);
+    state.lastSync = new Date().toISOString();
+    state.lastError = null;
+    saveCachedData(state.data);
+    if (!options.silent) showToast("Dashboard refreshed");
+  } catch (error) {
+    state.lastError = friendlyError(error);
+    if (!options.silent) showToast(`Refresh failed: ${state.lastError}`);
+  }
+  render();
+}
+
+async function fetchLiveRows() {
+  const [
+    focus,
+    sessions,
+    problems,
+    selfChecks,
+    dailyEntries,
+    workouts,
+    planTargets,
+    weeklyReviews
+  ] = await Promise.all([
+    selectRows("english_focus_cards", "select=*&order=updated_at.desc&limit=1"),
+    selectRows("english_sessions", "select=*&order=session_date.desc,created_at.desc&limit=8"),
+    selectRows("english_problem_tracker", "select=*&order=updated_at.desc"),
+    selectRows("english_self_checks", "select=*&order=created_at.desc&limit=8"),
+    selectRows("fitness_daily_entries", "select=*&order=entry_date.desc,created_at.desc&limit=30"),
+    selectRows("fitness_workouts", "select=*&order=workout_date.desc,created_at.desc&limit=12"),
+    selectRows("fitness_plan_targets", "select=*&order=sort_order.asc,updated_at.desc"),
+    selectRows("fitness_weekly_reviews", "select=*&order=week_start.desc&limit=4")
+  ]);
+
+  return {
+    focus,
+    sessions,
+    problems,
+    selfChecks,
+    dailyEntries,
+    workouts,
+    planTargets,
+    weeklyReviews
+  };
+}
+
+async function selectRows(table, query) {
+  return supabaseFetch(`/rest/v1/${table}?${query}`, { method: "GET" }, true);
+}
+
+function buildDashboardData(rows) {
+  const data = clone(state.demoData);
+  const focus = rows.focus[0];
+
+  if (focus) {
+    data.english.cefr = focus.cefr || data.english.cefr;
+    data.english.currentFocus = focus.current_focus || data.english.currentFocus;
+    data.english.tags = normalizeArray(focus.tags, data.english.tags);
+    data.english.reviewSentences = normalizeArray(focus.review_sentences, data.english.reviewSentences);
+  }
+
+  if (rows.problems.length) {
+    data.english.problems = rows.problems.map((item) => ({
+      problem: item.problem,
+      status: item.status,
+      latestEvidence: item.latest_evidence || "No recent evidence yet.",
+      improvementLooksLike: item.improvement_condition || "Define the next observable improvement."
+    }));
+  }
+
+  if (rows.sessions.length) {
+    data.english.improvementLog = rows.sessions.map((item) => ({
+      date: item.session_date || dateOnly(item.created_at),
+      title: item.topic || "English practice",
+      detail: [item.improvement, item.next_focus].filter(Boolean).join(" Next: ") || item.main_bottleneck || "Curated session summary saved."
+    }));
+  }
+
+  const entries = rows.dailyEntries.map(normalizeFitnessEntry);
+  const workouts = rows.workouts.map(normalizeWorkout);
+  const planTargets = rows.planTargets.map((item) => ({
+    title: item.title,
+    status: item.status || "Target",
+    detail: item.detail || "No detail yet."
+  }));
+
+  data.fitness._entries = entries;
+  data.fitness._workouts = workouts;
+  if (planTargets.length) data.fitness.planTargets = planTargets;
+  recalculateFitness(data, entries, workouts, rows.weeklyReviews);
+
+  data.home.todayFocus = data.english.currentFocus;
+  data.home.todaySummary = buildTodaySummary(data);
+  data.home.recentUpdates = buildRecentUpdates(rows, data.home.recentUpdates);
+  data._source = "cloud";
+  return data;
+}
+
+function buildTodaySummary(data) {
+  return `English: ${data.english.cefr}. Fitness: ${data.fitness.recoveryStatus}. Next: ${data.fitness.nextTrainingTarget}.`;
+}
+
+function buildRecentUpdates(rows, fallbackUpdates) {
+  const updates = [];
+
+  rows.selfChecks.forEach((item) => {
+    updates.push({
+      date: item.check_date || dateOnly(item.created_at),
+      title: "English self-check",
+      detail: [item.answer_chain, item.future_action, item.note].filter(Boolean).join(" / ") || "Self-check saved."
+    });
+  });
+
+  rows.dailyEntries.slice(0, 5).forEach((item) => {
+    updates.push({
+      date: item.entry_date || dateOnly(item.created_at),
+      title: item.training_status === "trained" ? "Training logged" : "Recovery day logged",
+      detail: item.training_content || item.notes || "Daily fitness entry saved."
+    });
+  });
+
+  return updates.length ? updates.slice(0, 8) : fallbackUpdates;
+}
+
+async function saveRecord(table, payload) {
+  const record = {
+    table,
+    payload,
+    queued_at: new Date().toISOString()
+  };
+
+  if (!canUseCloud()) {
+    state.pending.push(record);
+    saveQueue();
+    render();
+    showToast("Saved to pending queue");
+    return;
+  }
+
+  try {
+    await refreshAccessTokenIfNeeded();
+    await insertRecord(record);
+    showToast("Saved to cloud");
+    await refreshDashboardData({ silent: true });
+  } catch (error) {
+    state.pending.push(record);
+    saveQueue();
+    showToast("Cloud save failed. Queued locally.");
+  }
+  render();
+}
+
+async function syncPending() {
+  if (!state.pending.length) {
+    render();
+    return;
+  }
+
+  if (!canUseCloud()) {
+    showToast("Cannot sync yet");
+    render();
+    return;
+  }
+
+  const remaining = [];
+  await refreshAccessTokenIfNeeded();
+  for (const item of state.pending) {
+    try {
+      await insertRecord(item);
+    } catch (error) {
+      remaining.push(item);
+    }
+  }
+
+  const synced = state.pending.length - remaining.length;
+  state.pending = remaining;
+  saveQueue();
+  showToast(`${synced} synced, ${remaining.length} pending`);
+  render();
+}
+
+async function insertRecord(item) {
+  const payload = {
+    ...item.payload,
+    user_id: state.session.user.id
+  };
+
+  await supabaseFetch(
+    `/rest/v1/${item.table}`,
+    {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    },
+    true
+  );
+}
+
+async function refreshAccessTokenIfNeeded() {
+  if (!state.session?.refresh_token) return;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (state.session.expires_at && state.session.expires_at - nowSeconds > 60) return;
+
+  const result = await supabaseFetch(
+    "/auth/v1/token?grant_type=refresh_token",
+    {
+      method: "POST",
+      body: JSON.stringify({ refresh_token: state.session.refresh_token })
+    },
+    false
+  );
+
+  state.session = {
+    access_token: result.access_token,
+    refresh_token: result.refresh_token || state.session.refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + Number(result.expires_in || 3600),
+    user: result.user || state.session.user
+  };
+  localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
+}
+
+async function supabaseFetch(path, options = {}, useAuth = true) {
+  const baseUrl = state.config.supabaseUrl.replace(/\/$/, "");
+  const headers = {
+    apikey: state.config.supabaseAnonKey,
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
+  if (useAuth && state.session?.access_token) {
+    headers.Authorization = `Bearer ${state.session.access_token}`;
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, { ...options, headers });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || response.statusText);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+function render() {
+  renderNetwork();
+  renderHome();
+  renderEnglish();
+  renderFitness();
+  renderSettings();
+}
+
+function switchView(view) {
+  state.activeView = view;
+  Object.entries(views).forEach(([key, element]) => {
+    element.classList.toggle("active", key === view);
+  });
+  document.querySelectorAll(".nav-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  pageTitle.textContent = view[0].toUpperCase() + view.slice(1);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderNetwork() {
+  const status = document.getElementById("networkStatus");
+  const online = navigator.onLine;
+  status.textContent = online ? "Online" : "Offline";
+  status.classList.toggle("offline", !online);
+}
+
+function renderHome() {
+  const data = currentDashboard();
+  document.getElementById("todayFocus").textContent = data.home.todayFocus;
+  document.getElementById("todaySummary").textContent = data.home.todaySummary;
+  document.getElementById("pendingCount").textContent = `${state.pending.length} pending`;
+  document.getElementById("dataSource").textContent = dataSourceLabel(data);
+  document.getElementById("homeMetrics").innerHTML = [
+    metric("English", data.english.cefr, data.english.currentFocus),
+    metric("Bodyweight", data.fitness.latestBodyweight, "latest"),
+    metric("Training", data.fitness.trainingDaysThisWeek, "days this week"),
+    metric("Sync", state.pending.length, "pending records")
+  ].join("");
+  document.getElementById("recentUpdates").innerHTML = data.home.recentUpdates
+    .map((item) => listCard(item.title, item.detail, item.date))
+    .join("");
+}
+
+function renderEnglish() {
+  const data = currentDashboard().english;
+  document.getElementById("cefrBadge").textContent = data.cefr;
+  document.getElementById("englishFocus").textContent = data.currentFocus;
+  document.getElementById("englishTags").innerHTML = data.tags
+    .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
+    .join("");
+
+  const filter = document.getElementById("problemFilter").value;
+  const problems = data.problems.filter((item) => filter === "all" || item.status === filter);
+  document.getElementById("problemList").innerHTML = problems.map(problemCard).join("");
+  document.getElementById("improvementLog").innerHTML = (data.improvementLog || [])
+    .map((item) => listCard(item.title, item.detail, item.date))
+    .join("");
+
+  document.getElementById("sentenceList").innerHTML = data.reviewSentences
+    .map((sentence) => `<button class="sentence-button" type="button">${escapeHtml(sentence)}</button>`)
+    .join("");
+  document.querySelectorAll(".sentence-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.textContent);
+        showToast("Copied sentence");
+      } catch (error) {
+        showToast("Copy unavailable");
+      }
+    });
+  });
+}
+
+function renderFitness() {
+  const data = currentDashboard().fitness;
+  const recoveryBadge = document.getElementById("recoveryBadge");
+  recoveryBadge.textContent = data.recoveryStatus;
+  recoveryBadge.classList.toggle("warning", data.recoveryLevel === "warning");
+  document.getElementById("fitnessMetrics").innerHTML = [
+    metric("Bodyweight", data.latestBodyweight, "latest"),
+    metric("Weekly avg", data.weeklyAverageBodyweight, "bodyweight"),
+    metric("Training", data.trainingDaysThisWeek, "days this week"),
+    metric("Next", data.nextTrainingTarget, "training target")
+  ].join("");
+  document.getElementById("planList").innerHTML = data.planTargets
+    .map((item) => listCard(item.title, item.detail, item.status))
+    .join("");
+}
+
+function renderSettings() {
+  document.getElementById("authStatus").textContent = state.session
+    ? `Logged in as ${state.session.user.email}`
+    : state.supabaseReady
+      ? "Supabase configured. Please log in."
+      : "Demo mode. Add config.json to enable Supabase login.";
+
+  const syncParts = [`${state.pending.length} pending records`, `App version ${VERSION}`];
+  if (state.lastSync) syncParts.push(`Last cloud refresh ${formatDateTime(state.lastSync)}`);
+  if (state.lastError) syncParts.push(`Last error: ${state.lastError}`);
+  document.getElementById("syncStatus").textContent = `${syncParts.join(". ")}.`;
+
+  document.getElementById("setupState").innerHTML = [
+    listCard("Supabase config", state.supabaseReady ? "config.json loaded" : "config.json missing; demo mode active", state.supabaseReady ? "Ready" : "Demo"),
+    listCard("Allowed account", configuredEmailLabel(), state.config?.vinsonEmail ? "Restricted" : "Unset"),
+    listCard("Auth session", state.session ? "Active browser session" : "Not logged in", state.session ? "Ready" : "Waiting"),
+    listCard("Offline cache", "Service worker app shell plus last successful dashboard data", "PWA")
+  ].join("");
+}
+
+function currentDashboard() {
+  const data = clone(state.data || state.demoData || fallbackData());
+  applyPendingRecords(data);
+  return data;
+}
+
+function applyPendingRecords(data) {
+  if (!state.pending.length) return;
+
+  const pendingFitness = state.pending
+    .filter((item) => item.table === "fitness_daily_entries")
+    .map((item) => normalizeFitnessEntry({ ...item.payload, created_at: item.queued_at, _pending: true }));
+  const fitnessEntries = [...pendingFitness, ...(data.fitness._entries || [])];
+  if (fitnessEntries.length) {
+    data.fitness._entries = fitnessEntries;
+    recalculateFitness(data, fitnessEntries, data.fitness._workouts || [], []);
+  }
+
+  const pendingUpdates = state.pending.map((item) => {
+    if (item.table === "fitness_daily_entries") {
+      return {
+        date: item.payload.entry_date || dateOnly(item.queued_at),
+        title: "Pending fitness entry",
+        detail: item.payload.training_content || item.payload.notes || "Waiting for cloud sync."
+      };
+    }
+    return {
+      date: item.payload.check_date || dateOnly(item.queued_at),
+      title: "Pending English self-check",
+      detail: item.payload.note || "Waiting for cloud sync."
+    };
+  });
+
+  data.home.recentUpdates = [...pendingUpdates, ...(data.home.recentUpdates || [])].slice(0, 8);
+  data._source = data._source || "demo";
+}
+
+function recalculateFitness(data, entries, workouts, weeklyReviews) {
+  const sortedEntries = [...entries].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date));
+  const latestWeight = sortedEntries.find((item) => item.bodyweight_kg !== null);
+  if (latestWeight) data.fitness.latestBodyweight = `${formatNumber(latestWeight.bodyweight_kg)} kg`;
+
+  const recentWeights = sortedEntries
+    .filter((item) => item.bodyweight_kg !== null)
+    .slice(0, 7)
+    .map((item) => item.bodyweight_kg);
+  if (recentWeights.length) data.fitness.weeklyAverageBodyweight = `${formatNumber(avg(recentWeights))} kg`;
+
+  const weekStart = startOfWeek(new Date());
+  const trainedThisWeek = sortedEntries.filter((item) => {
+    return item.training_status === "trained" && new Date(item.entry_date) >= weekStart;
+  }).length;
+  data.fitness.trainingDaysThisWeek = String(trainedThisWeek);
+
+  const latestEntry = sortedEntries[0];
+  if (latestEntry) {
+    const sleepPoor = latestEntry.sleep_hours !== null && latestEntry.sleep_hours < 6;
+    const energyPoor = latestEntry.energy_score !== null && latestEntry.energy_score <= 2;
+    if (sleepPoor || energyPoor) {
+      data.fitness.recoveryStatus = "Recovery warning";
+      data.fitness.recoveryLevel = "warning";
+    } else if (latestEntry.sleep_hours !== null || latestEntry.energy_score !== null) {
+      data.fitness.recoveryStatus = "Recovery acceptable";
+      data.fitness.recoveryLevel = "ok";
+    }
+  }
+
+  const nextWorkout = workouts.find((item) => item.next_target);
+  const latestReview = weeklyReviews[0];
+  data.fitness.nextTrainingTarget =
+    nextWorkout?.next_target ||
+    latestReview?.next_adjustment ||
+    data.fitness.nextTrainingTarget;
+
+  if (workouts.length) {
+    data.fitness.planTargets = workouts.slice(0, 4).map((item) => ({
+      title: item.plan_type ? `${item.plan_type}: ${item.exercise}` : item.exercise,
+      status: item.workout_date,
+      detail: [item.reps, item.sets, item.weight, item.rpe, item.next_target].filter(Boolean).join(" / ")
+    }));
+  }
+}
+
+function normalizeFitnessEntry(item) {
+  return {
+    entry_date: item.entry_date || todayISO(),
+    bodyweight_kg: numberOrNull(item.bodyweight_kg),
+    training_status: item.training_status || "rest",
+    training_content: item.training_content || "",
+    sleep_hours: numberOrNull(item.sleep_hours),
+    energy_score: numberOrNull(item.energy_score),
+    notes: item.notes || "",
+    created_at: item.created_at || new Date().toISOString(),
+    _pending: Boolean(item._pending)
+  };
+}
+
+function normalizeWorkout(item) {
+  return {
+    workout_date: item.workout_date || dateOnly(item.created_at),
+    plan_type: item.plan_type || "",
+    exercise: item.exercise || "Workout",
+    weight: item.weight || "",
+    reps: item.reps || "",
+    sets: item.sets || "",
+    rpe: item.rpe || "",
+    next_target: item.next_target || ""
+  };
+}
+
+function metric(label, value, hint) {
+  return `<div class="metric-card"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(String(value))}</div><div class="hint">${escapeHtml(hint || "")}</div></div>`;
+}
+
+function listCard(title, detail, meta) {
+  return `<article class="list-card"><div class="card-topline"><h3>${escapeHtml(title)}</h3><span class="mini-status">${escapeHtml(meta || "")}</span></div><p class="card-text">${escapeHtml(detail)}</p></article>`;
+}
+
+function problemCard(item) {
+  const className = item.status === "Active" ? "active" : item.status === "Stable" ? "stable" : "";
+  return `<article class="problem-card"><div class="card-topline"><h3>${escapeHtml(item.problem)}</h3><span class="tag ${className}">${escapeHtml(item.status)}</span></div><p class="card-text">Latest: ${escapeHtml(item.latestEvidence)}</p><p class="card-text">Improvement: ${escapeHtml(item.improvementLooksLike)}</p></article>`;
+}
+
+function canUseCloud() {
+  return Boolean(navigator.onLine && state.supabaseReady && state.session);
+}
+
+function isConfiguredVinsonEmail(email) {
+  const configured = state.config?.vinsonEmail;
+  if (!configured || configured === "vinson@example.com") return true;
+  return configured.toLowerCase() === String(email || "").toLowerCase();
+}
+
+function configuredEmailLabel() {
+  if (!state.config?.vinsonEmail || state.config.vinsonEmail === "vinson@example.com") {
+    return "Set vinsonEmail in config.json before real use.";
+  }
+  return state.config.vinsonEmail;
+}
+
+function dataSourceLabel(data) {
+  if (state.session && data._source === "cloud") return "Cloud data";
+  if (state.session && loadCachedData()) return "Cached local data";
+  return "Demo data";
+}
+
+function normalizeArray(value, fallback) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) return value.split(",").map((item) => item.trim());
+  return fallback || [];
+}
+
+function formToObject(form) {
+  return Object.fromEntries(new FormData(form).entries());
+}
+
+function numberOrNull(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function loadQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveQueue() {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(state.pending));
+}
+
+function loadCachedData() {
+  try {
+    return JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || "null");
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveCachedData(data) {
+  localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+}
+
+function setDefaultDates() {
+  const dateInput = document.querySelector('input[name="entry_date"]');
+  if (dateInput && !dateInput.value) dateInput.value = todayISO();
+}
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 1800);
+}
+
+function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  }
+}
+
+function friendlyError(error) {
+  const message = String(error?.message || error || "Unknown error");
+  if (message.length > 150) return `${message.slice(0, 147)}...`;
+  return message;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function todayISO() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function dateOnly(value) {
+  return String(value || todayISO()).slice(0, 10);
+}
+
+function compareDateDesc(a, b) {
+  return new Date(b || 0) - new Date(a || 0);
+}
+
+function startOfWeek(date) {
+  const value = new Date(date);
+  const day = value.getDay() || 7;
+  value.setHours(0, 0, 0, 0);
+  value.setDate(value.getDate() - day + 1);
+  return value;
+}
+
+function avg(values) {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function formatNumber(value) {
+  return Number(value).toFixed(1);
+}
+
+function formatDateTime(value) {
+  return new Date(value).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function fallbackData() {
+  return {
+    home: {
+      todayFocus: "Demo data unavailable",
+      todaySummary: "Check app/data/demo.json",
+      recentUpdates: []
+    },
+    english: {
+      cefr: "B1",
+      currentFocus: "No data",
+      tags: [],
+      problems: [],
+      improvementLog: [],
+      reviewSentences: []
+    },
+    fitness: {
+      latestBodyweight: "--",
+      weeklyAverageBodyweight: "--",
+      trainingDaysThisWeek: "--",
+      recoveryStatus: "Unknown",
+      recoveryLevel: "ok",
+      nextTrainingTarget: "--",
+      planTargets: [],
+      _entries: [],
+      _workouts: []
+    }
+  };
+}

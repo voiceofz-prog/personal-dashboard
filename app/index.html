@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <meta name="description" content="Vinson personal dashboard PWA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Jessica">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Jessica Dashboard</title>
+</head>
+<body>
+  <header class="app-header">
+    <div><p class="eyebrow">Jessica Dashboard</p><h1 id="pageTitle">Home</h1></div>
+    <div class="status-pill" id="networkStatus">Checking</div>
+  </header>
+
+  <main class="app-main">
+    <section class="view active" id="homeView">
+      <div class="panel hero-panel">
+        <div><p class="eyebrow">Today</p><h2 id="todayFocus">Loading focus...</h2><p id="todaySummary" class="muted">Loading dashboard data.</p></div>
+        <div class="hero-actions">
+          <span id="dataSource" class="mini-status">Demo data</span>
+          <button class="primary-action" type="button" data-jump="fitness">Quick Entry</button>
+        </div>
+      </div>
+      <div class="metric-grid" id="homeMetrics"></div>
+      <section class="panel"><div class="section-heading"><h2>Recent Updates</h2><span id="pendingCount" class="mini-status">0 pending</span></div><div id="recentUpdates" class="stack-list"></div></section>
+    </section>
+
+    <section class="view" id="englishView">
+      <section class="panel"><div class="section-heading"><h2>English Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><div id="englishTags" class="tag-row"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
+      <section class="panel"><h2>Self-Check</h2><form id="englishCheckForm" class="form-stack"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One short note from today's practice"></textarea></label><button class="primary-action" type="submit">Save Self-Check</button></form></section>
+    </section>
+
+    <section class="view" id="fitnessView">
+      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
+      <section class="panel"><h2>Quick Entry</h2><form id="fitnessForm" class="form-stack"><label>Date <input name="entry_date" type="date" required></label><label>Bodyweight <input name="bodyweight_kg" type="number" inputmode="decimal" step="0.1" placeholder="58.3"></label><label>Training status<select name="training_status" required><option value="rest">Rest</option><option value="trained">Trained</option></select></label><label>Training content <textarea name="training_content" rows="3" placeholder="Plan A, push-ups 20/20/20..."></textarea></label><label>Protein <input name="protein" type="text" placeholder="eggs, milk, chicken"></label><label>Carbs / food volume <input name="carbs_food" type="text" placeholder="rice two bowls, banana"></label><div class="two-col"><label>Sleep hours <input name="sleep_hours" type="number" inputmode="decimal" step="0.5" placeholder="7"></label><label>Energy 1-5 <input name="energy_score" type="number" inputmode="numeric" min="1" max="5" placeholder="4"></label></div><label>Notes <textarea name="notes" rows="3" placeholder="soreness, appetite, recovery..."></textarea></label><button class="primary-action" type="submit">Save Fitness Entry</button></form></section>
+      <section class="panel"><div class="section-heading"><h2>Plan A/B</h2><span class="mini-status">next target</span></div><div id="planList" class="stack-list"></div></section>
+    </section>
+
+    <section class="view" id="settingsView">
+      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Demo mode until Supabase config is added.</p><form id="loginForm" class="form-stack"><label>Email <input name="email" type="email" autocomplete="email" placeholder="vinson@example.com"></label><label>Password <input name="password" type="password" autocomplete="current-password"></label><button class="primary-action" type="submit">Login</button></form><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
+      <section class="panel"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button">Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button><button id="clearLocalButton" class="danger-action" type="button">Clear Local Queue</button></div></section>
+      <section class="panel"><h2>Setup State</h2><div id="setupState" class="stack-list"></div></section>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation"><button class="nav-item active" type="button" data-view="home">Home</button><button class="nav-item" type="button" data-view="english">English</button><button class="nav-item" type="button" data-view="fitness">Fitness</button><button class="nav-item" type="button" data-view="settings">Settings</button></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

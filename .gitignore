@@ -1,0 +1,14 @@
+app/config.json
+.env
+.env.*
+node_modules/
+dist/
+build/
+.cache/
+secrets/
+*.secret
+*.key
+*.pem
+*.p12
+*.pfx
+.DS_Store
