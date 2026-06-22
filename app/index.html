@@ -14,13 +14,26 @@
   <link rel="stylesheet" href="styles.css">
   <title>Jessica Dashboard</title>
 </head>
-<body>
-  <header class="app-header">
+<body class="login-only">
+  <section class="login-gate" id="loginGate">
+    <div class="login-panel">
+      <p class="eyebrow">Jessica Dashboard</p>
+      <h1>Personal Dashboard</h1>
+      <p id="loginGateStatus" class="muted">Sign in to continue.</p>
+      <form id="loginForm" class="form-stack">
+        <label>Email <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+        <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="primary-action" type="submit">Login</button>
+      </form>
+    </div>
+  </section>
+
+  <header class="app-header" id="appHeader" hidden>
     <div><p class="eyebrow">Jessica Dashboard</p><h1 id="pageTitle">Home</h1></div>
     <div class="status-pill" id="networkStatus">Checking</div>
   </header>
 
-  <main class="app-main">
+  <main class="app-main" id="appMain" hidden>
     <section class="view active" id="homeView">
       <div class="panel hero-panel">
         <div><p class="eyebrow">Today</p><h2 id="todayFocus">Loading focus...</h2><p id="todaySummary" class="muted">Loading dashboard data.</p></div>
@@ -38,6 +51,10 @@
       <section class="panel"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Commute Cards</h2><span class="mini-status">quick review</span></div><div id="commuteCards" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Mistake Cards</h2><span class="mini-status">repeat fixes</span></div><div id="mistakeCards" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Speaking Warm-up</h2><span class="mini-status">before Mika</span></div><div id="warmupCards" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section>
       <section class="panel"><h2>Self-Check</h2><form id="englishCheckForm" class="form-stack"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One short note from today's practice"></textarea></label><button class="primary-action" type="submit">Save Self-Check</button></form></section>
     </section>
 
@@ -48,13 +65,13 @@
     </section>
 
     <section class="view" id="settingsView">
-      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Demo mode until Supabase config is added.</p><form id="loginForm" class="form-stack"><label>Email <input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label><label>Password <input name="password" type="password" autocomplete="current-password"></label><button class="primary-action" type="submit">Login</button></form><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
+      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
       <section class="panel"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button">Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button><button id="clearLocalButton" class="danger-action" type="button">Clear Local Queue</button></div></section>
       <section class="panel"><h2>Setup State</h2><div id="setupState" class="stack-list"></div></section>
     </section>
   </main>
 
-  <nav class="bottom-nav" aria-label="Main navigation"><button class="nav-item active" type="button" data-view="home">Home</button><button class="nav-item" type="button" data-view="english">English</button><button class="nav-item" type="button" data-view="fitness">Fitness</button><button class="nav-item" type="button" data-view="settings">Settings</button></nav>
+  <nav class="bottom-nav" id="bottomNav" aria-label="Main navigation" hidden><button class="nav-item active" type="button" data-view="home">Home</button><button class="nav-item" type="button" data-view="english">English</button><button class="nav-item" type="button" data-view="fitness">Fitness</button><button class="nav-item" type="button" data-view="settings">Settings</button></nav>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="app.js" defer></script>
 </body>

@@ -16,12 +16,14 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Write policy | `auth.uid() = user_id` plus dashboard allowlist check. |
 | Frontend key | Supabase anon key only. |
 | Forbidden key | Never expose service role key in browser files. |
-| Public content | Demo UI, labels, and non-sensitive app shell only. |
+| Public content | Login-first shell only before authentication. |
+| Login-first UI | Unauthenticated visitors see only a neutral login screen; internal tabs and personal modules render only after a Supabase session exists. |
 
 ## Data Allowed In V1
 
 - English learning summaries.
 - Mika review problems and corrected sentences.
+- Curated commute, mistake, warm-up, and self-test review cards.
 - Curated current Mika practice focus.
 - Curated English improvement log entries.
 - Fitness daily entries.
@@ -41,6 +43,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Risk | Mitigation |
 |---|---|
 | Someone gets the site URL | They see the app shell only; Supabase data requires login and RLS. |
+| Someone casually opens the public site | They see only the login screen; this is a privacy UX layer, not the security boundary. |
 | Someone sees the anon key | Acceptable only if RLS is correct; anon key is not an admin key. |
 | iPhone offline cache | Cached data may remain on the device. Protect the device with passcode/Face ID. |
 | Explicit logout | The app clears its cached cloud dashboard data on logout. |

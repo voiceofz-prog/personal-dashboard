@@ -28,6 +28,50 @@
       "If there is a delay, I may need to prepare more options.",
       "Next time, I will check in advance.",
       "I'll try to make it work."
+    ],
+    "reviewCards": [
+      {
+        "type": "commute",
+        "title": "Plan changed",
+        "prompt": "Say what you will do if the restaurant is closed.",
+        "answerHint": "If the restaurant is closed, I will change the plan and check another option.",
+        "tags": ["if", "will", "date plan"]
+      },
+      {
+        "type": "commute",
+        "title": "Real life status",
+        "prompt": "Describe today's energy and one thing you need to do.",
+        "answerHint": "Today I feel a little tired, so I need to keep my answer simple.",
+        "tags": ["today", "energy"]
+      },
+      {
+        "type": "mistake",
+        "title": "Will + base verb",
+        "prompt": "Fix: We will did it tomorrow.",
+        "answerHint": "We will do it tomorrow.",
+        "tags": ["will", "grammar"]
+      },
+      {
+        "type": "mistake",
+        "title": "Because chain",
+        "prompt": "Add a reason after your main idea.",
+        "answerHint": "It matters because the feeling is different when I'm on a date.",
+        "tags": ["because", "chain"]
+      },
+      {
+        "type": "warmup",
+        "title": "Before Mika",
+        "prompt": "Say one complete answer chain: problem -> because -> if -> future action.",
+        "answerHint": "The problem is..., because..., if..., next time I will...",
+        "tags": ["Mika", "chain"]
+      },
+      {
+        "type": "self_test",
+        "title": "30-second life update",
+        "prompt": "Can you explain your real status today in English for 30 seconds?",
+        "answerHint": "Start with today, add because, then finish with one future action.",
+        "tags": ["self test", "real life"]
+      }
     ]
   },
   "fitness": {

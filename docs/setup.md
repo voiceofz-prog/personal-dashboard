@@ -23,7 +23,7 @@ When testing after app updates, reload once while online so the service worker c
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` or `supabase/migrations/001_initial_schema.sql`.
+3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run the later migration files in order, starting with `supabase/migrations/002_english_review_cards.sql`.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 

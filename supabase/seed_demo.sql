@@ -56,6 +56,70 @@ insert into public.english_problem_tracker (
   'Use base verb after will: I will check, we will do it.'
 );
 
+insert into public.english_review_cards (
+  user_id,
+  card_type,
+  title,
+  prompt,
+  answer_hint,
+  tags,
+  sort_order
+) values
+(
+  'VINSON_AUTH_USER_UUID',
+  'commute',
+  'Plan changed',
+  'Say what you will do if the restaurant is closed.',
+  'If the restaurant is closed, I will change the plan and check another option.',
+  array['if', 'will', 'date plan'],
+  10
+),
+(
+  'VINSON_AUTH_USER_UUID',
+  'commute',
+  'Real life status',
+  'Describe today''s energy and one thing you need to do.',
+  'Today I feel a little tired, so I need to keep my answer simple.',
+  array['today', 'energy'],
+  20
+),
+(
+  'VINSON_AUTH_USER_UUID',
+  'mistake',
+  'Will + base verb',
+  'Fix: We will did it tomorrow.',
+  'We will do it tomorrow.',
+  array['will', 'grammar'],
+  30
+),
+(
+  'VINSON_AUTH_USER_UUID',
+  'mistake',
+  'Because chain',
+  'Add a reason after your main idea.',
+  'It matters because the feeling is different when I am on a date.',
+  array['because', 'chain'],
+  40
+),
+(
+  'VINSON_AUTH_USER_UUID',
+  'warmup',
+  'Before Mika',
+  'Say one complete answer chain: problem -> because -> if -> future action.',
+  'The problem is..., because..., if..., next time I will...',
+  array['Mika', 'chain'],
+  50
+),
+(
+  'VINSON_AUTH_USER_UUID',
+  'self_test',
+  '30-second life update',
+  'Can you explain your real status today in English for 30 seconds?',
+  'Start with today, add because, then finish with one future action.',
+  array['self test', 'real life'],
+  60
+);
+
 insert into public.english_sessions (
   user_id,
   session_date,

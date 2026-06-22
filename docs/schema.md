@@ -23,6 +23,7 @@ This schema stores only V1 dashboard data for English learning summaries and fit
 | `english_focus_cards` | Current Mika focus, CEFR, tags, and review sentences. | No; maintained as curated dashboard summary data. |
 | `english_sessions` | Curated session summaries, not raw transcripts. | No in V1 UI. |
 | `english_problem_tracker` | Active / Improving / Stable problem tracker. | No in V1 UI. |
+| `english_review_cards` | Commute cards, mistake cards, Mika warm-up prompts, and 30-second self-test prompts. | No; maintained as curated dashboard summary data. |
 | `english_self_checks` | Self-check form submissions. | Yes. |
 | `fitness_daily_entries` | Daily quick-entry fitness/nutrition tracking. | Yes. |
 | `fitness_workouts` | Plan A/B exercise performance and next target details. | No in V1 UI. |
@@ -37,6 +38,7 @@ After login, the app reads these tables through Supabase REST:
 - `english_focus_cards`
 - `english_sessions`
 - `english_problem_tracker`
+- `english_review_cards`
 - `english_self_checks`
 - `fitness_daily_entries`
 - `fitness_workouts`

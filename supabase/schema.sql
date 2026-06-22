@@ -67,6 +67,20 @@ create table if not exists public.english_problem_tracker (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.english_review_cards (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  card_type text not null check (card_type in ('commute','mistake','warmup','self_test')),
+  title text not null,
+  prompt text not null,
+  answer_hint text,
+  tags text[] not null default '{}',
+  sort_order integer not null default 100,
+  active boolean not null default true,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.english_self_checks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -144,6 +158,7 @@ alter table public.dashboard_allowed_users enable row level security;
 alter table public.english_focus_cards enable row level security;
 alter table public.english_sessions enable row level security;
 alter table public.english_problem_tracker enable row level security;
+alter table public.english_review_cards enable row level security;
 alter table public.english_self_checks enable row level security;
 alter table public.fitness_daily_entries enable row level security;
 alter table public.fitness_workouts enable row level security;
@@ -182,6 +197,15 @@ create policy "english_problem_owner_select" on public.english_problem_tracker f
 create policy "english_problem_owner_insert" on public.english_problem_tracker for insert with check (auth.uid() = user_id and public.is_dashboard_user());
 create policy "english_problem_owner_update" on public.english_problem_tracker for update using (auth.uid() = user_id and public.is_dashboard_user()) with check (auth.uid() = user_id and public.is_dashboard_user());
 create policy "english_problem_owner_delete" on public.english_problem_tracker for delete using (auth.uid() = user_id and public.is_dashboard_user());
+
+drop policy if exists "english_review_cards_owner_select" on public.english_review_cards;
+drop policy if exists "english_review_cards_owner_insert" on public.english_review_cards;
+drop policy if exists "english_review_cards_owner_update" on public.english_review_cards;
+drop policy if exists "english_review_cards_owner_delete" on public.english_review_cards;
+create policy "english_review_cards_owner_select" on public.english_review_cards for select using (auth.uid() = user_id and public.is_dashboard_user());
+create policy "english_review_cards_owner_insert" on public.english_review_cards for insert with check (auth.uid() = user_id and public.is_dashboard_user());
+create policy "english_review_cards_owner_update" on public.english_review_cards for update using (auth.uid() = user_id and public.is_dashboard_user()) with check (auth.uid() = user_id and public.is_dashboard_user());
+create policy "english_review_cards_owner_delete" on public.english_review_cards for delete using (auth.uid() = user_id and public.is_dashboard_user());
 
 drop policy if exists "english_self_checks_owner_select" on public.english_self_checks;
 drop policy if exists "english_self_checks_owner_insert" on public.english_self_checks;
@@ -247,12 +271,18 @@ create trigger english_problem_tracker_set_updated_at
 before update on public.english_problem_tracker
 for each row execute function public.set_updated_at();
 
+drop trigger if exists english_review_cards_set_updated_at on public.english_review_cards;
+create trigger english_review_cards_set_updated_at
+before update on public.english_review_cards
+for each row execute function public.set_updated_at();
+
 drop trigger if exists fitness_plan_targets_set_updated_at on public.fitness_plan_targets;
 create trigger fitness_plan_targets_set_updated_at
 before update on public.fitness_plan_targets
 for each row execute function public.set_updated_at();
 
 create index if not exists english_problem_tracker_user_status_idx on public.english_problem_tracker (user_id, status);
+create index if not exists english_review_cards_user_type_order_idx on public.english_review_cards (user_id, card_type, active, sort_order);
 create index if not exists english_self_checks_user_date_idx on public.english_self_checks (user_id, check_date desc);
 create index if not exists fitness_daily_entries_user_date_idx on public.fitness_daily_entries (user_id, entry_date desc);
 create index if not exists fitness_workouts_user_date_idx on public.fitness_workouts (user_id, workout_date desc);
@@ -265,6 +295,7 @@ grant select, insert, update, delete on
   public.english_focus_cards,
   public.english_sessions,
   public.english_problem_tracker,
+  public.english_review_cards,
   public.english_self_checks,
   public.fitness_daily_entries,
   public.fitness_workouts,

@@ -2,7 +2,9 @@
 
 ## Now
 
-- [ ] Configure real Supabase project details and test authenticated cloud sync.
+- [ ] Review and approve local login-first plus English review card changes for commit/push.
+- [ ] Apply `supabase/migrations/002_english_review_cards.sql` after approval.
+- [ ] Test authenticated cloud sync with the new English review cards table.
 
 ## Next
 
@@ -40,6 +42,8 @@
 - [x] Tightened service worker offline fallback so only page navigations fall back to the app shell.
 - [x] Verified local preview server responses for the app shell and core static assets.
 - [x] Verified JSON files parse and schema matches the versioned migration.
+- [x] Added local login-first privacy UI that hides internal dashboard modules before authentication.
+- [x] Added local English review card UI/data model draft for commute cards, mistake cards, Mika warm-up, and 30-second self tests.
 
 ## Decision Log
 

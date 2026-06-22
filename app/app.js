@@ -33,10 +33,12 @@ async function init() {
   bindForms();
   bindNetworkEvents();
   await loadConfig();
-  await loadDashboardData();
   restoreSession();
-  if (state.session) state.data = loadCachedData() || state.data;
-  await refreshDashboardData({ silent: true });
+  if (state.session) {
+    await loadDashboardData();
+    state.data = loadCachedData() || state.data;
+    await refreshDashboardData({ silent: true });
+  }
   render();
   registerServiceWorker();
 }
@@ -166,6 +168,7 @@ async function login(email, password) {
     };
     localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
     showToast("Logged in");
+    await loadDashboardData();
     await syncPending();
     await refreshDashboardData({ silent: true });
     render();
@@ -178,7 +181,9 @@ function logout() {
   state.session = null;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(DATA_CACHE_KEY);
-  state.data = clone(state.demoData);
+  state.demoData = null;
+  state.data = null;
+  state.activeView = "home";
   render();
   showToast("Logged out");
 }
@@ -209,6 +214,7 @@ async function fetchLiveRows() {
     focus,
     sessions,
     problems,
+    reviewCards,
     selfChecks,
     dailyEntries,
     workouts,
@@ -218,6 +224,7 @@ async function fetchLiveRows() {
     selectRows("english_focus_cards", "select=*&order=updated_at.desc&limit=1"),
     selectRows("english_sessions", "select=*&order=session_date.desc,created_at.desc&limit=8"),
     selectRows("english_problem_tracker", "select=*&order=updated_at.desc"),
+    selectRows("english_review_cards", "select=*&active=eq.true&order=sort_order.asc,updated_at.desc"),
     selectRows("english_self_checks", "select=*&order=created_at.desc&limit=8"),
     selectRows("fitness_daily_entries", "select=*&order=entry_date.desc,created_at.desc&limit=30"),
     selectRows("fitness_workouts", "select=*&order=workout_date.desc,created_at.desc&limit=12"),
@@ -229,6 +236,7 @@ async function fetchLiveRows() {
     focus,
     sessions,
     problems,
+    reviewCards,
     selfChecks,
     dailyEntries,
     workouts,
@@ -259,6 +267,10 @@ function buildDashboardData(rows) {
       latestEvidence: item.latest_evidence || "No recent evidence yet.",
       improvementLooksLike: item.improvement_condition || "Define the next observable improvement."
     }));
+  }
+
+  if (rows.reviewCards.length) {
+    data.english.reviewCards = rows.reviewCards.map(normalizeReviewCard);
   }
 
   if (rows.sessions.length) {
@@ -435,10 +447,30 @@ async function supabaseFetch(path, options = {}, useAuth = true) {
 
 function render() {
   renderNetwork();
+  renderAuthGate();
+  if (!state.session) return;
   renderHome();
   renderEnglish();
   renderFitness();
   renderSettings();
+}
+
+function renderAuthGate() {
+  const isAuthenticated = Boolean(state.session);
+  document.body.classList.toggle("login-only", !isAuthenticated);
+  document.body.classList.toggle("authenticated", isAuthenticated);
+
+  document.getElementById("loginGate").hidden = isAuthenticated;
+  document.getElementById("appHeader").hidden = !isAuthenticated;
+  document.getElementById("appMain").hidden = !isAuthenticated;
+  document.getElementById("bottomNav").hidden = !isAuthenticated;
+
+  const gateStatus = document.getElementById("loginGateStatus");
+  if (!isAuthenticated) {
+    gateStatus.textContent = state.supabaseReady
+      ? "Sign in to continue."
+      : "Configuration is unavailable. Please try again later.";
+  }
 }
 
 function switchView(view) {
@@ -505,6 +537,11 @@ function renderEnglish() {
       }
     });
   });
+
+  renderReviewCardGroup("commuteCards", data.reviewCards, "commute");
+  renderReviewCardGroup("mistakeCards", data.reviewCards, "mistake");
+  renderReviewCardGroup("warmupCards", data.reviewCards, "warmup");
+  renderReviewCardGroup("selfTestCards", data.reviewCards, "self_test");
 }
 
 function renderFitness() {
@@ -651,6 +688,29 @@ function normalizeWorkout(item) {
     rpe: item.rpe || "",
     next_target: item.next_target || ""
   };
+}
+
+function normalizeReviewCard(item) {
+  return {
+    type: item.card_type || item.type || "commute",
+    title: item.title || "Review card",
+    prompt: item.prompt || "",
+    answerHint: item.answer_hint || item.answerHint || "",
+    tags: normalizeArray(item.tags, [])
+  };
+}
+
+function renderReviewCardGroup(elementId, cards, type) {
+  const group = (cards || []).filter((item) => item.type === type);
+  document.getElementById(elementId).innerHTML = group.length
+    ? group.map(reviewCard).join("")
+    : listCard("No cards yet", "Jessica can add curated cards after the next review.", "empty");
+}
+
+function reviewCard(item) {
+  const hint = item.answerHint ? `Hint: ${item.answerHint}` : "Say your answer out loud before checking notes.";
+  const tags = item.tags.length ? ` ${item.tags.join(" / ")}` : "";
+  return listCard(item.title, `${item.prompt} ${hint}`, tags.trim());
 }
 
 function metric(label, value, hint) {
@@ -804,7 +864,8 @@ function fallbackData() {
       tags: [],
       problems: [],
       improvementLog: [],
-      reviewSentences: []
+      reviewSentences: [],
+      reviewCards: []
     },
     fitness: {
       latestBodyweight: "--",
