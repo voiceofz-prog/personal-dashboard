@@ -1,4 +1,4 @@
-const VERSION = "2026.06.21.4";
+const VERSION = "2026.06.22.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
 const DATA_CACHE_KEY = "jessica-dashboard-last-data-v1";
