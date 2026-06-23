@@ -1,4 +1,4 @@
-const VERSION = "2026.06.22.1";
+const VERSION = "2026.06.24.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
 const DATA_CACHE_KEY = "jessica-dashboard-last-data-v1";
@@ -13,6 +13,57 @@ const state = {
   supabaseReady: false,
   lastSync: null,
   lastError: null
+};
+
+const FITNESS_PHRASES = [
+  "Small reps still count.",
+  "Show up, then adjust.",
+  "Steady beats intense.",
+  "Good form first.",
+  "Keep the baseline.",
+  "A quiet set still counts.",
+  "Control before speed.",
+  "One clean rep matters.",
+  "Do the simple work.",
+  "Leave room to recover.",
+  "Strong starts steady.",
+  "Make it repeatable.",
+  "Start light, move well.",
+  "Progress can be small.",
+  "Stay honest with form.",
+  "Enough is still useful.",
+  "Train, then recover.",
+  "Today counts too.",
+  "Keep the rhythm.",
+  "Clean reps age well.",
+  "Build the habit.",
+  "Small effort compounds.",
+  "Do what fits today.",
+  "Smooth beats rushed.",
+  "Stop before sloppy.",
+  "A short session helps.",
+  "Consistency is training.",
+  "Move with attention.",
+  "Keep showing up.",
+  "Adjust and continue."
+];
+
+const PLAN_EXERCISES = {
+  "Plan A": [
+    { id: "a_row", name: "單臂啞鈴划船", load: true, defaultLoad: "5", defaultReps: "每側 20/20/20/20" },
+    { id: "a_lateral_raise", name: "啞鈴側平舉", load: true, defaultLoad: "", defaultReps: "15/15/15" },
+    { id: "a_pushup", name: "伏地挺身", load: false, defaultReps: "20/20/20" },
+    { id: "a_curl", name: "二頭彎舉", load: true, defaultLoad: "", defaultReps: "15/15/15" },
+    { id: "a_twist", name: "俄羅斯轉體", load: true, defaultLoad: "", defaultReps: "30/30/30" }
+  ],
+  "Plan B": [
+    { id: "b_goblet_squat", name: "啞鈴高腳杯深蹲", load: true, defaultLoad: "5", defaultReps: "17/17/17/17" },
+    { id: "b_rdl", name: "啞鈴羅馬尼亞硬舉", load: true, defaultLoad: "5", defaultReps: "17/17/17" },
+    { id: "b_press", name: "啞鈴肩推", load: true, defaultLoad: "5", defaultReps: "16/16/16" },
+    { id: "b_dip_pushup", name: "椅上撐體 / 窄距伏地挺身", load: false, defaultReps: "17/17/17" },
+    { id: "b_leg_raise", name: "仰臥抬腿 / 死蟲", load: false, defaultReps: "15/15/18" }
+  ],
+  "自訂": []
 };
 
 const views = {
@@ -53,16 +104,7 @@ function bindNavigation() {
 }
 
 function bindForms() {
-  document.getElementById("fitnessForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const payload = formToObject(event.target);
-    payload.bodyweight_kg = numberOrNull(payload.bodyweight_kg);
-    payload.sleep_hours = numberOrNull(payload.sleep_hours);
-    payload.energy_score = numberOrNull(payload.energy_score);
-    await saveRecord("fitness_daily_entries", payload);
-    event.target.reset();
-    setDefaultDates();
-  });
+  bindFitnessReportGenerator();
 
   document.getElementById("englishCheckForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -560,6 +602,178 @@ function renderFitness() {
     .join("");
 }
 
+function bindFitnessReportGenerator() {
+  const form = document.getElementById("fitnessReportForm");
+  if (!form) return;
+  const planSelect = form.elements.plan_template;
+  const dayTypeControls = form.querySelectorAll('input[name="day_type"]');
+
+  document.getElementById("fitnessDailyPhrase").textContent = dailyFitnessPhrase();
+  renderExerciseInputs(planSelect.value);
+  updateFitnessReport();
+
+  form.addEventListener("input", updateFitnessReport);
+  form.addEventListener("change", (event) => {
+    if (event.target.name === "plan_template") renderExerciseInputs(planSelect.value);
+    updateFitnessReport();
+  });
+
+  dayTypeControls.forEach((control) => {
+    control.addEventListener("change", updateFitnessReportVisibility);
+  });
+
+  document.getElementById("generateFitnessReport").addEventListener("click", () => {
+    updateFitnessReport();
+    showToast("內容已產生");
+  });
+
+  document.getElementById("copyFitnessReport").addEventListener("click", copyFitnessReport);
+  updateFitnessReportVisibility();
+}
+
+function renderExerciseInputs(planName) {
+  const picker = document.getElementById("exercisePicker");
+  if (!picker) return;
+  const exercises = PLAN_EXERCISES[planName] || [];
+  if (!exercises.length) {
+    picker.innerHTML = `
+      <label>自訂訓練內容
+        <textarea name="custom_training" rows="4" placeholder="例如：深蹲 15/15/15&#10;伏地挺身 20/20/20"></textarea>
+      </label>`;
+    return;
+  }
+
+  picker.innerHTML = `
+    <div class="exercise-list">
+      ${exercises.map(exerciseInput).join("")}
+    </div>`;
+}
+
+function exerciseInput(item) {
+  return `
+    <article class="exercise-row">
+      <label class="switch-line">
+        <input type="checkbox" name="exercise_done" value="${escapeHtml(item.id)}" checked>
+        <span>${escapeHtml(item.name)}</span>
+      </label>
+      <div class="${item.load ? "exercise-fields" : "exercise-fields single"}">
+        ${
+          item.load
+            ? `<label>重量 <input name="${escapeHtml(item.id)}_load" type="text" inputmode="decimal" value="${escapeHtml(item.defaultLoad || "")}" placeholder="5"></label>`
+            : ""
+        }
+        <label>次數 <input name="${escapeHtml(item.id)}_reps" type="text" value="${escapeHtml(item.defaultReps || "")}" placeholder="15/15/15"></label>
+      </div>
+    </article>`;
+}
+
+function updateFitnessReportVisibility() {
+  const form = document.getElementById("fitnessReportForm");
+  const isRest = getRadioValue(form, "day_type") === "rest";
+  document.getElementById("planTemplateLabel").hidden = isRest;
+  document.getElementById("exercisePicker").hidden = isRest;
+  updateFitnessReport();
+}
+
+function updateFitnessReport() {
+  const output = document.getElementById("fitnessReportOutput");
+  if (!output) return;
+  output.textContent = buildFitnessReport();
+}
+
+function buildFitnessReport() {
+  const form = document.getElementById("fitnessReportForm");
+  const dayType = getRadioValue(form, "day_type");
+  const lines = [];
+  const date = form.elements.entry_date.value || todayISO();
+  const bodyweight = form.elements.bodyweight.value.trim();
+  const supplements = formatSupplements(selectedValues(form, "supplements"), form.elements.custom_supplement.value.trim());
+  const recoveryNote = form.elements.recovery_note.value.trim();
+
+  lines.push(formatReportDate(date));
+
+  if (dayType === "rest") {
+    lines.push("休息");
+  } else {
+    const planName = form.elements.plan_template.value || "自訂";
+    lines.push(planName);
+    lines.push(...selectedExerciseLines(form, planName));
+  }
+
+  if (bodyweight) lines.push(`早上空腹${bodyweight}`);
+  if (supplements) lines.push(`運動後補充${supplements}`);
+  if (recoveryNote) lines.push(`睡眠/疲勞：${recoveryNote}`);
+
+  return lines.filter(Boolean).join("\n");
+}
+
+function selectedExerciseLines(form, planName) {
+  if (planName === "自訂") {
+    return form.elements.custom_training.value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  return (PLAN_EXERCISES[planName] || [])
+    .filter((item) => form.querySelector(`input[name="exercise_done"][value="${item.id}"]`)?.checked)
+    .map((item) => {
+      const load = form.elements[`${item.id}_load`]?.value.trim() || "";
+      const reps = form.elements[`${item.id}_reps`]?.value.trim() || "";
+      if (load && reps) return `${item.name}\n${formatLoad(load)}，${reps}`;
+      if (load) return `${item.name}\n${formatLoad(load)}`;
+      if (reps) return `${item.name} ${reps}`;
+      return item.name;
+    });
+}
+
+function formatSupplements(values, custom) {
+  const items = [...values];
+  if (custom) items.push(custom);
+  if (!items.length) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]}+${items[1]}`;
+  return `${items[0]}+${items.slice(1).join("、")}`;
+}
+
+function formatLoad(value) {
+  return /kg$/i.test(value.trim()) ? value.trim() : `${value.trim()}kg`;
+}
+
+function formatReportDate(value) {
+  const [year, month, day] = dateOnly(value).split("-");
+  return `${Number(month)}/${Number(day)}`;
+}
+
+function dailyFitnessPhrase() {
+  const [year, month, day] = todayISO().split("-").map(Number);
+  const dateIndex = Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+  return FITNESS_PHRASES[dateIndex % FITNESS_PHRASES.length];
+}
+
+async function copyFitnessReport() {
+  const text = document.getElementById("fitnessReportOutput").textContent.trim();
+  if (!text) {
+    showToast("沒有可複製內容");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("已複製");
+  } catch (error) {
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.setAttribute("readonly", "");
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand("copy");
+    helper.remove();
+    showToast(copied ? "已複製" : "複製不可用");
+  }
+}
+
 function renderSettings() {
   document.getElementById("authStatus").textContent = state.session
     ? `Logged in as ${state.session.user.email}`
@@ -744,6 +958,14 @@ function normalizeArray(value, fallback) {
 
 function formToObject(form) {
   return Object.fromEntries(new FormData(form).entries());
+}
+
+function getRadioValue(form, name) {
+  return form.querySelector(`input[name="${name}"]:checked`)?.value || "";
+}
+
+function selectedValues(form, name) {
+  return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map((item) => item.value);
 }
 
 function numberOrNull(value) {
