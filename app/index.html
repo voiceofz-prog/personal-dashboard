@@ -48,14 +48,17 @@
 
     <section class="view" id="englishView">
       <section class="panel"><div class="section-heading"><h2>English Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><div id="englishTags" class="tag-row"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Commute Cards</h2><span class="mini-status">quick review</span></div><div id="commuteCards" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Mistake Cards</h2><span class="mini-status">repeat fixes</span></div><div id="mistakeCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Speaking Warm-up</h2><span class="mini-status">before Mika</span></div><div id="warmupCards" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section>
       <section class="panel"><h2>Self-Check</h2><form id="englishCheckForm" class="form-stack"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One short note from today's practice"></textarea></label><button class="primary-action" type="submit">Save Self-Check</button></form></section>
+      <details class="panel disclosure-panel">
+        <summary><span>Learning Notes</span><span class="mini-status">analysis</span></summary>
+        <section class="disclosure-section"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section>
+        <section class="disclosure-section"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section>
+      </details>
     </section>
 
     <section class="view" id="fitnessView">

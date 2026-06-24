@@ -47,6 +47,16 @@ After login, the app reads these tables through Supabase REST:
 
 If live reads fail or Supabase is not configured, the app stays in demo mode or uses the last successful cached dashboard data for the active browser session.
 
+## English Dashboard Display Contract
+
+The English dashboard is a commute-first review surface. The source project should publish short, low-risk review material that is ready for phone use:
+
+- `english_focus_cards`: one current speaking focus, CEFR setting, tags, and 3-6 natural review sentences.
+- `english_review_cards`: active commute, mistake, warm-up, and 30-second self-test cards sorted by `sort_order`.
+- `english_problem_tracker` and `english_sessions`: learning analysis for Jessica and progress context; these should not be treated as the first-screen review experience.
+
+Supabase is the sync layer, not the content judge. The English learning project is responsible for turning Mika feedback into a curated commute review pack before writing rows here.
+
 ## Manual Seed Flow
 
 Use `supabase/seed_demo.sql` only after replacing `VINSON_AUTH_USER_UUID` with Vinson's real Supabase Auth UUID. It inserts low-risk curated demo rows so the live cloud dashboard has something visible after first login.
