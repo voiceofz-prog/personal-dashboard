@@ -2,13 +2,14 @@
 
 ## Now
 
-- [ ] Review and approve local login-first plus English review card changes for commit/push.
-- [ ] Apply `supabase/migrations/002_english_review_cards.sql` after approval.
-- [ ] Test authenticated cloud sync with the new English review cards table.
+- [ ] Review and approve security/content/logic/execution hardening changes.
+- [ ] Apply `supabase/migrations/002_english_review_cards.sql` and `supabase/migrations/003_security_hardening.sql` after approval.
+- [ ] Test authenticated cloud sync with the new English review cards table and hardened RLS policies.
 
 ## Next
 
 - [ ] Create a Supabase project, create Vinson's Auth user, and run `supabase/schema.sql`.
+- [ ] If the database already ran older migrations, apply `supabase/migrations/003_security_hardening.sql`.
 - [ ] Insert Vinson's Auth user UUID into `dashboard_allowed_users`.
 - [ ] Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID`.
 - [ ] Copy `app/config.sample.json` to `app/config.json` and fill the Supabase project URL, anon key, and Vinson email.
@@ -44,6 +45,13 @@
 - [x] Verified JSON files parse and schema matches the versioned migration.
 - [x] Added local login-first privacy UI that hides internal dashboard modules before authentication.
 - [x] Added local English review card UI/data model draft for commute cards, mistake cards, Mika warm-up, and 30-second self tests.
+- [x] Reviewed security, content boundaries, app logic, and execution flow.
+- [x] Hardened live REST reads with current-user filters.
+- [x] Hardened local pending queue ownership and logout clearing behavior.
+- [x] Added Supabase `003_security_hardening.sql` migration with stricter authenticated policies and anon revokes.
+- [x] Confirmed the deployed site was stale compared with the local 2026-06-27 build.
+- [x] Added safe migration for legacy ownerless pending records and visible Supabase write errors.
+- [x] Fixed iPhone Safari form zoom, grid overflow, and tab scroll reset behavior.
 
 ## Decision Log
 

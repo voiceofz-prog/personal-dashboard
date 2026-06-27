@@ -22,7 +22,7 @@ create table if not exists public.dashboard_allowed_users (
 create or replace function public.is_dashboard_user()
 returns boolean
 language sql
-security definer
+security invoker
 set search_path = public
 stable
 as $$

@@ -1,4 +1,4 @@
-const VERSION = "2026.06.25.1";
+const VERSION = "2026.06.27.6";
 const QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
 const DATA_CACHE_KEY = "jessica-dashboard-last-data-v1";
@@ -12,8 +12,11 @@ const state = {
   pending: loadQueue(),
   supabaseReady: false,
   lastSync: null,
-  lastError: null
+  lastError: null,
+  lastSyncError: null
 };
+
+const WRITABLE_TABLES = new Set(["english_self_checks", "fitness_daily_entries"]);
 
 const FITNESS_PHRASES = [
   "Small reps still count.",
@@ -86,8 +89,9 @@ async function init() {
   await loadConfig();
   restoreSession();
   if (state.session) {
+    adoptLegacyPendingRecords();
     await loadDashboardData();
-    state.data = loadCachedData() || state.data;
+    if (!state.session.demo) state.data = loadCachedData() || state.data;
     await refreshDashboardData({ silent: true });
   }
   render();
@@ -119,6 +123,7 @@ function bindForms() {
     const values = formToObject(event.target);
     await login(values.email, values.password);
   });
+  document.getElementById("demoModeButton").addEventListener("click", enterDemoPreview);
 
   document.getElementById("logoutButton").addEventListener("click", logout);
   document.getElementById("syncButton").addEventListener("click", async () => {
@@ -127,12 +132,14 @@ function bindForms() {
   });
   document.getElementById("refreshButton").addEventListener("click", () => refreshDashboardData());
   document.getElementById("clearLocalButton").addEventListener("click", () => {
-    if (!state.pending.length) {
+    const visiblePending = pendingForCurrentUser();
+    if (!visiblePending.length) {
       showToast("No pending records to clear");
       return;
     }
-    if (!window.confirm("Clear unsynced local records from this browser?")) return;
-    state.pending = [];
+    if (!window.confirm("Clear unsynced local records for this session?")) return;
+    const visibleSet = new Set(visiblePending);
+    state.pending = state.pending.filter((item) => !visibleSet.has(item));
     saveQueue();
     render();
     showToast("Local pending queue cleared");
@@ -154,14 +161,32 @@ async function loadConfig() {
     const response = await fetch("config.json", { cache: "no-store" });
     if (!response.ok) throw new Error("No config.json");
     state.config = await response.json();
-    state.supabaseReady = Boolean(
-      state.config.supabaseUrl &&
-      state.config.supabaseAnonKey &&
-      !state.config.supabaseUrl.includes("YOUR_PROJECT_REF")
-    );
+    state.supabaseReady = isValidRuntimeConfig(state.config);
   } catch (error) {
     state.config = null;
     state.supabaseReady = false;
+  }
+}
+
+function isValidRuntimeConfig(config) {
+  if (!config?.supabaseUrl || !config?.supabaseAnonKey) return false;
+  if (config.supabaseUrl.includes("YOUR_PROJECT_REF") || config.supabaseAnonKey.includes("YOUR_")) return false;
+
+  try {
+    const url = new URL(config.supabaseUrl);
+    if (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co")) return false;
+  } catch (error) {
+    return false;
+  }
+
+  const [, payload] = String(config.supabaseAnonKey).split(".");
+  if (!payload) return true;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "=");
+    const decoded = JSON.parse(atob(normalized));
+    return decoded.role !== "service_role";
+  } catch (error) {
+    return false;
   }
 }
 
@@ -181,9 +206,28 @@ function restoreSession() {
   if (!raw) return;
   try {
     state.session = JSON.parse(raw);
+    if (state.session?.demo && state.supabaseReady) {
+      state.session = null;
+      localStorage.removeItem(TOKEN_KEY);
+    }
   } catch (error) {
     localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+async function enterDemoPreview() {
+  state.session = {
+    access_token: "demo-preview",
+    refresh_token: "",
+    expires_at: Math.floor(Date.now() / 1000) + 86400,
+    user: { id: "demo-preview", email: "demo-preview.local" },
+    demo: true
+  };
+  localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
+  await loadDashboardData();
+  state.activeView = "home";
+  render();
+  showToast("Demo preview opened");
 }
 
 async function login(email, password) {
@@ -209,6 +253,7 @@ async function login(email, password) {
       user: result.user
     };
     localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
+    adoptLegacyPendingRecords();
     showToast("Logged in");
     await loadDashboardData();
     await syncPending();
@@ -220,9 +265,15 @@ async function login(email, password) {
 }
 
 function logout() {
+  if (state.pending.length) {
+    const confirmed = window.confirm("Logout will clear unsynced records stored on this device. Continue?");
+    if (!confirmed) return;
+  }
   state.session = null;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(DATA_CACHE_KEY);
+  state.pending = [];
+  saveQueue();
   state.demoData = null;
   state.data = null;
   state.activeView = "home";
@@ -288,7 +339,8 @@ async function fetchLiveRows() {
 }
 
 async function selectRows(table, query) {
-  return supabaseFetch(`/rest/v1/${table}?${query}`, { method: "GET" }, true);
+  const userId = encodeURIComponent(state.session.user.id);
+  return supabaseFetch(`/rest/v1/${table}?${query}&user_id=eq.${userId}`, { method: "GET" }, true);
 }
 
 function buildDashboardData(rows) {
@@ -373,6 +425,7 @@ async function saveRecord(table, payload) {
   const record = {
     table,
     payload,
+    owner_user_id: state.session?.user?.id || null,
     queued_at: new Date().toISOString()
   };
 
@@ -387,18 +440,26 @@ async function saveRecord(table, payload) {
   try {
     await refreshAccessTokenIfNeeded();
     await insertRecord(record);
+    state.lastSyncError = null;
     showToast("Saved to cloud");
     await refreshDashboardData({ silent: true });
   } catch (error) {
-    state.pending.push(record);
+    const message = friendlyError(error);
+    state.pending.push({
+      ...record,
+      last_error: message,
+      last_attempt_at: new Date().toISOString()
+    });
+    state.lastSyncError = message;
     saveQueue();
-    showToast("Cloud save failed. Queued locally.");
+    showToast(`Cloud save failed: ${message}`);
   }
   render();
 }
 
 async function syncPending() {
-  if (!state.pending.length) {
+  const visiblePending = pendingForCurrentUser();
+  if (!visiblePending.length) {
     render();
     return;
   }
@@ -409,24 +470,47 @@ async function syncPending() {
     return;
   }
 
-  const remaining = [];
-  await refreshAccessTokenIfNeeded();
-  for (const item of state.pending) {
+  const visibleSet = new Set(visiblePending);
+  const remaining = state.pending.filter((item) => !visibleSet.has(item));
+  let firstError = null;
+
+  try {
+    await refreshAccessTokenIfNeeded();
+  } catch (error) {
+    state.lastSyncError = friendlyError(error);
+    showToast(`Sync failed: ${state.lastSyncError}`);
+    render();
+    return;
+  }
+
+  for (const item of visiblePending) {
     try {
       await insertRecord(item);
     } catch (error) {
-      remaining.push(item);
+      const message = friendlyError(error);
+      firstError ||= message;
+      remaining.push({
+        ...item,
+        last_error: message,
+        last_attempt_at: new Date().toISOString()
+      });
     }
   }
 
-  const synced = state.pending.length - remaining.length;
+  const remainingVisible = remaining.filter((item) => (item.owner_user_id || null) === state.session.user.id).length;
+  const synced = visiblePending.length - remainingVisible;
   state.pending = remaining;
+  state.lastSyncError = firstError;
   saveQueue();
-  showToast(`${synced} synced, ${remaining.length} pending`);
+  showToast(firstError ? `${synced} synced, ${remainingVisible} failed: ${firstError}` : `${synced} synced`);
   render();
 }
 
 async function insertRecord(item) {
+  if (!item.owner_user_id || item.owner_user_id !== state.session.user.id) {
+    throw new Error("Pending record is not owned by this local session");
+  }
+
   const payload = {
     ...item.payload,
     user_id: state.session.user.id
@@ -481,7 +565,14 @@ async function supabaseFetch(path, options = {}, useAuth = true) {
   const response = await fetch(`${baseUrl}${path}`, { ...options, headers });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || response.statusText);
+    try {
+      const details = JSON.parse(text);
+      const code = details.code ? `${details.code}: ` : "";
+      throw new Error(`${code}${details.message || response.statusText}`);
+    } catch (error) {
+      if (error instanceof SyntaxError) throw new Error(text || response.statusText);
+      throw error;
+    }
   }
   if (response.status === 204) return null;
   return response.json();
@@ -508,14 +599,18 @@ function renderAuthGate() {
   document.getElementById("bottomNav").hidden = !isAuthenticated;
 
   const gateStatus = document.getElementById("loginGateStatus");
+  const demoButton = document.getElementById("demoModeButton");
+  demoButton.hidden = isAuthenticated || state.supabaseReady;
   if (!isAuthenticated) {
     gateStatus.textContent = state.supabaseReady
       ? "Sign in to continue."
-      : "Configuration is unavailable. Please try again later.";
+      : "Supabase is not configured yet. Use demo preview or add config.json to enable login.";
   }
 }
 
 function switchView(view) {
+  if (!views[view]) return;
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   state.activeView = view;
   Object.entries(views).forEach(([key, element]) => {
     element.classList.toggle("active", key === view);
@@ -524,7 +619,9 @@ function switchView(view) {
     button.classList.toggle("active", button.dataset.view === view);
   });
   pageTitle.textContent = view[0].toUpperCase() + view.slice(1);
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 }
 
 function renderNetwork() {
@@ -536,15 +633,28 @@ function renderNetwork() {
 
 function renderHome() {
   const data = currentDashboard();
+  const pendingCount = pendingForCurrentUser().length;
   document.getElementById("todayFocus").textContent = data.home.todayFocus;
   document.getElementById("todaySummary").textContent = data.home.todaySummary;
-  document.getElementById("pendingCount").textContent = `${state.pending.length} pending`;
+  document.getElementById("pendingCount").textContent = `${pendingCount} pending`;
   document.getElementById("dataSource").textContent = dataSourceLabel(data);
+  document.getElementById("homeEnglishBadge").textContent = data.english.cefr;
+  document.getElementById("homeFitnessBadge").textContent = data.fitness.recoveryStatus;
   document.getElementById("homeMetrics").innerHTML = [
-    metric("English", data.english.cefr, data.english.currentFocus),
-    metric("Bodyweight", data.fitness.latestBodyweight, "latest"),
-    metric("Training", data.fitness.trainingDaysThisWeek, "days this week"),
-    metric("Sync", state.pending.length, "pending records")
+    metric("Today", data.fitness.nextTrainingTarget, "fitness target"),
+    metric("English", data.english.cefr, "current level"),
+    metric("Recovery", data.fitness.recoveryStatus, "latest state"),
+    metric("Sync", pendingCount, "pending records")
+  ].join("");
+  document.getElementById("homeEnglishStatus").innerHTML = [
+    listCard("Today focus", data.english.currentFocus, data.english.cefr),
+    listCard("Review sentences", `${data.english.reviewSentences.length} ready to copy`, "English"),
+    listCard("Self test", "Use the 30-second cards before or after speaking practice.", "Daily")
+  ].join("");
+  document.getElementById("homeFitnessStatus").innerHTML = [
+    listCard("Next training", data.fitness.nextTrainingTarget, data.fitness.recoveryStatus),
+    listCard("Bodyweight", `${data.fitness.latestBodyweight} latest / ${data.fitness.weeklyAverageBodyweight} weekly avg`, "Fitness"),
+    listCard("Plan A/B", buildFitnessPlanCards(data.fitness).slice(0, 2).map((item) => `${item.title}: ${item.status}`).join(" / "), "Jessica")
   ].join("");
   document.getElementById("recentUpdates").innerHTML = data.home.recentUpdates
     .map((item) => listCard(item.title, item.detail, item.date))
@@ -597,9 +707,126 @@ function renderFitness() {
     metric("Training", data.trainingDaysThisWeek, "days this week"),
     metric("Next", data.nextTrainingTarget, "training target")
   ].join("");
-  document.getElementById("planList").innerHTML = data.planTargets
+  document.getElementById("planList").innerHTML = buildFitnessPlanCards(data)
     .map((item) => listCard(item.title, item.detail, item.status))
     .join("");
+}
+
+function buildFitnessPlanCards(data) {
+  const entries = data._entries || data.fitness?._entries || [];
+  const targets = data.planTargets || data.fitness?.planTargets || [];
+  const nextPlan = inferNextPlan([...entries].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date)));
+  const latestEntry = latestFitnessEntry(entries);
+  const cards = ["Plan A", "Plan B"].map((planName) => {
+    const latest = latestEntryForPlan(entries, planName);
+    const fallback = targets.find((item) => item.title === planName);
+    return buildJessicaPlanTarget(planName, latest, fallback, nextPlan === planName, latestEntry);
+  });
+
+  cards.push({
+    title: "Recovery gate",
+    status: latestEntry ? `Last ${latestEntry.entry_date}` : "No log yet",
+    detail: latestEntry ? buildRecoveryTarget(latestEntry) : "先記錄睡眠與精神，Jessica 才能判斷下次要進步、重複或保守維持。"
+  });
+
+  return cards;
+}
+
+function buildJessicaPlanTarget(planName, latest, fallback, isNext, recoveryEntry) {
+  const baseTitle = `${planName} - Jessica 目標`;
+
+  if (!latest) {
+    return {
+      title: baseTitle,
+      status: isNext ? "Next target" : fallback?.status || "Baseline needed",
+      detail: fallback?.detail
+        ? `第一次可執行目標：${fallback.detail}`
+        : `先完成一次乾淨的 ${planName} 基準訓練，並記錄體重、睡眠、精神與恢復註記。`
+    };
+  }
+
+  const recoveryContext = recoveryEntry && recoveryEntry !== latest
+    ? `；恢復依據：${summarizeRecoveryEntry(recoveryEntry)}`
+    : "";
+
+  return {
+    title: baseTitle,
+    status: latest._pending ? `Pending ${latest.entry_date}` : isNext ? `Next target, last ${latest.entry_date}` : `Last ${latest.entry_date}`,
+    detail: `訓練依據：${summarizeTrainingEntry(latest)}${recoveryContext}。Jessica 下次目標：${nextPlanAction(planName, recoveryEntry || latest)}`
+  };
+}
+
+function latestEntryForPlan(entries, planName) {
+  return [...entries]
+    .sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))
+    .find((item) => item.training_status === "trained" && item.training_content.includes(planName));
+}
+
+function latestFitnessEntry(entries) {
+  return [...entries].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0];
+}
+
+function nextPlanAction(planName, entry) {
+  const recovery = recoverySignal(entry);
+  const planFocus = compactPlanFocus(planName);
+
+  if (recovery === "hold") {
+    return `維持 ${planFocus}；不加重量、不加次數，動作品質開始掉以前保留 2 下。`;
+  }
+
+  if (recovery === "progress") {
+    return `重量不變，主動作最後一組加 1-2 下；如果動作變形，就維持上次總量。`;
+  }
+
+  return `重複 ${planFocus}；目標是同樣總次數但節奏更乾淨，並補一句哪一組最吃力。`;
+}
+
+function buildRecoveryTarget(entry) {
+  const recovery = recoverySignal(entry);
+  const summary = summarizeRecoveryEntry(entry);
+
+  if (recovery === "hold") {
+    return `${summary}。下次先保守維持，等睡眠或精神恢復再推進。`;
+  }
+
+  if (recovery === "progress") {
+    return `${summary}。恢復狀態允許小幅進步，但前提是動作品質乾淨。`;
+  }
+
+  return `${summary}。恢復可用，但先重複目標，再決定是否增加難度。`;
+}
+
+function recoverySignal(entry) {
+  const sleep = entry.sleep_hours;
+  const energy = entry.energy_score;
+  if ((sleep !== null && sleep < 6) || (energy !== null && energy <= 2)) return "hold";
+  if ((sleep === null || sleep >= 7) && (energy === null || energy >= 4)) return "progress";
+  return "repeat";
+}
+
+function compactPlanFocus(planName) {
+  const exercises = PLAN_EXERCISES[planName] || [];
+  const primary = exercises.slice(0, 2).map((exercise) => {
+    const load = exercise.defaultLoad ? `${formatNumber(exercise.defaultLoad)}kg ` : "";
+    return `${exercise.name} ${load}${exercise.defaultReps}`.trim();
+  });
+  return primary.length ? primary.join("、") : planName;
+}
+
+function summarizeTrainingEntry(entry) {
+  const lines = entry.training_content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const plan = lines[1] || lines[0] || "Training logged";
+  const bodyweight = entry.bodyweight_kg !== null ? `BW ${formatNumber(entry.bodyweight_kg)} kg` : "";
+  const recovery = summarizeRecoveryEntry(entry);
+  return [plan, bodyweight, recovery].filter(Boolean).join(" / ");
+}
+
+function summarizeRecoveryEntry(entry) {
+  const parts = [];
+  if (entry.sleep_hours !== null) parts.push(`Sleep ${formatNumber(entry.sleep_hours)}h`);
+  if (entry.energy_score !== null) parts.push(`Energy ${entry.energy_score}/5`);
+  if (entry.notes) parts.push(entry.notes);
+  return parts.length ? parts.join(" / ") : "No recovery note yet.";
 }
 
 function bindFitnessReportGenerator() {
@@ -628,6 +855,7 @@ function bindFitnessReportGenerator() {
   });
 
   document.getElementById("copyFitnessReport").addEventListener("click", copyFitnessReport);
+  document.getElementById("saveFitnessEntry").addEventListener("click", saveFitnessEntry);
   updateFitnessReportVisibility();
 }
 
@@ -687,6 +915,8 @@ function buildFitnessReport() {
   const lines = [];
   const date = form.elements.entry_date.value || todayISO();
   const bodyweight = form.elements.bodyweight.value.trim();
+  const sleepHours = form.elements.sleep_hours.value.trim();
+  const energyScore = form.elements.energy_score.value;
   const supplements = formatSupplements(selectedValues(form, "supplements"), form.elements.custom_supplement.value.trim());
   const recoveryNote = form.elements.recovery_note.value.trim();
 
@@ -701,7 +931,9 @@ function buildFitnessReport() {
   }
 
   if (bodyweight) lines.push(`早上空腹${bodyweight}`);
-  if (supplements) lines.push(`運動後補充${supplements}`);
+  if (sleepHours) lines.push(`睡眠${sleepHours}小時`);
+  if (energyScore) lines.push(`精神${energyScore}/5`);
+  if (supplements) lines.push(dayType === "trained" ? `運動後補充${supplements}` : `今日補給${supplements}`);
   if (recoveryNote) lines.push(`睡眠/疲勞：${recoveryNote}`);
 
   return lines.filter(Boolean).join("\n");
@@ -774,23 +1006,60 @@ async function copyFitnessReport() {
   }
 }
 
+async function saveFitnessEntry() {
+  const form = document.getElementById("fitnessReportForm");
+  updateFitnessReport();
+
+  const dayType = getRadioValue(form, "day_type") || "rest";
+  const report = document.getElementById("fitnessReportOutput").textContent.trim();
+  const supplements = formatSupplements(
+    selectedValues(form, "supplements"),
+    form.elements.custom_supplement.value.trim()
+  );
+
+  const payload = {
+    entry_date: form.elements.entry_date.value || todayISO(),
+    bodyweight_kg: numberOrNull(form.elements.bodyweight.value.trim()),
+    training_status: dayType,
+    training_content: dayType === "trained" ? report : "",
+    protein: supplements,
+    sleep_hours: numberOrNull(form.elements.sleep_hours.value.trim()),
+    energy_score: numberOrNull(form.elements.energy_score.value),
+    notes: form.elements.recovery_note.value.trim()
+  };
+
+  await saveRecord("fitness_daily_entries", payload);
+}
+
 function renderSettings() {
+  const pendingCount = pendingForCurrentUser().length;
   document.getElementById("authStatus").textContent = state.session
-    ? `Logged in as ${state.session.user.email}`
+    ? state.session.demo
+      ? "Demo preview session. No cloud account is connected."
+      : `Logged in as ${state.session.user.email}`
     : state.supabaseReady
       ? "Supabase configured. Please log in."
       : "Demo mode. Add config.json to enable Supabase login.";
 
-  const syncParts = [`${state.pending.length} pending records`, `App version ${VERSION}`];
+  const syncParts = [`${pendingCount} pending records`];
   if (state.lastSync) syncParts.push(`Last cloud refresh ${formatDateTime(state.lastSync)}`);
-  if (state.lastError) syncParts.push(`Last error: ${state.lastError}`);
+  if (state.lastError) syncParts.push(`Last read error: ${state.lastError}`);
+  if (state.lastSyncError) syncParts.push(`Last write error: ${state.lastSyncError}`);
   document.getElementById("syncStatus").textContent = `${syncParts.join(". ")}.`;
+  document.getElementById("offlineBadge").textContent = navigator.onLine ? "Online" : "Offline";
+  document.getElementById("versionBadge").textContent = VERSION;
+  document.getElementById("offlineState").innerHTML = [
+    listCard("Pending queue", `${pendingCount} unsynced records for this session`, pendingCount ? "Needs sync" : "Clear"),
+    listCard("Cached dashboard", loadCachedData() ? "Last successful cloud data is available for offline reading" : "No cloud cache saved yet", "Local"),
+    listCard("App shell", "Core PWA files are cached by the service worker after installation", "Offline")
+  ].join("");
 
   document.getElementById("setupState").innerHTML = [
     listCard("Supabase config", state.supabaseReady ? "config.json loaded" : "config.json missing; demo mode active", state.supabaseReady ? "Ready" : "Demo"),
-    listCard("Access control", "Supabase Auth plus RLS allowlist", "Private"),
-    listCard("Auth session", state.session ? "Active browser session" : "Not logged in", state.session ? "Ready" : "Waiting"),
-    listCard("Offline cache", "Service worker app shell plus last successful dashboard data", "PWA")
+    listCard("Cloud read", state.lastSync ? `Verified ${formatDateTime(state.lastSync)}` : "No successful cloud read in this session", state.lastSync ? "Verified" : "Unverified"),
+    listCard("Access policy", "Supabase Auth, user ownership, and RLS allowlist; verify isolation with a separate negative test", "Configured"),
+    listCard("Auth session", state.session?.demo ? "Demo preview; cloud is disabled" : state.session ? "Active browser session" : "Not logged in", state.session?.demo ? "Demo" : state.session ? "Ready" : "Waiting"),
+    listCard("App version", VERSION, "Build")
   ].join("");
 }
 
@@ -803,7 +1072,9 @@ function currentDashboard() {
 function applyPendingRecords(data) {
   if (!state.pending.length) return;
 
-  const pendingFitness = state.pending
+  const visiblePending = pendingForCurrentUser();
+
+  const pendingFitness = visiblePending
     .filter((item) => item.table === "fitness_daily_entries")
     .map((item) => normalizeFitnessEntry({ ...item.payload, created_at: item.queued_at, _pending: true }));
   const fitnessEntries = [...pendingFitness, ...(data.fitness._entries || [])];
@@ -812,7 +1083,7 @@ function applyPendingRecords(data) {
     recalculateFitness(data, fitnessEntries, data.fitness._workouts || [], []);
   }
 
-  const pendingUpdates = state.pending.map((item) => {
+  const pendingUpdates = visiblePending.map((item) => {
     if (item.table === "fitness_daily_entries") {
       return {
         date: item.payload.entry_date || dateOnly(item.queued_at),
@@ -866,6 +1137,7 @@ function recalculateFitness(data, entries, workouts, weeklyReviews) {
   data.fitness.nextTrainingTarget =
     nextWorkout?.next_target ||
     latestReview?.next_adjustment ||
+    inferNextPlan(sortedEntries) ||
     data.fitness.nextTrainingTarget;
 
   if (workouts.length) {
@@ -875,6 +1147,14 @@ function recalculateFitness(data, entries, workouts, weeklyReviews) {
       detail: [item.reps, item.sets, item.weight, item.rpe, item.next_target].filter(Boolean).join(" / ")
     }));
   }
+}
+
+function inferNextPlan(entries) {
+  const latestTraining = entries.find((item) => item.training_status === "trained");
+  if (!latestTraining?.training_content) return "";
+  if (latestTraining.training_content.includes("Plan A")) return "Plan B";
+  if (latestTraining.training_content.includes("Plan B")) return "Plan A";
+  return "Repeat or adjust";
 }
 
 function normalizeFitnessEntry(item) {
@@ -941,13 +1221,38 @@ function problemCard(item) {
 }
 
 function canUseCloud() {
-  return Boolean(navigator.onLine && state.supabaseReady && state.session);
+  return Boolean(navigator.onLine && state.supabaseReady && state.session && !state.session.demo);
 }
 
 function dataSourceLabel(data) {
+  if (state.session?.demo) return "Demo data";
   if (state.session && data._source === "cloud") return "Cloud data";
   if (state.session && loadCachedData()) return "Cached local data";
   return "Demo data";
+}
+
+function pendingForCurrentUser() {
+  const userId = state.session?.user?.id || null;
+  return state.pending.filter((item) => (item.owner_user_id || null) === userId);
+}
+
+function adoptLegacyPendingRecords() {
+  const userId = state.session?.demo ? null : state.session?.user?.id;
+  if (!userId) return 0;
+
+  let adopted = 0;
+  state.pending = state.pending.map((item) => {
+    if (item?.owner_user_id || !WRITABLE_TABLES.has(item?.table) || !item?.payload) return item;
+    adopted += 1;
+    return {
+      ...item,
+      owner_user_id: userId,
+      migrated_at: new Date().toISOString()
+    };
+  });
+
+  if (adopted) saveQueue();
+  return adopted;
 }
 
 function normalizeArray(value, fallback) {
@@ -976,7 +1281,8 @@ function numberOrNull(value) {
 
 function loadQueue() {
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+    const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+    return Array.isArray(queue) ? queue : [];
   } catch (error) {
     return [];
   }

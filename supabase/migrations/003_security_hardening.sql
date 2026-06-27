@@ -1,23 +1,5 @@
--- Personal Dashboard PWA - initial Supabase schema and RLS policies.
--- Run in Supabase SQL Editor after creating Vinson's Auth user.
-
-create extension if not exists pgcrypto;
-
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-create table if not exists public.dashboard_allowed_users (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  email text not null,
-  created_at timestamptz not null default now()
-);
+-- Security hardening for existing Personal Dashboard Supabase projects.
+-- Run after 001_initial_schema.sql and 002_english_review_cards.sql.
 
 create or replace function public.is_dashboard_user()
 returns boolean
@@ -36,127 +18,7 @@ $$;
 
 revoke execute on function public.set_updated_at() from public, anon, authenticated;
 revoke execute on function public.is_dashboard_user() from public, anon;
-
-create table if not exists public.english_focus_cards (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  current_focus text not null,
-  cefr text,
-  tags text[] not null default '{}',
-  review_sentences text[] not null default '{}',
-  updated_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.english_sessions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  session_date date not null,
-  topic text not null,
-  cefr text,
-  main_bottleneck text,
-  improvement text,
-  next_focus text,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.english_problem_tracker (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  problem text not null,
-  status text not null check (status in ('Active','Improving','Stable','Paused')),
-  latest_evidence text,
-  improvement_condition text,
-  updated_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.english_review_cards (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  card_type text not null check (card_type in ('commute','mistake','warmup','self_test')),
-  title text not null,
-  prompt text not null,
-  answer_hint text,
-  tags text[] not null default '{}',
-  sort_order integer not null default 100,
-  active boolean not null default true,
-  updated_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.english_self_checks (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  check_date date not null default current_date,
-  answer_chain text,
-  future_action text,
-  note text,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.fitness_daily_entries (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  entry_date date not null default current_date,
-  bodyweight_kg numeric(5,2),
-  training_status text not null check (training_status in ('trained','rest')),
-  training_content text,
-  protein text,
-  carbs_food text,
-  sleep_hours numeric(3,1),
-  energy_score integer check (energy_score between 1 and 5),
-  notes text,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.fitness_workouts (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  workout_date date not null default current_date,
-  plan_type text,
-  exercise text not null,
-  weight text,
-  reps text,
-  sets text,
-  rpe text,
-  next_target text,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.fitness_plan_targets (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  title text not null,
-  status text,
-  detail text,
-  sort_order integer not null default 100,
-  updated_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.fitness_weekly_reviews (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  week_start date not null,
-  week_end date not null,
-  average_bodyweight_kg numeric(5,2),
-  training_days integer,
-  food_execution text,
-  recovery_summary text,
-  next_adjustment text,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.dashboard_tasks (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  module text not null check (module in ('home','english','fitness','settings')),
-  title text not null,
-  status text not null default 'open' check (status in ('open','done','paused')),
-  due_date date,
-  created_at timestamptz not null default now()
-);
+grant execute on function public.is_dashboard_user() to authenticated;
 
 alter table public.dashboard_allowed_users enable row level security;
 alter table public.english_focus_cards enable row level security;
@@ -266,35 +128,6 @@ create policy "dashboard_tasks_owner_insert" on public.dashboard_tasks for inser
 create policy "dashboard_tasks_owner_update" on public.dashboard_tasks for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 create policy "dashboard_tasks_owner_delete" on public.dashboard_tasks for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 
-drop trigger if exists english_focus_cards_set_updated_at on public.english_focus_cards;
-create trigger english_focus_cards_set_updated_at
-before update on public.english_focus_cards
-for each row execute function public.set_updated_at();
-
-drop trigger if exists english_problem_tracker_set_updated_at on public.english_problem_tracker;
-create trigger english_problem_tracker_set_updated_at
-before update on public.english_problem_tracker
-for each row execute function public.set_updated_at();
-
-drop trigger if exists english_review_cards_set_updated_at on public.english_review_cards;
-create trigger english_review_cards_set_updated_at
-before update on public.english_review_cards
-for each row execute function public.set_updated_at();
-
-drop trigger if exists fitness_plan_targets_set_updated_at on public.fitness_plan_targets;
-create trigger fitness_plan_targets_set_updated_at
-before update on public.fitness_plan_targets
-for each row execute function public.set_updated_at();
-
-create index if not exists english_problem_tracker_user_status_idx on public.english_problem_tracker (user_id, status);
-create index if not exists english_review_cards_user_type_order_idx on public.english_review_cards (user_id, card_type, active, sort_order);
-create index if not exists english_self_checks_user_date_idx on public.english_self_checks (user_id, check_date desc);
-create index if not exists fitness_daily_entries_user_date_idx on public.fitness_daily_entries (user_id, entry_date desc);
-create index if not exists fitness_workouts_user_date_idx on public.fitness_workouts (user_id, workout_date desc);
-create index if not exists fitness_plan_targets_user_order_idx on public.fitness_plan_targets (user_id, sort_order);
-
-grant usage on schema public to authenticated;
-grant execute on function public.is_dashboard_user() to authenticated;
 revoke all on
   public.dashboard_allowed_users,
   public.english_focus_cards,
@@ -308,6 +141,8 @@ revoke all on
   public.fitness_weekly_reviews,
   public.dashboard_tasks
 from anon;
+
+grant usage on schema public to authenticated;
 grant select on public.dashboard_allowed_users to authenticated;
 grant select, insert, update, delete on
   public.english_focus_cards,

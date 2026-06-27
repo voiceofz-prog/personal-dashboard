@@ -1,10 +1,12 @@
-const CACHE_NAME = "jessica-dashboard-v2026-06-25-2";
+const CACHE_NAME = "jessica-dashboard-v2026-06-27-6";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
+  "./ios-fixes.css",
   "./app.js",
   "./manifest.webmanifest",
+  "./robots.txt",
   "./data/demo.json",
   "./icons/icon.svg",
   "./icons/icon-180.png",

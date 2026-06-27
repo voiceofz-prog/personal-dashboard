@@ -12,7 +12,8 @@ This schema stores only V1 dashboard data for English learning summaries and fit
 | Vinson-only access | `dashboard_allowed_users` allowlist contains Vinson's Auth user UUID. |
 | Ownership | Every dashboard data row has `user_id`. |
 | RLS | Every table has Row Level Security enabled. |
-| Read/write checks | Policies require `auth.uid() = user_id` and `public.is_dashboard_user()`. |
+| Read/write checks | Policies use `TO authenticated`, `(select auth.uid()) = user_id`, and `(select public.is_dashboard_user())`. |
+| Data API grants | Dashboard tables are granted to `authenticated`; anon table access is revoked. |
 | Browser key | Frontend uses only the Supabase anon key. |
 
 ## Tables
@@ -44,6 +45,8 @@ After login, the app reads these tables through Supabase REST:
 - `fitness_workouts`
 - `fitness_plan_targets`
 - `fitness_weekly_reviews`
+
+Every live read includes a `user_id=eq.<current user id>` filter. RLS remains the security boundary; the explicit filter keeps the REST query aligned with the ownership rule and improves query planning.
 
 If live reads fail or Supabase is not configured, the app stays in demo mode or uses the last successful cached dashboard data for the active browser session.
 

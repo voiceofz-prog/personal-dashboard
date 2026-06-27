@@ -29,7 +29,7 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 | App shell | `app/index.html` | Static PWA entrypoint. |
 | App logic | `app/app.js` | Demo data, local queue, cached reading, Supabase REST reads/writes. |
 | Styling | `app/styles.css` | Phone-first UI. |
-| Supabase schema | `supabase/schema.sql` and `supabase/migrations/001_initial_schema.sql` | Tables, allowlist, RLS policies, indexes, and update triggers. |
+| Supabase schema | `supabase/schema.sql` and `supabase/migrations/001_initial_schema.sql` through `003_security_hardening.sql` | Tables, allowlist, RLS policies, grants, indexes, update triggers, and hardening migration. |
 | Supabase seed | `supabase/seed_demo.sql` | Optional low-risk cloud demo rows after Vinson Auth UUID is known. |
 | Data model | `docs/schema.md` | Table map, write paths, and live-read behavior. |
 | Verification | `docs/verification.md` | Repeatable local checks and post-Supabase checks. |

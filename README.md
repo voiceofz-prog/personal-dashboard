@@ -33,10 +33,10 @@ https://<username>.github.io/<repo-name>/index.html
 
 | Module | Features |
 |---|---|
-| Home | Today focus, sync status, recent updates |
-| English | Mika focus, problem tracker, improvement log, review sentences, self-check |
-| Fitness | Quick entry, bodyweight, training days, Plan A/B status, recovery warning |
-| Settings | Login, sync controls, app version, setup state |
+| Home | Today focus, English status, fitness status, recent personal records |
+| English | Today's speaking focus, review sentences, commute cards, self-test, mistake fixes, folded analysis notes |
+| Fitness | Quick-entry workspace, bodyweight, recovery, and Jessica Plan A/B targets |
+| Settings | Login status, sync status, offline data, app version |
 
 ## Quick Local Preview
 
@@ -47,7 +47,7 @@ python -m http.server 5177
 
 Open `http://127.0.0.1:5177`.
 
-The app works in demo mode until `config.json` is created from `config.sample.json`.
+The app works in demo preview mode until `config.json` is created from `config.sample.json`; use `Open Demo Preview` on the login screen when no Supabase config exists.
 
 ## Important Files
 
@@ -70,7 +70,7 @@ The app works in demo mode until `config.json` is created from `config.sample.js
 
 ## Current Behavior
 
-- Without `config.json`, the app runs fully in demo mode.
+- Without `config.json`, the login screen can open Demo Preview with committed low-risk demo data.
 - With Supabase configured and logged in, the app reads Vinson-owned dashboard rows from Supabase.
 - Fitness entries and English self-checks save directly when online.
 - Offline or failed submissions are saved to the browser pending queue and shown in the UI until synced.

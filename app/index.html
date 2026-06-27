@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; script-src 'self'; style-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#f6f8fb">
   <meta name="description" content="Vinson personal dashboard PWA">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,6 +14,7 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="ios-fixes.css">
   <title>Jessica Dashboard</title>
 </head>
 <body class="login-only">
@@ -24,6 +27,7 @@
         <label>Email <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
         <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
         <button class="primary-action" type="submit">Login</button>
+        <button class="secondary-action" id="demoModeButton" type="button" hidden>Open Demo Preview</button>
       </form>
     </div>
   </section>
@@ -43,11 +47,13 @@
         </div>
       </div>
       <div class="metric-grid" id="homeMetrics"></div>
-      <section class="panel"><div class="section-heading"><h2>Recent Updates</h2><span id="pendingCount" class="mini-status">0 pending</span></div><div id="recentUpdates" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>English Status</h2><span id="homeEnglishBadge" class="mini-status">Loading</span></div><div id="homeEnglishStatus" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div><div class="button-row"><button class="secondary-action" type="button" data-jump="fitness">Open Fitness Log</button></div></section>
+      <section class="panel"><div class="section-heading"><h2>Recent Personal Records</h2><span id="pendingCount" class="mini-status">0 pending</span></div><div id="recentUpdates" class="stack-list"></div></section>
     </section>
 
     <section class="view" id="englishView">
-      <section class="panel"><div class="section-heading"><h2>English Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><div id="englishTags" class="tag-row"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Today's Speaking Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><div id="englishTags" class="tag-row"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Commute Cards</h2><span class="mini-status">quick review</span></div><div id="commuteCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section>
@@ -62,15 +68,16 @@
     </section>
 
     <section class="view" id="fitnessView">
-      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
-      <section class="panel fitness-generator"><div class="section-heading"><p id="fitnessDailyPhrase" class="daily-phrase">Small reps still count.</p><span class="mini-status">copy report</span></div><p class="muted">勾一下、填次數，產生可貼給 Jessica 的回報。</p><form id="fitnessReportForm" class="form-stack"><label>日期 <input name="entry_date" type="date" required></label><div class="segmented-control" role="group" aria-label="今日類型"><label class="segment-option"><input type="radio" name="day_type" value="trained" checked><span>訓練日</span></label><label class="segment-option"><input type="radio" name="day_type" value="rest"><span>休息日</span></label></div><label>空腹體重 <input name="bodyweight" type="text" inputmode="decimal" placeholder="58.0"></label><label id="planTemplateLabel">訓練模板 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option><option value="自訂">自訂</option></select></label><section class="exercise-picker" id="exercisePicker" aria-label="Plan exercises"></section><section class="supplement-group"><h3>運動後補充</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="supplements" value="高蛋白" checked><span>高蛋白</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="豆漿" checked><span>豆漿</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="香蕉" checked><span>香蕉</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="蛋"><span>蛋</span></label></div><label>自訂補給 <input name="custom_supplement" type="text" placeholder="例如 優格、飯糰"></label></section><label>睡眠 / 疲勞備註 <textarea name="recovery_note" rows="3" placeholder="可留空"></textarea></label><section class="report-output"><div class="section-heading"><h3>等一下貼給 Jessica</h3><span class="mini-status">preview</span></div><pre id="fitnessReportOutput" class="report-box"></pre><div class="button-row report-actions"><button class="secondary-action" id="generateFitnessReport" type="button">產生內容</button><button class="primary-action" id="copyFitnessReport" type="button">複製</button></div></section></form></section>
-      <section class="panel"><div class="section-heading"><h2>Plan A/B</h2><span class="mini-status">next target</span></div><div id="planList" class="stack-list"></div></section>
+      <section class="panel fitness-generator"><div class="section-heading"><p id="fitnessDailyPhrase" class="daily-phrase">Small reps still count.</p><span class="mini-status">log + copy</span></div><p class="muted">填一次，同時產生可貼給 Jessica 的回報，並更新下方追蹤狀態。</p><form id="fitnessReportForm" class="form-stack"><label>日期 <input name="entry_date" type="date" required></label><div class="segmented-control" role="group" aria-label="今日類型"><label class="segment-option"><input type="radio" name="day_type" value="trained" checked><span>訓練日</span></label><label class="segment-option"><input type="radio" name="day_type" value="rest"><span>休息日</span></label></div><div class="two-col"><label>空腹體重 <input name="bodyweight" type="text" inputmode="decimal" placeholder="58.0"></label><label>睡眠時數 <input name="sleep_hours" type="text" inputmode="decimal" placeholder="6.5"></label></div><label>今日精神 <select name="energy_score"><option value="">不記錄</option><option value="5">5 很好</option><option value="4">4 穩定</option><option value="3">3 普通</option><option value="2">2 偏累</option><option value="1">1 很累</option></select></label><label id="planTemplateLabel">訓練模板 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option><option value="自訂">自訂</option></select></label><section class="exercise-picker" id="exercisePicker" aria-label="Plan exercises"></section><section class="supplement-group"><h3>補給紀錄</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="supplements" value="高蛋白" checked><span>高蛋白</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="豆漿" checked><span>豆漿</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="香蕉" checked><span>香蕉</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="蛋"><span>蛋</span></label></div><label>自訂補給 <input name="custom_supplement" type="text" placeholder="例如 優格、飯糰"></label></section><label>恢復備註 <textarea name="recovery_note" rows="3" placeholder="例如：肩膀有點緊、今天精神普通"></textarea></label><section class="report-output"><div class="section-heading"><h3>等一下貼給 Jessica</h3><span class="mini-status">preview</span></div><pre id="fitnessReportOutput" class="report-box"></pre><div class="button-row report-actions"><button class="secondary-action" id="generateFitnessReport" type="button">產生內容</button><button class="secondary-action" id="copyFitnessReport" type="button">複製</button><button class="primary-action" id="saveFitnessEntry" type="button">更新追蹤</button></div></section></form></section>
+      <section class="panel"><div class="section-heading"><h2>Status Snapshot</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Plan A/B Tracker</h2><span class="mini-status">from logs</span></div><div id="planList" class="stack-list"></div></section>
     </section>
 
     <section class="view" id="settingsView">
-      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
-      <section class="panel"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button">Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button><button id="clearLocalButton" class="danger-action" type="button">Clear Local Queue</button></div></section>
-      <section class="panel"><h2>Setup State</h2><div id="setupState" class="stack-list"></div></section>
+      <section class="panel"><h2>Login Status</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
+      <section class="panel"><h2>Sync Status</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button">Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button><button id="clearLocalButton" class="danger-action" type="button">Clear Local Queue</button></div></section>
+      <section class="panel"><div class="section-heading"><h2>Offline Data</h2><span id="offlineBadge" class="mini-status">PWA</span></div><div id="offlineState" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Version</h2><span id="versionBadge" class="mini-status">Loading</span></div><div id="setupState" class="stack-list"></div></section>
     </section>
   </main>
 

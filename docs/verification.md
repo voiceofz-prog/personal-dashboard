@@ -82,12 +82,19 @@ Expected result: each command returns `200`.
 ```powershell
 rg -n "service_role|SERVICE_ROLE|sk-" app supabase docs .github README.md project_brief.md task_board.md
 rg -n "Feng|destiny|bazi|birth|immigration|medical|raw full" app supabase docs README.md project_brief.md task_board.md
+rg -n "auth\\.role\\(|user_metadata|raw_user_meta_data" supabase docs app
+rg -n "for select to authenticated|for insert to authenticated|for update to authenticated|for delete to authenticated" supabase/schema.sql supabase/migrations/003_security_hardening.sql
+rg -n "user_id=eq" app/app.js
 ```
 
 Expected result:
 
-- No service-role key or secret value appears in frontend files.
+- No service-role key or secret value appears in frontend files. A match in this verification command list is acceptable.
 - Restricted-domain words appear only in docs or comments that explicitly exclude those categories from V1.
+- Supabase high-risk auth terms appear only in this verification command list unless a future migration intentionally documents a blocked pattern.
+- Supabase policies use `TO authenticated` rather than unrestricted policies.
+- Frontend REST reads include a current-user filter.
+- Runtime config validation rejects placeholder config, non-`https://*.supabase.co` URLs, and service-role-like JWT keys before enabling login.
 
 ## Supabase Checks After Credentials Exist
 
@@ -100,3 +107,11 @@ These cannot be completed in demo mode:
 - Vinson can read rows whose `user_id` matches his Auth UUID.
 - A non-allowlisted test user cannot read or insert dashboard rows.
 - Offline fitness/self-check submissions remain pending locally, then sync after reconnecting.
+- Logging out with unsynced records asks for confirmation and clears local pending records only after confirmation.
+- A pending record tagged with a different local user id does not sync under the current user.
+- Clearing the local queue from Settings removes only records visible to the current local session.
+- A supported legacy pending record without `owner_user_id` is adopted after real login and retains any Supabase write error for diagnosis.
+- Unsupported or malformed ownerless queue records are not adopted.
+- Settings shows `Verified` for cloud read only after all required Supabase reads succeed; access-policy isolation still requires a separate non-allowlisted-user test.
+- Inputs remain at 16px or larger on iPhone Safari, date fields do not overflow, and switching tabs clears form focus and returns to the top immediately.
+- Settings app version and the deployed service-worker cache version match before iPhone acceptance testing.

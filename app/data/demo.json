@@ -80,11 +80,11 @@
     "trainingDaysThisWeek": "4",
     "recoveryStatus": "Watch sleep data",
     "recoveryLevel": "ok",
-    "nextTrainingTarget": "Plan A/B steady",
+    "nextTrainingTarget": "Plan A",
     "_entries": [
-      {"entry_date":"2026-06-21","bodyweight_kg":58.3,"training_status":"rest","sleep_hours":6.5,"energy_score":3,"notes":"Demo recovery day"},
-      {"entry_date":"2026-06-20","bodyweight_kg":58.2,"training_status":"trained","training_content":"Plan A demo session","sleep_hours":7,"energy_score":4},
-      {"entry_date":"2026-06-18","bodyweight_kg":58.4,"training_status":"trained","training_content":"Plan B demo session","sleep_hours":7.5,"energy_score":4}
+      {"entry_date":"2026-06-21","bodyweight_kg":58.3,"training_status":"rest","sleep_hours":6.5,"energy_score":3,"notes":"Rest day. Keep food steady and watch sleep."},
+      {"entry_date":"2026-06-20","bodyweight_kg":58.2,"training_status":"trained","training_content":"6/20\nPlan B\n啞鈴高腳杯深蹲\n5kg，17/17/17/17\n啞鈴羅馬尼亞硬舉\n5kg，17/17/17\n運動後補充高蛋白+豆漿+香蕉","sleep_hours":7,"energy_score":4,"notes":"Lower body felt stable."},
+      {"entry_date":"2026-06-18","bodyweight_kg":58.4,"training_status":"trained","training_content":"6/18\nPlan A\n單臂啞鈴划船\n5kg，每側 20/20/20/20\n伏地挺身 20/20/20\n運動後補充高蛋白+豆漿","sleep_hours":7.5,"energy_score":4,"notes":"Upper body baseline complete."}
     ],
     "_workouts": [],
     "planTargets": [

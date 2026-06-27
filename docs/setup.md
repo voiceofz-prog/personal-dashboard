@@ -17,13 +17,15 @@ http://127.0.0.1:5177
 
 Use localhost for PWA/service-worker testing. Opening `index.html` directly as a file will show the UI, but service worker offline cache will not register.
 
-When testing after app updates, reload once while online so the service worker can install the latest cache version.
+If `app/config.json` is not present, the login screen shows an `Open Demo Preview` button. That preview uses only the committed low-risk demo data and does not connect to Supabase.
+
+When testing after app updates, reload once while online so the service worker can install the latest cache version. In Settings, confirm the displayed app version matches the deployed `app.js` version before testing sync.
 
 ## 2. Supabase Setup
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run the later migration files in order, starting with `supabase/migrations/002_english_review_cards.sql`.
+3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run the later migration files in order: `supabase/migrations/002_english_review_cards.sql`, then `supabase/migrations/003_security_hardening.sql`.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 
@@ -34,16 +36,16 @@ on conflict (user_id) do update set email = excluded.email;
 ```
 
 6. Confirm public dashboard tables have RLS enabled.
-7. Confirm the schema grants dashboard table access to the `authenticated` role. RLS policies still restrict rows to `auth.uid() = user_id` and the allowlist.
+7. Confirm the schema grants dashboard table access to the `authenticated` role only. RLS policies still restrict rows to the logged-in `user_id` and the allowlist.
 8. Copy `app/config.sample.json` to `app/config.json`.
 9. Fill the Supabase project URL and anon key.
 10. Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID` with Vinson's real Auth user UUID.
 
-Do not put the service role key in `config.json`.
+Do not put the service role key in `config.json`. The app rejects service-role-like JWT keys at runtime, but the key should still be rotated immediately if it was ever placed in a browser file.
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
 
-If an older copy of the schema was already run before the grant section existed, rerun the current `supabase/schema.sql` or run only the final `grant ... to authenticated` statements from that file in Supabase SQL Editor.
+If an older copy of the schema was already run before the grant or policy-hardening sections existed, run `supabase/migrations/003_security_hardening.sql` in Supabase SQL Editor.
 
 ## 3. GitHub Pages Deployment
 
@@ -112,9 +114,19 @@ This alternative is not the recommended setup.
 7. Submit a fitness entry offline.
 8. Reconnect.
 9. Tap Sync Pending and confirm the record appears in Supabase.
+10. If Sync Pending fails, read the `Last write error` shown in Settings before clearing the queue.
+11. Switch between Home, English, Fitness, and Settings after scrolling; every view should open at the top without Safari zooming the form.
+
+Logout behavior:
+
+- If unsynced local records exist, logout asks for confirmation.
+- Confirmed logout clears the cached cloud dashboard data and pending queue from that browser.
+- Pending records created by one logged-in user are not synced under a different local session.
+- The Settings clear action removes only pending records visible to the current local session.
+- Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the two supported write tables.
 
 ## 5. Current Limitations
 
-- Real cloud sync cannot be verified until Supabase URL, anon key, Auth user, and allowlist row are configured.
+- Settings reports a cloud read as `Verified` only after all required dashboard reads succeed in the current session. Config, browser-session, and access-policy labels alone do not prove RLS isolation or writes are working.
 - The app reads live Supabase rows for dashboard display after login.
 - Markdown reconciliation remains manual: Jessica should summarize important Supabase records back into the relevant local project files during review.

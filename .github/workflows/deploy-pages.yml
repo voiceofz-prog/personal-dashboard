@@ -24,9 +24,30 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          forbidden_files=(
+            "app/config.json"
+            ".env"
+            ".env.local"
+          )
+
+          for file in "${forbidden_files[@]}"; do
+            if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+              echo "::error::$file must not be committed"
+              exit 1
+            fi
+          done
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -53,11 +74,29 @@ jobs:
             throw new Error(`Missing required runtime config: ${missing.join(", ")}`);
           }
 
+          const url = new URL(config.supabaseUrl);
+          if (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co")) {
+            throw new Error("SUPABASE_URL must be an https://*.supabase.co URL");
+          }
+
+          if (config.supabaseAnonKey.includes("YOUR_") || config.supabaseAnonKey.length < 20) {
+            throw new Error("SUPABASE_ANON_KEY is missing or still uses a placeholder");
+          }
+
+          const [, payload] = config.supabaseAnonKey.split(".");
+          if (payload) {
+            const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+            const decoded = JSON.parse(Buffer.from(normalized, "base64").toString("utf8"));
+            if (decoded.role === "service_role") {
+              throw new Error("SUPABASE_ANON_KEY contains a service_role token");
+            }
+          }
+
           fs.writeFileSync("app/config.json", `${JSON.stringify(config, null, 2)}\n`);
           NODE
 
       - name: Upload app folder
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: app
 
