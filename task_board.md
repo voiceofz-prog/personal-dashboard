@@ -53,6 +53,7 @@
 - [x] Added review-cycle provenance and structured Jessica exercise-target adoption to the Dashboard contract.
 - [x] Published and read back the first real English/Fitness cycles: one active cycle per domain, 8 linked English cards, and 5 targets for each Fitness plan.
 - [x] Verified owner reads/writes, non-owner zero-row reads, non-owner write denial, and target provenance in the mobile flow.
+- [x] Deployed build `2026.06.30.9` and verified the live service worker, compatibility loader, and current dashboard shell.
 
 ## Decision Log
 

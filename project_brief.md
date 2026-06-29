@@ -17,7 +17,7 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 
 | Item | Summary |
 |---|---|
-| Status | Manual cross-project Jessica review loop implemented and published; awaiting build 2026.06.30.9 deployment and next Plan B execution. |
+| Status | Manual cross-project Jessica review loop implemented, published, and deployed as build 2026.06.30.9; awaiting the next Plan B execution. |
 | Last updated | 2026-06-21 |
 | Latest decision | Create a separate `05_personal-dashboard` project. Build a static PWA frontend hosted by GitHub Pages, with Supabase for Auth, RLS-protected data, and cloud sync. |
 | Next action | Record the next Plan B execution, then let `02_Fitness_Nutrition` compare target versus actual and publish the second reviewed cycle. |
