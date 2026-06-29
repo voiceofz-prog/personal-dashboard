@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="ios-fixes.css">
+  <link rel="stylesheet" href="product.css">
   <title>Jessica Dashboard</title>
 </head>
 <body class="login-only">
@@ -41,48 +42,70 @@
     <section class="view active" id="homeView">
       <div class="panel hero-panel">
         <div><p class="eyebrow">Today</p><h2 id="todayFocus">Loading focus...</h2><p id="todaySummary" class="muted">Loading dashboard data.</p></div>
-        <div class="hero-actions">
-          <span id="dataSource" class="mini-status">Demo data</span>
-          <button class="primary-action" type="button" data-jump="fitness">Quick Entry</button>
-        </div>
+        <div class="hero-actions"><span id="dataSource" class="mini-status">Local</span><button class="primary-action" type="button" data-jump="fitness">Quick Entry</button></div>
       </div>
+      <section class="panel alert-panel" id="homeAlerts" hidden><div id="homeAlertList" class="stack-list"></div></section>
       <div class="metric-grid" id="homeMetrics"></div>
       <section class="panel"><div class="section-heading"><h2>English Status</h2><span id="homeEnglishBadge" class="mini-status">Loading</span></div><div id="homeEnglishStatus" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div><div class="button-row"><button class="secondary-action" type="button" data-jump="fitness">Open Fitness Log</button></div></section>
-      <section class="panel"><div class="section-heading"><h2>Recent Personal Records</h2><span id="pendingCount" class="mini-status">0 pending</span></div><div id="recentUpdates" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Recent Personal Records</h2><span id="recentStatus" class="mini-status">Latest</span></div><div id="recentUpdates" class="stack-list"></div></section>
     </section>
 
     <section class="view" id="englishView">
+      <section class="panel review-workspace">
+        <div class="section-heading"><div><p class="eyebrow">Commute Review</p><h2>5-Minute Review</h2></div><span id="reviewTimer" class="mini-status">05:00</span></div>
+        <div id="reviewIdle"><p class="lead-text">One card at a time. Answer first, then reveal the hint.</p><button class="primary-action" id="startReviewSession" type="button">Start Review</button></div>
+        <div id="reviewActive" hidden>
+          <div class="review-progress"><span id="reviewProgress">Card 1</span><button class="secondary-action compact-action" id="finishReviewSession" type="button">Finish</button></div>
+          <article class="review-focus-card"><span id="reviewCardType" class="mini-status">Review</span><h3 id="reviewCardTitle">Card</h3><p id="reviewPrompt" class="review-prompt"></p><button class="secondary-action" id="revealReviewAnswer" type="button">Reveal Hint</button><p id="reviewAnswer" class="review-answer" hidden></p></article>
+          <div class="rating-row" id="reviewRating" hidden><button type="button" class="danger-action" data-review-result="again">再複習</button><button type="button" class="secondary-action" data-review-result="hard">有點難</button><button type="button" class="primary-action" data-review-result="mastered">掌握</button></div>
+        </div>
+        <div id="reviewComplete" hidden><div id="reviewSessionSummary" class="metric-grid"></div><form id="englishCheckForm" class="form-stack"><input type="hidden" name="id"><input type="hidden" name="session_id"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option value="yes">yes</option><option value="partly">partly</option><option value="not yet">not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option value="yes">yes</option><option value="partly">partly</option><option value="not yet">not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One useful note from this review"></textarea></label><div class="button-row"><button class="primary-action" type="submit">Save Review Summary</button><button class="secondary-action" id="cancelEnglishEdit" type="button" hidden>Cancel</button></div></form></div>
+      </section>
+      <section class="panel"><div class="section-heading"><h2>Last 7 Days</h2><span id="englishProgressBadge" class="mini-status">Progress</span></div><div id="englishProgress" class="metric-grid"></div><div id="englishProgressDetail" class="stack-list"></div><button class="secondary-action" id="editEnglishSummary" type="button" hidden>Edit Latest Summary</button></section>
       <section class="panel"><div class="section-heading"><h2>Today's Speaking Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><div id="englishTags" class="tag-row"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Commute Cards</h2><span class="mini-status">quick review</span></div><div id="commuteCards" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Mistake Cards</h2><span class="mini-status">repeat fixes</span></div><div id="mistakeCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Speaking Warm-up</h2><span class="mini-status">before Mika</span></div><div id="warmupCards" class="stack-list"></div></section>
-      <section class="panel"><h2>Self-Check</h2><form id="englishCheckForm" class="form-stack"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option>yes</option><option>partly</option><option>not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One short note from today's practice"></textarea></label><button class="primary-action" type="submit">Save Self-Check</button></form></section>
-      <details class="panel disclosure-panel">
-        <summary><span>Learning Notes</span><span class="mini-status">analysis</span></summary>
-        <section class="disclosure-section"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section>
-        <section class="disclosure-section"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section>
-      </details>
+      <details class="panel disclosure-panel"><summary><span>Review Library</span><span class="mini-status">browse</span></summary><section class="disclosure-section"><div class="section-heading"><h2>Commute Cards</h2><span class="mini-status">library</span></div><div id="commuteCards" class="stack-list"></div></section><section class="disclosure-section"><div class="section-heading"><h2>30-sec Self Test</h2><span class="mini-status">speak aloud</span></div><div id="selfTestCards" class="stack-list"></div></section></details>
+      <details class="panel disclosure-panel"><summary><span>Learning Notes</span><span class="mini-status">analysis</span></summary><section class="disclosure-section"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section><section class="disclosure-section"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section></details>
     </section>
 
     <section class="view" id="fitnessView">
-      <section class="panel fitness-generator"><div class="section-heading"><p id="fitnessDailyPhrase" class="daily-phrase">Small reps still count.</p><span class="mini-status">log + copy</span></div><p class="muted">填一次，同時產生可貼給 Jessica 的回報，並更新下方追蹤狀態。</p><form id="fitnessReportForm" class="form-stack"><label>日期 <input name="entry_date" type="date" required></label><div class="segmented-control" role="group" aria-label="今日類型"><label class="segment-option"><input type="radio" name="day_type" value="trained" checked><span>訓練日</span></label><label class="segment-option"><input type="radio" name="day_type" value="rest"><span>休息日</span></label></div><div class="two-col"><label>空腹體重 <input name="bodyweight" type="text" inputmode="decimal" placeholder="58.0"></label><label>睡眠時數 <input name="sleep_hours" type="text" inputmode="decimal" placeholder="6.5"></label></div><label>今日精神 <select name="energy_score"><option value="">不記錄</option><option value="5">5 很好</option><option value="4">4 穩定</option><option value="3">3 普通</option><option value="2">2 偏累</option><option value="1">1 很累</option></select></label><label id="planTemplateLabel">訓練模板 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option><option value="自訂">自訂</option></select></label><section class="exercise-picker" id="exercisePicker" aria-label="Plan exercises"></section><section class="supplement-group"><h3>補給紀錄</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="supplements" value="高蛋白" checked><span>高蛋白</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="豆漿" checked><span>豆漿</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="香蕉" checked><span>香蕉</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="蛋"><span>蛋</span></label></div><label>自訂補給 <input name="custom_supplement" type="text" placeholder="例如 優格、飯糰"></label></section><label>恢復備註 <textarea name="recovery_note" rows="3" placeholder="例如：肩膀有點緊、今天精神普通"></textarea></label><section class="report-output"><div class="section-heading"><h3>等一下貼給 Jessica</h3><span class="mini-status">preview</span></div><pre id="fitnessReportOutput" class="report-box"></pre><div class="button-row report-actions"><button class="secondary-action" id="generateFitnessReport" type="button">產生內容</button><button class="secondary-action" id="copyFitnessReport" type="button">複製</button><button class="primary-action" id="saveFitnessEntry" type="button">更新追蹤</button></div></section></form></section>
-      <section class="panel"><div class="section-heading"><h2>Status Snapshot</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Plan A/B Tracker</h2><span class="mini-status">from logs</span></div><div id="planList" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Body & Recovery</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
+      <section class="panel recommendation-panel"><div class="section-heading"><h2>Next Training</h2><span id="recommendationMode" class="mini-status">Preparing</span></div><div id="fitnessRecommendation" class="stack-list"></div></section>
+      <section class="panel fitness-generator"><div class="section-heading"><div><p class="eyebrow">Today</p><h2>Quick Log</h2></div><span class="mini-status">save first</span></div><p class="muted">Jessica 建議值會自動帶入；只有勾選完成的動作與實際補給會寫入紀錄。</p>
+        <form id="fitnessReportForm" class="form-stack">
+          <input type="hidden" name="id">
+          <label>日期 <input name="entry_date" type="date" required></label>
+          <div class="segmented-control" role="group" aria-label="今日類型"><label class="segment-option"><input type="radio" name="day_type" value="trained" checked><span>訓練日</span></label><label class="segment-option"><input type="radio" name="day_type" value="rest"><span>恢復日</span></label></div>
+          <div class="two-col"><label>空腹體重 <input name="bodyweight" type="text" inputmode="decimal" placeholder="58.0"></label><label>睡眠時數 <input name="sleep_hours" type="text" inputmode="decimal" placeholder="6.5"></label></div>
+          <div class="two-col"><label>今日精神 <select name="energy_score" required><option value="">Choose</option><option value="5">5 很好</option><option value="4">4 穩定</option><option value="3">3 普通</option><option value="2">2 偏累</option><option value="1">1 很累</option></select></label><label>整體恢復 <select name="recovery_score" required><option value="">Choose</option><option value="5">5 充分</option><option value="4">4 良好</option><option value="3">3 普通</option><option value="2">2 不足</option><option value="1">1 很差</option></select></label></div>
+          <label>痠痛程度 <select name="soreness_level" required><option value="none">無</option><option value="mild">輕微</option><option value="moderate">中度</option><option value="severe">嚴重</option></select></label>
+          <section class="supplement-group"><h3>痠痛部位</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="soreness_areas" value="肩"><span>肩</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="胸"><span>胸</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="背"><span>背</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="手臂"><span>手臂</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="腿"><span>腿</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="臀"><span>臀</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="下背"><span>下背</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="核心"><span>核心</span></label></div></section>
+          <label id="planTemplateLabel">訓練模板 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option><option value="自訂">自訂</option></select></label>
+          <section class="exercise-picker" id="exercisePicker" aria-label="Plan exercises"></section>
+          <section class="supplement-group"><h3>實際補給</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="supplements" value="高蛋白"><span>高蛋白</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="豆漿"><span>豆漿</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="香蕉"><span>香蕉</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="蛋"><span>蛋</span></label></div><label>自訂補給 <input name="custom_supplement" type="text" placeholder="例如 優格、飯糰"></label></section>
+          <label>恢復備註 <textarea name="recovery_note" rows="3" placeholder="例如：肩膀偏緊、最後一組最吃力"></textarea></label>
+          <div class="button-row"><button class="primary-action" id="saveFitnessEntry" type="submit">Save Today</button><button class="secondary-action" id="cancelFitnessEdit" type="button" hidden>Cancel Edit</button></div>
+        </form>
+      </section>
+      <section class="panel" id="savedFitnessReport" hidden><div class="section-heading"><h2>Saved Report</h2><span class="mini-status">secondary</span></div><pre id="fitnessReportOutput" class="report-box"></pre><button class="secondary-action" id="copyFitnessReport" type="button">Copy for Jessica</button></section>
+      <section class="panel"><div class="section-heading"><h2>Plan A/B Progress</h2><span class="mini-status">structured logs</span></div><div id="planList" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Latest Fitness Record</h2><span class="mini-status">editable</span></div><div id="fitnessHistory" class="stack-list"></div><button class="secondary-action" id="editFitnessEntry" type="button" hidden>Edit Latest Record</button></section>
     </section>
 
     <section class="view" id="settingsView">
-      <section class="panel"><h2>Login Status</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
-      <section class="panel"><h2>Sync Status</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button">Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button><button id="clearLocalButton" class="danger-action" type="button">Clear Local Queue</button></div></section>
+      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
+      <section class="panel"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button" hidden>Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button></div></section>
       <section class="panel"><div class="section-heading"><h2>Offline Data</h2><span id="offlineBadge" class="mini-status">PWA</span></div><div id="offlineState" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Version</h2><span id="versionBadge" class="mini-status">Loading</span></div><div id="setupState" class="stack-list"></div></section>
+      <section class="panel"><div class="section-heading"><h2>Version</h2><span id="versionBadge" class="mini-status">Loading</span></div><p id="versionText" class="muted"></p></section>
+      <details class="panel disclosure-panel"><summary><span>Diagnostics</span><span class="mini-status">advanced</span></summary><section class="disclosure-section"><div id="setupState" class="stack-list"></div><button id="clearLocalButton" class="danger-action" type="button" hidden>Clear Local Queue</button></section></details>
     </section>
   </main>
 
   <nav class="bottom-nav" id="bottomNav" aria-label="Main navigation" hidden><button class="nav-item active" type="button" data-view="home">Home</button><button class="nav-item" type="button" data-view="english">English</button><button class="nav-item" type="button" data-view="fitness">Fitness</button><button class="nav-item" type="button" data-view="settings">Settings</button></nav>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js" defer></script>
+  <script src="dashboard.js" defer></script>
 </body>
 </html>

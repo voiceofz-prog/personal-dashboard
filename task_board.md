@@ -2,26 +2,17 @@
 
 ## Now
 
-- [ ] Review and approve security/content/logic/execution hardening changes.
-- [ ] Apply `supabase/migrations/002_english_review_cards.sql` and `supabase/migrations/003_security_hardening.sql` after approval.
-- [ ] Test authenticated cloud sync with the new English review cards table and hardened RLS policies.
+- [ ] Complete final browser regression and publish the commute-English / fitness-readiness release.
 
 ## Next
 
-- [ ] Create a Supabase project, create Vinson's Auth user, and run `supabase/schema.sql`.
-- [ ] If the database already ran older migrations, apply `supabase/migrations/003_security_hardening.sql`.
-- [ ] Insert Vinson's Auth user UUID into `dashboard_allowed_users`.
-- [ ] Optional: run `supabase/seed_demo.sql` after replacing `VINSON_AUTH_USER_UUID`.
-- [ ] Copy `app/config.sample.json` to `app/config.json` and fill the Supabase project URL, anon key, and Vinson email.
-- [ ] Test local login, live reads, online insert behavior, offline queue, and pending sync.
-- [ ] Configure GitHub Pages deployment for the `app/` static site from an independent repo root or copied root workflow.
-- [ ] Verify iPhone Safari, Add to Home Screen, offline cache, and pending sync.
+- [ ] Enable Supabase leaked-password protection if the project plan exposes that Auth option.
+- [ ] Add a normalized free-text fitness parser in a future phase without changing the storage contract.
+- [ ] Verify Add to Home Screen and offline reopen on Vinson's physical iPhone after deployment.
 
 ## Waiting
 
-- [ ] Supabase project URL and anon key from Vinson.
-- [ ] Vinson's Supabase Auth user UUID allowlist setup.
-- [ ] GitHub Pages deployment choice from the next execution session.
+- [ ] Physical-device acceptance after the new Pages service worker reaches Safari.
 
 ## Done
 
@@ -52,6 +43,11 @@
 - [x] Confirmed the deployed site was stale compared with the local 2026-06-27 build.
 - [x] Added safe migration for legacy ownerless pending records and visible Supabase write errors.
 - [x] Fixed iPhone Safari form zoom, grid overflow, and tab scroll reset behavior.
+- [x] Applied migrations `004` and `005` to the live Supabase project.
+- [x] Added commute-first English review sessions, three-way ratings, seven-day progress, and editable summaries.
+- [x] Added recovery-aware Plan A/B recommendations and structured exercise tracking.
+- [x] Added owner-scoped idempotent offline insert/update/delete operations.
+- [x] Reorganized Home, Fitness, and Settings around user decisions instead of engineering status.
 
 ## Decision Log
 
@@ -60,3 +56,4 @@
 | 2026-06-21 | Build dashboard as a separate `05_personal-dashboard` project. | `01_language-learning` is English-only and should not contain cross-project product code. |
 | 2026-06-21 | Use GitHub Pages + Supabase for V1. | Static PWA frontend plus authenticated cloud data and RLS-protected writes. |
 | 2026-06-21 | V1 includes English and fitness only. | These are approved low-risk long-term tracking domains; private destiny and immigration remain excluded. |
+| 2026-06-27 | English is commute-first; Fitness is next-training-first. | Review execution and readiness decisions are the primary goals, while progress analysis and quick reporting remain secondary. |

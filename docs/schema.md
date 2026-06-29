@@ -25,9 +25,10 @@ This schema stores only V1 dashboard data for English learning summaries and fit
 | `english_sessions` | Curated session summaries, not raw transcripts. | No in V1 UI. |
 | `english_problem_tracker` | Active / Improving / Stable problem tracker. | No in V1 UI. |
 | `english_review_cards` | Commute cards, mistake cards, Mika warm-up prompts, and 30-second self-test prompts. | No; maintained as curated dashboard summary data. |
-| `english_self_checks` | Self-check form submissions. | Yes. |
-| `fitness_daily_entries` | Daily quick-entry fitness/nutrition tracking. | Yes. |
-| `fitness_workouts` | Plan A/B exercise performance and next target details. | No in V1 UI. |
+| `english_review_events` | One rating per reviewed card with a session id and content snapshots. | Yes; offline-capable insert. |
+| `english_self_checks` | Editable completion summaries for English review sessions. | Yes; offline-capable insert/update. |
+| `fitness_daily_entries` | Daily bodyweight, sleep, energy, recovery, soreness, and nutrition status. | Yes; offline-capable insert/update. |
+| `fitness_workouts` | Structured Plan A/B exercise weight, reps by set, completion, and date relation. | Yes; offline-capable insert/update/delete. |
 | `fitness_plan_targets` | Curated Plan A/B/Nutrition target cards. | No in V1 UI. |
 | `fitness_weekly_reviews` | Weekly averages, training days, recovery summary, and next adjustment. | No in V1 UI. |
 | `dashboard_tasks` | Optional dashboard module tasks. | No in V1 UI. |
@@ -40,6 +41,7 @@ After login, the app reads these tables through Supabase REST:
 - `english_sessions`
 - `english_problem_tracker`
 - `english_review_cards`
+- `english_review_events`
 - `english_self_checks`
 - `fitness_daily_entries`
 - `fitness_workouts`
@@ -48,7 +50,7 @@ After login, the app reads these tables through Supabase REST:
 
 Every live read includes a `user_id=eq.<current user id>` filter. RLS remains the security boundary; the explicit filter keeps the REST query aligned with the ownership rule and improves query planning.
 
-If live reads fail or Supabase is not configured, the app stays in demo mode or uses the last successful cached dashboard data for the active browser session.
+English and Fitness load independently with settled requests. A failed module keeps its last successful cache and records its own diagnostic message without blocking the other module. An authenticated account with no rows receives a real empty state; demo values are never merged into cloud data.
 
 ## English Dashboard Display Contract
 
@@ -59,6 +61,15 @@ The English dashboard is a commute-first review surface. The source project shou
 - `english_problem_tracker` and `english_sessions`: learning analysis for Jessica and progress context; these should not be treated as the first-screen review experience.
 
 Supabase is the sync layer, not the content judge. The English learning project is responsible for turning Mika feedback into a curated commute review pack before writing rows here.
+
+## Write And Offline Contract
+
+- Browser-created UUIDs identify new review events, summaries, daily entries, and workouts before a network connection exists.
+- Pending operations store `insert`, `update`, or `delete`, plus owner, target row id, attempts, and last error.
+- Inserts use idempotent upsert semantics. An offline insert followed by edits remains one insert containing the latest values.
+- Pending operations sync only for the logged-in owner.
+- New fitness records write one daily status row plus only the exercises explicitly marked complete.
+- Legacy `training_content` remains a read-only display fallback. New progress and recommendations use structured workout rows.
 
 ## Manual Seed Flow
 

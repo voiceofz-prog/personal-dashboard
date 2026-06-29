@@ -2,10 +2,7 @@
   "home": {
     "todayFocus": "Complete one answer chain and keep fitness tracking simple.",
     "todaySummary": "English focuses on problem -> because -> if -> future action. Fitness focuses on bodyweight, training, food, sleep, and energy.",
-    "recentUpdates": [
-      {"date":"2026-06-21","title":"Dashboard scaffold ready","detail":"PWA shell, English module, fitness module, offline queue, and Supabase integration points are in place."},
-      {"date":"2026-06-20","title":"English B1 stable","detail":"Vinson can discuss changed plans and practical solutions; future forms and conditionals still need control."}
-    ]
+    "recentUpdates": []
   },
   "english": {
     "cefr": "B1 stable",
@@ -72,6 +69,14 @@
         "answerHint": "Start with today, add because, then finish with one future action.",
         "tags": ["self test", "real life"]
       }
+    ],
+    "_reviewEvents": [
+      {"id":"10000000-0000-4000-8000-000000000001","session_id":"20000000-0000-4000-8000-000000000001","result":"mastered","card_type_snapshot":"commute","card_title_snapshot":"Plan changed","reviewed_at":"2026-06-27T00:30:00Z"},
+      {"id":"10000000-0000-4000-8000-000000000002","session_id":"20000000-0000-4000-8000-000000000001","result":"hard","card_type_snapshot":"mistake","card_title_snapshot":"Will + base verb","reviewed_at":"2026-06-27T00:31:00Z"},
+      {"id":"10000000-0000-4000-8000-000000000003","session_id":"20000000-0000-4000-8000-000000000001","result":"again","card_type_snapshot":"mistake","card_title_snapshot":"Because chain","reviewed_at":"2026-06-27T00:32:00Z"}
+    ],
+    "_selfChecks": [
+      {"id":"30000000-0000-4000-8000-000000000001","session_id":"20000000-0000-4000-8000-000000000001","check_date":"2026-06-27","answer_chain":"partly","future_action":"yes","note":"Keep the because-to-action chain short.","created_at":"2026-06-27T00:33:00Z","updated_at":"2026-06-27T00:33:00Z"}
     ]
   },
   "fitness": {
@@ -82,11 +87,15 @@
     "recoveryLevel": "ok",
     "nextTrainingTarget": "Plan A",
     "_entries": [
-      {"entry_date":"2026-06-21","bodyweight_kg":58.3,"training_status":"rest","sleep_hours":6.5,"energy_score":3,"notes":"Rest day. Keep food steady and watch sleep."},
-      {"entry_date":"2026-06-20","bodyweight_kg":58.2,"training_status":"trained","training_content":"6/20\nPlan B\n啞鈴高腳杯深蹲\n5kg，17/17/17/17\n啞鈴羅馬尼亞硬舉\n5kg，17/17/17\n運動後補充高蛋白+豆漿+香蕉","sleep_hours":7,"energy_score":4,"notes":"Lower body felt stable."},
-      {"entry_date":"2026-06-18","bodyweight_kg":58.4,"training_status":"trained","training_content":"6/18\nPlan A\n單臂啞鈴划船\n5kg，每側 20/20/20/20\n伏地挺身 20/20/20\n運動後補充高蛋白+豆漿","sleep_hours":7.5,"energy_score":4,"notes":"Upper body baseline complete."}
+      {"id":"40000000-0000-4000-8000-000000000001","entry_date":"2026-06-27","bodyweight_kg":58.3,"training_status":"rest","sleep_hours":6.5,"energy_score":3,"recovery_score":3,"soreness_level":"mild","soreness_areas":["肩"],"notes":"Rest day. Keep food steady and watch sleep."},
+      {"id":"40000000-0000-4000-8000-000000000002","entry_date":"2026-06-26","bodyweight_kg":58.2,"training_status":"trained","training_content":"6/26\nPlan B","sleep_hours":7,"energy_score":4,"recovery_score":4,"soreness_level":"none","soreness_areas":[],"notes":"Lower body felt stable."},
+      {"id":"40000000-0000-4000-8000-000000000003","entry_date":"2026-06-24","bodyweight_kg":58.4,"training_status":"trained","training_content":"6/24\nPlan A","sleep_hours":7.5,"energy_score":4,"recovery_score":4,"soreness_level":"none","soreness_areas":[],"notes":"Upper body baseline complete."}
     ],
-    "_workouts": [],
+    "_workouts": [
+      {"id":"50000000-0000-4000-8000-000000000001","daily_entry_id":"40000000-0000-4000-8000-000000000002","workout_date":"2026-06-26","plan_type":"Plan B","exercise_key":"b_goblet_squat","exercise":"啞鈴高腳杯深蹲","weight_kg":5,"reps_by_set":[17,17,17,17],"completed":true},
+      {"id":"50000000-0000-4000-8000-000000000002","daily_entry_id":"40000000-0000-4000-8000-000000000002","workout_date":"2026-06-26","plan_type":"Plan B","exercise_key":"b_rdl","exercise":"啞鈴羅馬尼亞硬舉","weight_kg":5,"reps_by_set":[17,17,17],"completed":true},
+      {"id":"50000000-0000-4000-8000-000000000003","daily_entry_id":"40000000-0000-4000-8000-000000000003","workout_date":"2026-06-24","plan_type":"Plan A","exercise_key":"a_row","exercise":"單臂啞鈴划船","weight_kg":5,"reps_by_set":[20,20,20,20],"completed":true}
+    ],
     "planTargets": [
       {"title":"Plan A","status":"Upper body","detail":"Keep push-ups controlled and improve biceps third set by 1-2 reps when recovery is good."},
       {"title":"Plan B","status":"Lower + core","detail":"Keep squat and hinge baseline; control leg raise lowering before adding reps."},

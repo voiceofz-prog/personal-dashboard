@@ -19,13 +19,13 @@ Use localhost for PWA/service-worker testing. Opening `index.html` directly as a
 
 If `app/config.json` is not present, the login screen shows an `Open Demo Preview` button. That preview uses only the committed low-risk demo data and does not connect to Supabase.
 
-When testing after app updates, reload once while online so the service worker can install the latest cache version. In Settings, confirm the displayed app version matches the deployed `app.js` version before testing sync.
+When testing after app updates, reload once while online so the service worker can install the latest cache version. In Settings, confirm the displayed app version matches the deployed `dashboard.js` and service-worker cache version before testing sync.
 
 ## 2. Supabase Setup
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run the later migration files in order: `supabase/migrations/002_english_review_cards.sql`, then `supabase/migrations/003_security_hardening.sql`.
+3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `005` in filename order.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 
@@ -45,7 +45,7 @@ Do not put the service role key in `config.json`. The app rejects service-role-l
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
 
-If an older copy of the schema was already run before the grant or policy-hardening sections existed, run `supabase/migrations/003_security_hardening.sql` in Supabase SQL Editor.
+If an older copy of the schema was already run, apply every migration after its current version. Migration `004` adds commute review events and structured recovery/workout tracking; migration `005` hardens helper-function execution.
 
 ## 3. GitHub Pages Deployment
 
@@ -111,7 +111,7 @@ This alternative is not the recommended setup.
 4. Open from the Home Screen icon.
 5. Turn on airplane mode.
 6. Confirm cached pages and demo/last cloud data open.
-7. Submit a fitness entry offline.
+7. Complete English reviews or submit a fitness entry offline.
 8. Reconnect.
 9. Tap Sync Pending and confirm the record appears in Supabase.
 10. If Sync Pending fails, read the `Last write error` shown in Settings before clearing the queue.
@@ -123,10 +123,10 @@ Logout behavior:
 - Confirmed logout clears the cached cloud dashboard data and pending queue from that browser.
 - Pending records created by one logged-in user are not synced under a different local session.
 - The Settings clear action removes only pending records visible to the current local session.
-- Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the two supported write tables.
+- Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the previously supported write tables.
 
 ## 5. Current Limitations
 
-- Settings reports a cloud read as `Verified` only after all required dashboard reads succeed in the current session. Config, browser-session, and access-policy labels alone do not prove RLS isolation or writes are working.
-- The app reads live Supabase rows for dashboard display after login.
+- Settings reports English and Fitness module status separately. A successful module can refresh while the other retains its last successful cache.
+- The app reads live Supabase rows after login and shows a true empty state when the account has no data.
 - Markdown reconciliation remains manual: Jessica should summarize important Supabase records back into the relevant local project files during review.

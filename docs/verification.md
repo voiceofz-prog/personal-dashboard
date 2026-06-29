@@ -52,8 +52,9 @@ Then check core assets:
 
 ```powershell
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/ | Select-Object -ExpandProperty StatusCode
-Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/app.js | Select-Object -ExpandProperty StatusCode
+Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/dashboard.js | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/styles.css | Select-Object -ExpandProperty StatusCode
+Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/product.css | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/manifest.webmanifest | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/service-worker.js | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5177/data/demo.json | Select-Object -ExpandProperty StatusCode
@@ -83,8 +84,8 @@ Expected result: each command returns `200`.
 rg -n "service_role|SERVICE_ROLE|sk-" app supabase docs .github README.md project_brief.md task_board.md
 rg -n "Feng|destiny|bazi|birth|immigration|medical|raw full" app supabase docs README.md project_brief.md task_board.md
 rg -n "auth\\.role\\(|user_metadata|raw_user_meta_data" supabase docs app
-rg -n "for select to authenticated|for insert to authenticated|for update to authenticated|for delete to authenticated" supabase/schema.sql supabase/migrations/003_security_hardening.sql
-rg -n "user_id=eq" app/app.js
+rg -n "for select to authenticated|for insert to authenticated|for update to authenticated|for delete to authenticated" supabase/schema.sql supabase/migrations
+rg -n "user_id=eq" app/dashboard.js
 ```
 
 Expected result:
@@ -106,12 +107,16 @@ These cannot be completed in demo mode:
 - Vinson can log in with Supabase Auth.
 - Vinson can read rows whose `user_id` matches his Auth UUID.
 - A non-allowlisted test user cannot read or insert dashboard rows.
-- Offline fitness/self-check submissions remain pending locally, then sync after reconnecting.
+- Offline review events, summaries, fitness entries, and structured workouts remain pending locally, then sync after reconnecting.
 - Logging out with unsynced records asks for confirmation and clears local pending records only after confirmation.
 - A pending record tagged with a different local user id does not sync under the current user.
 - Clearing the local queue from Settings removes only records visible to the current local session.
 - A supported legacy pending record without `owner_user_id` is adopted after real login and retains any Supabase write error for diagnosis.
 - Unsupported or malformed ownerless queue records are not adopted.
-- Settings shows `Verified` for cloud read only after all required Supabase reads succeed; access-policy isolation still requires a separate non-allowlisted-user test.
+- English API failure does not block Fitness, and Fitness API failure does not block English; Settings identifies the failed module.
+- A five-minute English flow supports reveal, all three ratings, early finish, seven-day statistics, and latest-summary editing.
+- Recovery-day, maintain, and progress recommendations follow the documented thresholds and Plan A/B alternation.
+- Suggested exercises and supplements begin unchecked; only explicitly checked values are stored and copied into the saved report.
+- Editing the latest fitness entry reconciles the daily status and its structured exercise rows.
 - Inputs remain at 16px or larger on iPhone Safari, date fields do not overflow, and switching tabs clears form focus and returns to the top immediately.
 - Settings app version and the deployed service-worker cache version match before iPhone acceptance testing.

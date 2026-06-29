@@ -6,6 +6,8 @@ create extension if not exists pgcrypto;
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+security invoker
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -23,7 +25,7 @@ create or replace function public.is_dashboard_user()
 returns boolean
 language sql
 security invoker
-set search_path = public
+set search_path = ''
 stable
 as $$
   select exists (
@@ -92,6 +94,21 @@ create table if not exists public.english_self_checks (
   answer_chain text,
   future_action text,
   note text,
+  session_id uuid,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.english_review_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  review_card_id uuid references public.english_review_cards(id) on delete set null,
+  session_id uuid not null,
+  result text not null check (result in ('again','hard','mastered')),
+  card_type_snapshot text not null,
+  card_title_snapshot text not null,
+  tags_snapshot text[] not null default '{}',
+  reviewed_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
@@ -106,7 +123,12 @@ create table if not exists public.fitness_daily_entries (
   carbs_food text,
   sleep_hours numeric(3,1),
   energy_score integer check (energy_score between 1 and 5),
+  recovery_score integer check (recovery_score between 1 and 5),
+  soreness_level text not null default 'none' check (soreness_level in ('none','mild','moderate','severe')),
+  soreness_areas text[] not null default '{}',
+  source text not null default 'manual' check (source in ('manual','text_import')),
   notes text,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
@@ -121,6 +143,13 @@ create table if not exists public.fitness_workouts (
   sets text,
   rpe text,
   next_target text,
+  daily_entry_id uuid references public.fitness_daily_entries(id) on delete cascade,
+  exercise_key text,
+  weight_kg numeric(6,2),
+  reps_by_set integer[] not null default '{}',
+  completed boolean not null default true,
+  source text not null default 'manual' check (source in ('manual','text_import')),
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
@@ -164,6 +193,7 @@ alter table public.english_sessions enable row level security;
 alter table public.english_problem_tracker enable row level security;
 alter table public.english_review_cards enable row level security;
 alter table public.english_self_checks enable row level security;
+alter table public.english_review_events enable row level security;
 alter table public.fitness_daily_entries enable row level security;
 alter table public.fitness_workouts enable row level security;
 alter table public.fitness_plan_targets enable row level security;
@@ -220,6 +250,15 @@ create policy "english_self_checks_owner_select" on public.english_self_checks f
 create policy "english_self_checks_owner_insert" on public.english_self_checks for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 create policy "english_self_checks_owner_update" on public.english_self_checks for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 create policy "english_self_checks_owner_delete" on public.english_self_checks for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+
+drop policy if exists "english_review_events_owner_select" on public.english_review_events;
+drop policy if exists "english_review_events_owner_insert" on public.english_review_events;
+drop policy if exists "english_review_events_owner_update" on public.english_review_events;
+drop policy if exists "english_review_events_owner_delete" on public.english_review_events;
+create policy "english_review_events_owner_select" on public.english_review_events for select to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "english_review_events_owner_insert" on public.english_review_events for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "english_review_events_owner_update" on public.english_review_events for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "english_review_events_owner_delete" on public.english_review_events for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 
 drop policy if exists "fitness_daily_owner_select" on public.fitness_daily_entries;
 drop policy if exists "fitness_daily_owner_insert" on public.fitness_daily_entries;
@@ -286,11 +325,33 @@ create trigger fitness_plan_targets_set_updated_at
 before update on public.fitness_plan_targets
 for each row execute function public.set_updated_at();
 
+drop trigger if exists english_self_checks_set_updated_at on public.english_self_checks;
+create trigger english_self_checks_set_updated_at
+before update on public.english_self_checks
+for each row execute function public.set_updated_at();
+
+drop trigger if exists fitness_daily_entries_set_updated_at on public.fitness_daily_entries;
+create trigger fitness_daily_entries_set_updated_at
+before update on public.fitness_daily_entries
+for each row execute function public.set_updated_at();
+
+drop trigger if exists fitness_workouts_set_updated_at on public.fitness_workouts;
+create trigger fitness_workouts_set_updated_at
+before update on public.fitness_workouts
+for each row execute function public.set_updated_at();
+
 create index if not exists english_problem_tracker_user_status_idx on public.english_problem_tracker (user_id, status);
 create index if not exists english_review_cards_user_type_order_idx on public.english_review_cards (user_id, card_type, active, sort_order);
 create index if not exists english_self_checks_user_date_idx on public.english_self_checks (user_id, check_date desc);
+create index if not exists english_review_events_user_reviewed_idx on public.english_review_events (user_id, reviewed_at desc);
+create index if not exists english_review_events_card_idx on public.english_review_events (review_card_id);
+create index if not exists english_review_events_user_session_idx on public.english_review_events (user_id, session_id);
+create unique index if not exists english_self_checks_user_session_unique on public.english_self_checks (user_id, session_id) where session_id is not null;
 create index if not exists fitness_daily_entries_user_date_idx on public.fitness_daily_entries (user_id, entry_date desc);
 create index if not exists fitness_workouts_user_date_idx on public.fitness_workouts (user_id, workout_date desc);
+create index if not exists fitness_workouts_daily_entry_idx on public.fitness_workouts (daily_entry_id);
+create index if not exists fitness_workouts_user_plan_exercise_idx on public.fitness_workouts (user_id, plan_type, exercise_key, workout_date desc);
+create unique index if not exists fitness_workouts_user_entry_exercise_unique on public.fitness_workouts (user_id, daily_entry_id, exercise_key) where daily_entry_id is not null and exercise_key is not null;
 create index if not exists fitness_plan_targets_user_order_idx on public.fitness_plan_targets (user_id, sort_order);
 
 grant usage on schema public to authenticated;
@@ -302,6 +363,7 @@ revoke all on
   public.english_problem_tracker,
   public.english_review_cards,
   public.english_self_checks,
+  public.english_review_events,
   public.fitness_daily_entries,
   public.fitness_workouts,
   public.fitness_plan_targets,
@@ -315,6 +377,7 @@ grant select, insert, update, delete on
   public.english_problem_tracker,
   public.english_review_cards,
   public.english_self_checks,
+  public.english_review_events,
   public.fitness_daily_entries,
   public.fitness_workouts,
   public.fitness_plan_targets,
