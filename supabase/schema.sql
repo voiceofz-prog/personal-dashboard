@@ -39,6 +39,38 @@ $$;
 revoke execute on function public.set_updated_at() from public, anon, authenticated;
 revoke execute on function public.is_dashboard_user() from public, anon;
 
+create table if not exists public.jessica_review_cycles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  domain text not null check (domain in ('english','fitness')),
+  status text not null default 'active' check (status in ('active','superseded','completed')),
+  evidence jsonb not null default '{}'::jsonb,
+  summary text not null,
+  next_focus text not null,
+  reviewed_by text not null default 'jessica' check (reviewed_by = 'jessica'),
+  reviewed_at timestamptz not null default now(),
+  next_review_after timestamptz,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.fitness_exercise_targets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  review_cycle_id uuid not null references public.jessica_review_cycles(id) on delete cascade,
+  plan_type text not null check (plan_type in ('Plan A','Plan B')),
+  exercise_key text not null,
+  exercise_name text not null,
+  weight_kg numeric(6,2),
+  reps_by_set integer[] not null default '{}',
+  instructions text,
+  sort_order integer not null default 100,
+  active boolean not null default true,
+  effective_from date not null default current_date,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.english_focus_cards (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -46,6 +78,7 @@ create table if not exists public.english_focus_cards (
   cefr text,
   tags text[] not null default '{}',
   review_sentences text[] not null default '{}',
+  review_cycle_id uuid references public.jessica_review_cycles(id) on delete set null,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -83,6 +116,7 @@ create table if not exists public.english_review_cards (
   tags text[] not null default '{}',
   sort_order integer not null default 100,
   active boolean not null default true,
+  review_cycle_id uuid references public.jessica_review_cycles(id) on delete set null,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -149,6 +183,7 @@ create table if not exists public.fitness_workouts (
   reps_by_set integer[] not null default '{}',
   completed boolean not null default true,
   source text not null default 'manual' check (source in ('manual','text_import')),
+  target_id uuid references public.fitness_exercise_targets(id) on delete set null,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -188,6 +223,8 @@ create table if not exists public.dashboard_tasks (
 );
 
 alter table public.dashboard_allowed_users enable row level security;
+alter table public.jessica_review_cycles enable row level security;
+alter table public.fitness_exercise_targets enable row level security;
 alter table public.english_focus_cards enable row level security;
 alter table public.english_sessions enable row level security;
 alter table public.english_problem_tracker enable row level security;
@@ -205,6 +242,24 @@ create policy "dashboard_allowed_users_owner_select"
 on public.dashboard_allowed_users for select
 to authenticated
 using ((select auth.uid()) = user_id);
+
+drop policy if exists "jessica_review_cycles_owner_select" on public.jessica_review_cycles;
+drop policy if exists "jessica_review_cycles_owner_insert" on public.jessica_review_cycles;
+drop policy if exists "jessica_review_cycles_owner_update" on public.jessica_review_cycles;
+drop policy if exists "jessica_review_cycles_owner_delete" on public.jessica_review_cycles;
+create policy "jessica_review_cycles_owner_select" on public.jessica_review_cycles for select to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "jessica_review_cycles_owner_insert" on public.jessica_review_cycles for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "jessica_review_cycles_owner_update" on public.jessica_review_cycles for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "jessica_review_cycles_owner_delete" on public.jessica_review_cycles for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+
+drop policy if exists "fitness_exercise_targets_owner_select" on public.fitness_exercise_targets;
+drop policy if exists "fitness_exercise_targets_owner_insert" on public.fitness_exercise_targets;
+drop policy if exists "fitness_exercise_targets_owner_update" on public.fitness_exercise_targets;
+drop policy if exists "fitness_exercise_targets_owner_delete" on public.fitness_exercise_targets;
+create policy "fitness_exercise_targets_owner_select" on public.fitness_exercise_targets for select to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "fitness_exercise_targets_owner_insert" on public.fitness_exercise_targets for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "fitness_exercise_targets_owner_update" on public.fitness_exercise_targets for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
+create policy "fitness_exercise_targets_owner_delete" on public.fitness_exercise_targets for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 
 drop policy if exists "english_focus_owner_select" on public.english_focus_cards;
 drop policy if exists "english_focus_owner_insert" on public.english_focus_cards;
@@ -310,6 +365,14 @@ create trigger english_focus_cards_set_updated_at
 before update on public.english_focus_cards
 for each row execute function public.set_updated_at();
 
+drop trigger if exists jessica_review_cycles_set_updated_at on public.jessica_review_cycles;
+create trigger jessica_review_cycles_set_updated_at before update on public.jessica_review_cycles
+for each row execute function public.set_updated_at();
+
+drop trigger if exists fitness_exercise_targets_set_updated_at on public.fitness_exercise_targets;
+create trigger fitness_exercise_targets_set_updated_at before update on public.fitness_exercise_targets
+for each row execute function public.set_updated_at();
+
 drop trigger if exists english_problem_tracker_set_updated_at on public.english_problem_tracker;
 create trigger english_problem_tracker_set_updated_at
 before update on public.english_problem_tracker
@@ -341,7 +404,11 @@ before update on public.fitness_workouts
 for each row execute function public.set_updated_at();
 
 create index if not exists english_problem_tracker_user_status_idx on public.english_problem_tracker (user_id, status);
+create index if not exists english_focus_cards_user_idx on public.english_focus_cards (user_id);
+create index if not exists english_focus_cards_review_cycle_idx on public.english_focus_cards (review_cycle_id);
 create index if not exists english_review_cards_user_type_order_idx on public.english_review_cards (user_id, card_type, active, sort_order);
+create index if not exists english_review_cards_review_cycle_idx on public.english_review_cards (review_cycle_id);
+create index if not exists english_sessions_user_idx on public.english_sessions (user_id);
 create index if not exists english_self_checks_user_date_idx on public.english_self_checks (user_id, check_date desc);
 create index if not exists english_review_events_user_reviewed_idx on public.english_review_events (user_id, reviewed_at desc);
 create index if not exists english_review_events_card_idx on public.english_review_events (review_card_id);
@@ -353,11 +420,21 @@ create index if not exists fitness_workouts_daily_entry_idx on public.fitness_wo
 create index if not exists fitness_workouts_user_plan_exercise_idx on public.fitness_workouts (user_id, plan_type, exercise_key, workout_date desc);
 create unique index if not exists fitness_workouts_user_entry_exercise_unique on public.fitness_workouts (user_id, daily_entry_id, exercise_key) where daily_entry_id is not null and exercise_key is not null;
 create index if not exists fitness_plan_targets_user_order_idx on public.fitness_plan_targets (user_id, sort_order);
+create index if not exists fitness_weekly_reviews_user_idx on public.fitness_weekly_reviews (user_id);
+create index if not exists dashboard_tasks_user_idx on public.dashboard_tasks (user_id);
+create unique index if not exists jessica_review_cycles_one_active_domain on public.jessica_review_cycles (user_id, domain) where status = 'active';
+create index if not exists jessica_review_cycles_user_reviewed_idx on public.jessica_review_cycles (user_id, domain, reviewed_at desc);
+create unique index if not exists fitness_exercise_targets_active_key on public.fitness_exercise_targets (user_id, plan_type, exercise_key) where active;
+create index if not exists fitness_exercise_targets_cycle_idx on public.fitness_exercise_targets (review_cycle_id);
+create index if not exists fitness_workouts_target_idx on public.fitness_workouts (target_id);
 
 grant usage on schema public to authenticated;
 grant execute on function public.is_dashboard_user() to authenticated;
+revoke all on public.jessica_review_cycles, public.fitness_exercise_targets from authenticated;
 revoke all on
   public.dashboard_allowed_users,
+  public.jessica_review_cycles,
+  public.fitness_exercise_targets,
   public.english_focus_cards,
   public.english_sessions,
   public.english_problem_tracker,
@@ -372,6 +449,8 @@ revoke all on
 from anon;
 grant select on public.dashboard_allowed_users to authenticated;
 grant select, insert, update, delete on
+  public.jessica_review_cycles,
+  public.fitness_exercise_targets,
   public.english_focus_cards,
   public.english_sessions,
   public.english_problem_tracker,

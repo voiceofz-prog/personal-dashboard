@@ -2,17 +2,19 @@
 
 ## Now
 
-- [ ] Complete final browser regression and publish the commute-English / fitness-readiness release.
+- [ ] Wait for the next Plan B execution and use its `target_id` results in the second Jessica Fitness review.
 
 ## Next
 
 - [ ] Enable Supabase leaked-password protection if the project plan exposes that Auth option.
 - [ ] Add a normalized free-text fitness parser in a future phase without changing the storage contract.
+- [ ] Automate the Jessica review trigger only after the manual cycle is proven with real records.
 - [ ] Verify Add to Home Screen and offline reopen on Vinson's physical iPhone after deployment.
 
 ## Waiting
 
-- [ ] Physical-device acceptance after the new Pages service worker reaches Safari.
+- [ ] Physical-device acceptance after build `2026.06.30.9` reaches Safari.
+- [ ] Vinson's next Plan B execution record.
 
 ## Done
 
@@ -48,6 +50,9 @@
 - [x] Added recovery-aware Plan A/B recommendations and structured exercise tracking.
 - [x] Added owner-scoped idempotent offline insert/update/delete operations.
 - [x] Reorganized Home, Fitness, and Settings around user decisions instead of engineering status.
+- [x] Added review-cycle provenance and structured Jessica exercise-target adoption to the Dashboard contract.
+- [x] Published and read back the first real English/Fitness cycles: one active cycle per domain, 8 linked English cards, and 5 targets for each Fitness plan.
+- [x] Verified owner reads/writes, non-owner zero-row reads, non-owner write denial, and target provenance in the mobile flow.
 
 ## Decision Log
 

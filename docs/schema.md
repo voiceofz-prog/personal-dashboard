@@ -27,8 +27,10 @@ This schema stores only V1 dashboard data for English learning summaries and fit
 | `english_review_cards` | Commute cards, mistake cards, Mika warm-up prompts, and 30-second self-test prompts. | No; maintained as curated dashboard summary data. |
 | `english_review_events` | One rating per reviewed card with a session id and content snapshots. | Yes; offline-capable insert. |
 | `english_self_checks` | Editable completion summaries for English review sessions. | Yes; offline-capable insert/update. |
+| `jessica_review_cycles` | Traceable English/Fitness evidence review, conclusion, and next focus. | Jessica publishes through the authorized connector. |
 | `fitness_daily_entries` | Daily bodyweight, sleep, energy, recovery, soreness, and nutrition status. | Yes; offline-capable insert/update. |
 | `fitness_workouts` | Structured Plan A/B exercise weight, reps by set, completion, and date relation. | Yes; offline-capable insert/update/delete. |
+| `fitness_exercise_targets` | Jessica-reviewed executable weight/reps targets for each Plan A/B exercise. | Jessica publishes through the authorized connector. |
 | `fitness_plan_targets` | Curated Plan A/B/Nutrition target cards. | No in V1 UI. |
 | `fitness_weekly_reviews` | Weekly averages, training days, recovery summary, and next adjustment. | No in V1 UI. |
 | `dashboard_tasks` | Optional dashboard module tasks. | No in V1 UI. |
@@ -43,8 +45,10 @@ After login, the app reads these tables through Supabase REST:
 - `english_review_cards`
 - `english_review_events`
 - `english_self_checks`
+- `jessica_review_cycles`
 - `fitness_daily_entries`
 - `fitness_workouts`
+- `fitness_exercise_targets`
 - `fitness_plan_targets`
 - `fitness_weekly_reviews`
 
@@ -69,6 +73,7 @@ Supabase is the sync layer, not the content judge. The English learning project 
 - Inserts use idempotent upsert semantics. An offline insert followed by edits remains one insert containing the latest values.
 - Pending operations sync only for the logged-in owner.
 - New fitness records write one daily status row plus only the exercises explicitly marked complete.
+- Completed workout rows retain the reviewed `target_id`; active Jessica targets override the built-in fallback template.
 - Legacy `training_content` remains a read-only display fallback. New progress and recommendations use structured workout rows.
 
 ## Manual Seed Flow

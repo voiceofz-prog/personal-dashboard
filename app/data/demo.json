@@ -77,7 +77,8 @@
     ],
     "_selfChecks": [
       {"id":"30000000-0000-4000-8000-000000000001","session_id":"20000000-0000-4000-8000-000000000001","check_date":"2026-06-27","answer_chain":"partly","future_action":"yes","note":"Keep the because-to-action chain short.","created_at":"2026-06-27T00:33:00Z","updated_at":"2026-06-27T00:33:00Z"}
-    ]
+    ],
+    "jessicaReview":{"id":"60000000-0000-4000-8000-000000000001","domain":"english","status":"active","summary":"Recent answers need a shorter because-to-action chain.","next_focus":"Complete one clear past-tense story before adding detail.","reviewed_at":"2026-06-29T13:47:00Z"}
   },
   "fitness": {
     "latestBodyweight": "58.3 kg",
@@ -95,6 +96,19 @@
       {"id":"50000000-0000-4000-8000-000000000001","daily_entry_id":"40000000-0000-4000-8000-000000000002","workout_date":"2026-06-26","plan_type":"Plan B","exercise_key":"b_goblet_squat","exercise":"啞鈴高腳杯深蹲","weight_kg":5,"reps_by_set":[17,17,17,17],"completed":true},
       {"id":"50000000-0000-4000-8000-000000000002","daily_entry_id":"40000000-0000-4000-8000-000000000002","workout_date":"2026-06-26","plan_type":"Plan B","exercise_key":"b_rdl","exercise":"啞鈴羅馬尼亞硬舉","weight_kg":5,"reps_by_set":[17,17,17],"completed":true},
       {"id":"50000000-0000-4000-8000-000000000003","daily_entry_id":"40000000-0000-4000-8000-000000000003","workout_date":"2026-06-24","plan_type":"Plan A","exercise_key":"a_row","exercise":"單臂啞鈴划船","weight_kg":5,"reps_by_set":[20,20,20,20],"completed":true}
+    ],
+    "jessicaReview":{"id":"60000000-0000-4000-8000-000000000002","domain":"fitness","status":"active","summary":"Recovery is acceptable; keep the next Plan A controlled and verify the final set.","next_focus":"Complete Plan A without exceeding the reviewed targets.","reviewed_at":"2026-06-29T14:00:00Z"},
+    "exerciseTargets":[
+      {"id":"70000000-0000-4000-8000-000000000001","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan A","exercise_key":"a_row","exercise_name":"單臂啞鈴划船","weight_kg":5,"reps_by_set":[20,20,20,21],"instructions":"Only add the final rep if tempo stays controlled.","sort_order":10,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000002","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan A","exercise_key":"a_lateral_raise","exercise_name":"啞鈴側平舉","weight_kg":null,"reps_by_set":[15,15,15],"instructions":"Stop before shoulder compensation.","sort_order":20,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000003","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan A","exercise_key":"a_pushup","exercise_name":"伏地挺身","weight_kg":null,"reps_by_set":[20,20,20],"instructions":"Keep the same total volume.","sort_order":30,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000004","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan A","exercise_key":"a_curl","exercise_name":"二頭彎舉","weight_kg":null,"reps_by_set":[15,15,15],"instructions":"No momentum on the final set.","sort_order":40,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000005","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan A","exercise_key":"a_twist","exercise_name":"俄羅斯轉體","weight_kg":5,"reps_by_set":[30,30,30],"instructions":"Keep the trunk controlled.","sort_order":50,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000006","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan B","exercise_key":"b_goblet_squat","exercise_name":"啞鈴高腳杯深蹲","weight_kg":5,"reps_by_set":[18,18,18,18],"instructions":"Pause at the bottom and keep the same volume.","sort_order":10,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000007","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan B","exercise_key":"b_rdl","exercise_name":"啞鈴羅馬尼亞硬舉","weight_kg":5,"reps_by_set":[18,18,18],"instructions":"Keep the hinge clean and lower slowly.","sort_order":20,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000008","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan B","exercise_key":"b_press","exercise_name":"啞鈴肩推","weight_kg":5,"reps_by_set":[16,16,16],"instructions":"Hold the baseline while recovery is average.","sort_order":30,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000009","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan B","exercise_key":"b_dip_pushup","exercise_name":"椅上撐體／窄距伏地挺身","weight_kg":null,"reps_by_set":[18,18,18],"instructions":"Use a slow lowering phase and watch the wrists.","sort_order":40,"active":true},
+      {"id":"70000000-0000-4000-8000-000000000010","review_cycle_id":"60000000-0000-4000-8000-000000000002","plan_type":"Plan B","exercise_key":"b_leg_raise","exercise_name":"仰臥抬腿／死蟲","weight_kg":null,"reps_by_set":[16,16,16],"instructions":"Control the pelvis and lowering phase.","sort_order":50,"active":true}
     ],
     "planTargets": [
       {"title":"Plan A","status":"Upper body","detail":"Keep push-ups controlled and improve biceps third set by 1-2 reps when recovery is good."},

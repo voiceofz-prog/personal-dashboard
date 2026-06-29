@@ -1,4 +1,4 @@
-const VERSION = "2026.06.27.7";
+const VERSION = "2026.06.30.9";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -30,24 +30,6 @@ const state = {
   reviewTimerId: null,
   editingFitnessId: null,
   lastSavedReport: ""
-};
-
-const PLAN_EXERCISES = {
-  "Plan A": [
-    { key: "a_row", name: "單臂啞鈴划船", load: 5, reps: [20, 20, 20, 20], prefix: "每側" },
-    { key: "a_lateral_raise", name: "啞鈴側平舉", load: null, reps: [15, 15, 15] },
-    { key: "a_pushup", name: "伏地挺身", load: null, reps: [20, 20, 20] },
-    { key: "a_curl", name: "二頭彎舉", load: null, reps: [15, 15, 15] },
-    { key: "a_twist", name: "俄羅斯轉體", load: null, reps: [30, 30, 30] }
-  ],
-  "Plan B": [
-    { key: "b_goblet_squat", name: "啞鈴高腳杯深蹲", load: 5, reps: [17, 17, 17, 17] },
-    { key: "b_rdl", name: "啞鈴羅馬尼亞硬舉", load: 5, reps: [17, 17, 17] },
-    { key: "b_press", name: "啞鈴肩推", load: 5, reps: [16, 16, 16] },
-    { key: "b_dip_pushup", name: "椅上撐體 / 窄距伏地挺身", load: null, reps: [17, 17, 17] },
-    { key: "b_leg_raise", name: "仰臥抬腿 / 死蟲", load: null, reps: [15, 15, 18] }
-  ],
-  "自訂": []
 };
 
 const views = {
@@ -292,25 +274,28 @@ async function refreshDashboardData(options = {}) {
 }
 
 async function fetchEnglishRows() {
-  const [focus, sessions, problems, reviewCards, reviewEvents, selfChecks] = await Promise.all([
+  const [focus, sessions, problems, reviewCards, reviewEvents, selfChecks, reviewCycles] = await Promise.all([
     selectRows("english_focus_cards", "select=*&order=updated_at.desc&limit=1"),
     selectRows("english_sessions", "select=*&order=session_date.desc,created_at.desc&limit=8"),
     selectRows("english_problem_tracker", "select=*&order=updated_at.desc"),
     selectRows("english_review_cards", "select=*&active=eq.true&order=sort_order.asc,updated_at.desc"),
     selectRows("english_review_events", "select=*&order=reviewed_at.desc&limit=200"),
-    selectRows("english_self_checks", "select=*&order=updated_at.desc,created_at.desc&limit=30")
+    selectRows("english_self_checks", "select=*&order=updated_at.desc,created_at.desc&limit=30"),
+    selectRows("jessica_review_cycles", "select=*&domain=eq.english&status=eq.active&order=reviewed_at.desc&limit=1")
   ]);
-  return { focus, sessions, problems, reviewCards, reviewEvents, selfChecks };
+  return { focus, sessions, problems, reviewCards, reviewEvents, selfChecks, reviewCycles };
 }
 
 async function fetchFitnessRows() {
-  const [dailyEntries, workouts, planTargets, weeklyReviews] = await Promise.all([
+  const [dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles] = await Promise.all([
     selectRows("fitness_daily_entries", "select=*&order=entry_date.desc,created_at.desc&limit=60"),
     selectRows("fitness_workouts", "select=*&order=workout_date.desc,created_at.desc&limit=200"),
     selectRows("fitness_plan_targets", "select=*&order=sort_order.asc,updated_at.desc"),
-    selectRows("fitness_weekly_reviews", "select=*&order=week_start.desc&limit=8")
+    selectRows("fitness_weekly_reviews", "select=*&order=week_start.desc&limit=8"),
+    selectRows("fitness_exercise_targets", "select=*&active=eq.true&order=plan_type.asc,sort_order.asc"),
+    selectRows("jessica_review_cycles", "select=*&domain=eq.fitness&status=eq.active&order=reviewed_at.desc&limit=1")
   ]);
-  return { dailyEntries, workouts, planTargets, weeklyReviews };
+  return { dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles };
 }
 
 async function selectRows(table, query) {
@@ -338,7 +323,8 @@ function buildEnglishData(rows) {
     })),
     reviewCards: rows.reviewCards.map(normalizeReviewCard),
     _reviewEvents: rows.reviewEvents.map(normalizeReviewEvent),
-    _selfChecks: rows.selfChecks.map(normalizeSelfCheck)
+    _selfChecks: rows.selfChecks.map(normalizeSelfCheck),
+    jessicaReview: rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null
   };
 }
 
@@ -352,6 +338,8 @@ function buildFitnessData(rows) {
     detail: item.detail || "No detail yet."
   }));
   fitness._weeklyReviews = rows.weeklyReviews;
+  fitness.exerciseTargets = rows.exerciseTargets.map(normalizeExerciseTarget);
+  fitness.jessicaReview = rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null;
   return recalculateFitness(fitness);
 }
 
@@ -680,6 +668,9 @@ function renderEnglish() {
   const progress = englishProgressStats(data);
   document.getElementById("cefrBadge").textContent = data.cefr;
   document.getElementById("englishFocus").textContent = data.currentFocus;
+  document.getElementById("englishJessicaReview").textContent = data.jessicaReview
+    ? `Jessica reviewed ${formatDateTime(data.jessicaReview.reviewed_at)} · ${data.jessicaReview.next_focus}`
+    : "Awaiting the first Jessica evidence review.";
   document.getElementById("englishTags").innerHTML = data.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
   document.getElementById("englishProgressBadge").textContent = progress.reviewed ? `${progress.reviewed} reviews` : "No evidence";
   document.getElementById("englishProgress").innerHTML = [
@@ -934,7 +925,10 @@ function bindFitnessForm() {
   form.addEventListener("submit", saveFitnessEntry);
   form.addEventListener("change", (event) => {
     if (event.target.name === "day_type") updateFitnessFormVisibility();
-    if (event.target.name === "plan_template") renderExerciseInputs(event.target.value);
+    if (event.target.name === "plan_template") {
+      const fitness = currentDashboard().fitness;
+      renderExerciseInputs(event.target.value, recommendedExercises(event.target.value, fitness._workouts, "maintain", targetsForPlan(fitness, event.target.value)));
+    }
     if (event.target.name === "soreness_level" && event.target.value === "none") {
       setCheckedValues(form, "soreness_areas", []);
     }
@@ -964,7 +958,10 @@ function renderFitness() {
   document.getElementById("recommendationMode").textContent = recommendation.modeLabel;
   document.getElementById("fitnessRecommendation").innerHTML = [
     listCard(recommendation.title, recommendation.detail, recommendation.plan),
-    listCard("Reason", recommendation.reason, recommendation.modeLabel)
+    listCard("Reason", recommendation.reason, recommendation.modeLabel),
+    fitness.jessicaReview
+      ? listCard("Jessica review", fitness.jessicaReview.summary, formatDateTime(fitness.jessicaReview.reviewed_at))
+      : listCard("Jessica review", "No reviewed target yet. Publish it from the Fitness project before training.", "Awaiting review")
   ].join("");
   document.getElementById("planList").innerHTML = buildStructuredPlanCards(fitness).map((item) => listCard(item.title, item.detail, item.status)).join("");
   document.getElementById("fitnessHistory").innerHTML = latest
@@ -1007,8 +1004,10 @@ function computeFitnessRecommendation(fitness) {
   ) mode = "progress";
   else if (moderateRelevant || latest?.recovery_score === 3) mode = "maintain";
 
-  const exercises = recommendedExercises(plan, workouts, mode);
-  const modeLabel = mode === "recovery" ? "Recovery" : mode === "progress" ? "Progress" : "Maintain";
+  const jessicaTargets = (fitness.exerciseTargets || []).filter((item) => item.plan_type === plan);
+  const hasJessicaTargets = jessicaTargets.length > 0;
+  const exercises = recommendedExercises(plan, workouts, mode, jessicaTargets);
+  const modeLabel = mode === "recovery" ? "Recovery" : hasJessicaTargets ? "Jessica target" : mode === "progress" ? "Progress" : "Maintain";
   const reason = !latest
     ? "No body-status record yet; start with the baseline and confirm actual completion."
     : [
@@ -1027,7 +1026,22 @@ function computeFitnessRecommendation(fitness) {
       summary: "recover before the next plan",
       detail: "Do not add load or reps. Record sleep, energy, recovery and soreness again before training.",
       reason,
-      exercises
+      exercises,
+      reviewed: hasJessicaTargets
+    };
+  }
+
+  if (!hasJessicaTargets) {
+    return {
+      plan,
+      mode: "pending",
+      modeLabel: "Awaiting Jessica",
+      title: `${plan} · target pending`,
+      summary: `${plan} awaiting reviewed target`,
+      detail: "The Fitness project has not published an executable target for this plan yet.",
+      reason,
+      exercises: [],
+      reviewed: false
     };
   }
 
@@ -1037,44 +1051,68 @@ function computeFitnessRecommendation(fitness) {
     modeLabel,
     title: `${plan} · ${modeLabel}`,
     summary: `${plan} ${modeLabel.toLowerCase()}`,
-    detail: mode === "progress"
-      ? "Keep the same load and add 1–2 reps to the final set of the main exercise only if form stays clean."
+    detail: hasJessicaTargets
+      ? "Follow Jessica's reviewed target exactly; record actual reps and do not exceed the reviewed ceiling."
+      : mode === "progress"
+        ? "Keep the same load and add 1–2 reps to the final set of the main exercise only if form stays clean."
       : "Repeat the previous target with cleaner tempo; do not add load.",
     reason,
-    exercises
+    exercises,
+    reviewed: hasJessicaTargets
   };
 }
 
-function recommendedExercises(plan, workouts, mode) {
-  const baseline = PLAN_EXERCISES[plan] || [];
+function recommendedExercises(plan, workouts, mode, reviewedTargets = []) {
+  const baseline = reviewedTargets.length
+    ? reviewedTargets.map((item) => ({
+      key: item.exercise_key,
+      name: item.exercise_name,
+      load: item.weight_kg,
+      reps: item.reps_by_set,
+      instructions: item.instructions,
+      targetId: item.id
+    }))
+    : [];
   return baseline.map((item, index) => {
     const latest = [...workouts]
       .filter((workout) => workout.exercise_key === item.key && workout.completed)
       .sort((a, b) => compareDateDesc(a.workout_date, b.workout_date))[0];
-    const reps = latest?.reps_by_set?.length ? [...latest.reps_by_set] : [...item.reps];
-    if (mode === "progress" && index === 0 && reps.length) reps[reps.length - 1] += 1;
+    const reps = reviewedTargets.length
+      ? [...item.reps]
+      : latest?.reps_by_set?.length ? [...latest.reps_by_set] : [...item.reps];
+    if (!reviewedTargets.length && mode === "progress" && index === 0 && reps.length) reps[reps.length - 1] += 1;
     return {
       ...item,
-      load: latest?.weight_kg ?? item.load,
+      load: reviewedTargets.length ? item.load : latest?.weight_kg ?? item.load,
       reps,
-      prefix: item.prefix || ""
+      prefix: item.prefix || "",
+      targetId: item.targetId || null,
+      instructions: item.instructions || ""
     };
   });
 }
 
+function targetsForPlan(fitness, plan) {
+  return (fitness.exerciseTargets || [])
+    .filter((item) => item.active && item.plan_type === plan)
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
+
 function renderExerciseInputs(planName, recommendations = null, completedRows = []) {
   const picker = document.getElementById("exercisePicker");
-  const items = recommendations || recommendedExercises(planName, currentDashboard()?.fitness?._workouts || [], "maintain");
+  const fitness = currentDashboard()?.fitness || emptyFitness();
+  const items = recommendations || recommendedExercises(planName, fitness._workouts, "maintain", targetsForPlan(fitness, planName));
   const completedMap = new Map(completedRows.map((item) => [item.exercise_key, item]));
   picker.innerHTML = items.length
     ? items.map((item) => exerciseInput(item, completedMap.get(item.key))).join("")
-    : `<label>自訂訓練內容<textarea name="custom_training" rows="4" placeholder="每行一個動作"></textarea></label>`;
+    : emptyState("Awaiting Jessica target", "Record recovery status first. Training targets are published from the Fitness project.");
 }
 
 function exerciseInput(item, completed) {
   const weight = completed?.weight_kg ?? item.load ?? "";
   const reps = completed?.reps_by_set?.length ? completed.reps_by_set.join("/") : item.reps.join("/");
-  return `<article class="exercise-row" data-exercise-key="${escapeHtml(item.key)}" data-exercise-name="${escapeHtml(item.name)}"><label class="switch-line"><input type="checkbox" name="exercise_completed" ${completed ? "checked" : ""}><span>${escapeHtml(item.name)}</span></label><div class="exercise-fields ${item.load === null && weight === "" ? "single" : ""}">${item.load !== null || weight !== "" ? `<label>重量 kg<input name="exercise_weight" type="text" inputmode="decimal" value="${escapeHtml(weight)}"></label>` : ""}<label>各組次數<input name="exercise_reps" type="text" inputmode="numeric" value="${escapeHtml(`${item.prefix || ""}${reps}`)}"></label></div></article>`;
+  const targetId = completed?.target_id || item.targetId || "";
+  return `<article class="exercise-row" data-exercise-key="${escapeHtml(item.key)}" data-exercise-name="${escapeHtml(item.name)}" data-target-id="${escapeHtml(targetId)}"><label class="switch-line"><input type="checkbox" name="exercise_completed" ${completed ? "checked" : ""}><span>${escapeHtml(item.name)}</span></label>${item.instructions ? `<p class="card-text">${escapeHtml(item.instructions)}</p>` : ""}<div class="exercise-fields ${item.load === null && weight === "" ? "single" : ""}">${item.load !== null || weight !== "" ? `<label>重量 kg<input name="exercise_weight" type="text" inputmode="decimal" value="${escapeHtml(weight)}"></label>` : ""}<label>各組次數<input name="exercise_reps" type="text" inputmode="numeric" value="${escapeHtml(`${item.prefix || ""}${reps}`)}"></label></div></article>`;
 }
 
 function updateFitnessFormVisibility() {
@@ -1145,6 +1183,7 @@ function collectCompletedExercises(form, plan, entryId) {
       plan_type: plan,
       exercise_key: key,
       exercise: row.dataset.exerciseName,
+      target_id: isUuid(row.dataset.targetId) ? row.dataset.targetId : null,
       weight_kg: numberOrNull(weight),
       weight: weight ? `${weight} kg` : "",
       reps_by_set: repsBySet,
@@ -1213,7 +1252,7 @@ function editLatestFitnessEntry() {
   const rows = data._workouts.filter((item) => item.daily_entry_id === latest.id);
   const plan = rows[0]?.plan_type || inferPlanFromText(latest.training_content) || inferNextPlanFromFitness(data);
   form.elements.plan_template.value = plan;
-  renderExerciseInputs(plan, recommendedExercises(plan, data._workouts, "maintain"), rows);
+  renderExerciseInputs(plan, recommendedExercises(plan, data._workouts, "maintain", targetsForPlan(data, plan)), rows);
   updateFitnessFormVisibility();
   document.getElementById("saveFitnessEntry").textContent = "Update Record";
   document.getElementById("cancelFitnessEdit").hidden = false;
@@ -1433,14 +1472,17 @@ function normalizeDemoData(raw) {
     ...(raw.english || {}),
     reviewCards: (raw.english?.reviewCards || []).map((card, index) => normalizeReviewCard({ ...card, sort_order: index + 1 })),
     _reviewEvents: (raw.english?._reviewEvents || []).map(normalizeReviewEvent),
-    _selfChecks: (raw.english?._selfChecks || []).map(normalizeSelfCheck)
+    _selfChecks: (raw.english?._selfChecks || []).map(normalizeSelfCheck),
+    jessicaReview: raw.english?.jessicaReview ? normalizeJessicaReview(raw.english.jessicaReview) : null
   };
   data.fitness = recalculateFitness({
     ...data.fitness,
     ...(raw.fitness || {}),
     _entries: (raw.fitness?._entries || []).map(normalizeFitnessEntry),
     _workouts: (raw.fitness?._workouts || []).map(normalizeWorkout),
-    planTargets: raw.fitness?.planTargets || []
+    planTargets: raw.fitness?.planTargets || [],
+    exerciseTargets: (raw.fitness?.exerciseTargets || []).map(normalizeExerciseTarget),
+    jessicaReview: raw.fitness?.jessicaReview ? normalizeJessicaReview(raw.fitness.jessicaReview) : null
   });
   data._source = "demo";
   return composeDashboard(data);
@@ -1458,7 +1500,8 @@ function emptyDashboard() {
       reviewSentences: [],
       reviewCards: [],
       _reviewEvents: [],
-      _selfChecks: []
+      _selfChecks: [],
+      jessicaReview: null
     },
     fitness: emptyFitness(),
     _source: "empty"
@@ -1474,6 +1517,8 @@ function emptyFitness() {
     recoveryStatus: "No status yet",
     recoveryLevel: "ok",
     planTargets: [],
+    exerciseTargets: [],
+    jessicaReview: null,
     _entries: [],
     _workouts: [],
     _weeklyReviews: []
@@ -1517,6 +1562,7 @@ function normalizeWorkout(item) {
     rpe: item.rpe || "",
     completed: item.completed !== false,
     source: item.source || "manual",
+    target_id: item.target_id || null,
     next_target: item.next_target || "",
     created_at: item.created_at || new Date().toISOString(),
     updated_at: item.updated_at || item.created_at || new Date().toISOString()
@@ -1532,6 +1578,35 @@ function normalizeReviewCard(item) {
     answerHint: item.answer_hint || item.answerHint || "",
     tags: normalizeArray(item.tags, []),
     sortOrder: Number(item.sort_order || item.sortOrder || 100)
+  };
+}
+
+function normalizeJessicaReview(item) {
+  return {
+    id: item.id,
+    domain: item.domain,
+    status: item.status,
+    evidence: item.evidence || {},
+    summary: item.summary || "",
+    next_focus: item.next_focus || "",
+    reviewed_at: item.reviewed_at || item.created_at,
+    next_review_after: item.next_review_after || null
+  };
+}
+
+function normalizeExerciseTarget(item) {
+  return {
+    id: item.id,
+    review_cycle_id: item.review_cycle_id,
+    plan_type: item.plan_type,
+    exercise_key: item.exercise_key,
+    exercise_name: item.exercise_name,
+    weight_kg: numberOrNull(item.weight_kg),
+    reps_by_set: normalizeIntegerArray(item.reps_by_set, []),
+    instructions: item.instructions || "",
+    sort_order: Number(item.sort_order || 100),
+    active: item.active !== false,
+    effective_from: item.effective_from || todayISO()
   };
 }
 

@@ -25,7 +25,7 @@ When testing after app updates, reload once while online so the service worker c
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `005` in filename order.
+3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `008` in filename order.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 
@@ -45,7 +45,7 @@ Do not put the service role key in `config.json`. The app rejects service-role-l
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
 
-If an older copy of the schema was already run, apply every migration after its current version. Migration `004` adds commute review events and structured recovery/workout tracking; migration `005` hardens helper-function execution.
+If an older copy of the schema was already run, apply every migration after its current version. Migration `006` adds the traceable manual Jessica review loop and executable exercise targets; migration `007` removes unnecessary authenticated table privileges.
 
 ## 3. GitHub Pages Deployment
 
@@ -129,4 +129,4 @@ Logout behavior:
 
 - Settings reports English and Fitness module status separately. A successful module can refresh while the other retains its last successful cache.
 - The app reads live Supabase rows after login and shows a true empty state when the account has no data.
-- Markdown reconciliation remains manual: Jessica should summarize important Supabase records back into the relevant local project files during review.
+- Jessica review is manually triggered for this phase. Follow `docs/jessica-review-loop.md`; domain records stay in projects `01` and `02`, while the Dashboard stores only published execution data and provenance.

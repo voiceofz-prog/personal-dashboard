@@ -118,5 +118,8 @@ These cannot be completed in demo mode:
 - Recovery-day, maintain, and progress recommendations follow the documented thresholds and Plan A/B alternation.
 - Suggested exercises and supplements begin unchecked; only explicitly checked values are stored and copied into the saved report.
 - Editing the latest fitness entry reconciles the daily status and its structured exercise rows.
+- An active Jessica Fitness cycle supplies a complete target set, the form uses its exact values, and saved workouts retain `target_id`.
+- A recovery-day decision overrides reviewed exercise targets without deleting or marking them complete.
+- English and Fitness pages show the active Jessica review date; no cycle displays an explicit awaiting-review state.
 - Inputs remain at 16px or larger on iPhone Safari, date fields do not overflow, and switching tabs clears form focus and returns to the top immediately.
 - Settings app version and the deployed service-worker cache version match before iPhone acceptance testing.

@@ -41,6 +41,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - Mika review problems and corrected sentences.
 - Curated commute, mistake, warm-up, and self-test review cards.
 - Per-card review results and editable review-session summaries.
+- Jessica review-cycle provenance and structured exercise targets published from the owning domain project.
 - Curated current Mika practice focus.
 - Curated English improvement log entries.
 - Fitness daily entries.
@@ -89,6 +90,8 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - Fitness quick entry can save to `fitness_daily_entries`; offline saves remain local pending records until sync.
 - Only checked exercises are written to `fitness_workouts`; suggested exercises and supplements are not treated as completed activity.
 - `english_review_events`, `english_self_checks`, `fitness_daily_entries`, and `fitness_workouts` support owner-scoped insert/update behavior required by the offline queue.
+- `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and contain only curated low-risk conclusions from projects `01` and `02`.
+- A completed workout may reference `target_id`; the foreign key does not weaken either table's owner RLS.
 - Frontend files contain no service role key.
 - GitHub Pages artifact contains only the static `app/` folder.
 - GitHub repository settings are reviewed before real use: visibility, Pages source, branch protection, Actions secret names, and workflow permissions.
