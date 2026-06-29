@@ -106,4 +106,3 @@ create index if not exists fitness_workouts_target_idx
 
 revoke all on public.jessica_review_cycles, public.fitness_exercise_targets from anon;
 grant select, insert, update, delete on public.jessica_review_cycles, public.fitness_exercise_targets to authenticated;
-

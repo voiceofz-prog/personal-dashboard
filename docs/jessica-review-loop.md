@@ -45,4 +45,3 @@ Jessica then performs both domain workflows through the authorized Supabase conn
 `evidence recorded -> Jessica reviewed -> target published -> target executed -> result recorded -> Jessica re-reviewed`
 
 The process is complete only when the published rows are read back successfully. Automation must preserve these same states and checks.
-

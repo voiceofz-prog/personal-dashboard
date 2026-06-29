@@ -5,4 +5,3 @@ revoke all on public.jessica_review_cycles, public.fitness_exercise_targets from
 grant select, insert, update, delete
 on public.jessica_review_cycles, public.fitness_exercise_targets
 to authenticated;
-

@@ -13,4 +13,3 @@ create index if not exists fitness_weekly_reviews_user_idx
   on public.fitness_weekly_reviews (user_id);
 create index if not exists dashboard_tasks_user_idx
   on public.dashboard_tasks (user_id);
-
