@@ -1,4 +1,4 @@
-const VERSION = "2026.06.30.9";
+const VERSION = "2026.06.30.10";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -292,7 +292,7 @@ async function fetchFitnessRows() {
     selectRows("fitness_workouts", "select=*&order=workout_date.desc,created_at.desc&limit=200"),
     selectRows("fitness_plan_targets", "select=*&order=sort_order.asc,updated_at.desc"),
     selectRows("fitness_weekly_reviews", "select=*&order=week_start.desc&limit=8"),
-    selectRows("fitness_exercise_targets", "select=*&active=eq.true&order=plan_type.asc,sort_order.asc"),
+    selectRows("fitness_exercise_targets", "select=*&order=plan_type.asc,sort_order.asc"),
     selectRows("jessica_review_cycles", "select=*&domain=eq.fitness&status=eq.active&order=reviewed_at.desc&limit=1")
   ]);
   return { dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles };
@@ -460,7 +460,7 @@ async function executeOperation(item) {
     });
   }
 
-  const payload = { ...item.payload, user_id: state.session.user.id };
+  const payload = prepareOperationPayload(item);
   if (item.operation === "update") {
     delete payload.id;
     return supabaseFetch(`/rest/v1/${item.table}?id=eq.${rowId}&user_id=eq.${userId}`, {
@@ -475,6 +475,13 @@ async function executeOperation(item) {
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify(payload)
   });
+}
+
+function prepareOperationPayload(item) {
+  const payload = { ...item.payload, user_id: state.session.user.id };
+  if (item.table !== "fitness_workouts" || item.operation === "delete") return payload;
+  payload.target_id = resolveWorkoutTargetId(payload);
+  return payload;
 }
 
 async function syncPending() {
@@ -1176,14 +1183,14 @@ function collectCompletedExercises(form, plan, entryId) {
       item.daily_entry_id === entryId && item.exercise_key === key
     );
     const repsBySet = parseReps(repsText);
-    return [{
+    const workout = {
       id: existing?.id || crypto.randomUUID(),
       daily_entry_id: entryId,
       workout_date: form.elements.entry_date.value || todayISO(),
       plan_type: plan,
       exercise_key: key,
       exercise: row.dataset.exerciseName,
-      target_id: isUuid(row.dataset.targetId) ? row.dataset.targetId : null,
+      target_id: existing?.target_id || (isUuid(row.dataset.targetId) ? row.dataset.targetId : null),
       weight_kg: numberOrNull(weight),
       weight: weight ? `${weight} kg` : "",
       reps_by_set: repsBySet,
@@ -1192,13 +1199,33 @@ function collectCompletedExercises(form, plan, entryId) {
       completed: true,
       source: "manual",
       next_target: ""
-    }];
+    };
+    workout.target_id = resolveWorkoutTargetId(workout);
+    return [workout];
+  });
+}
+
+function resolveWorkoutTargetId(workout) {
+  const fitness = currentDashboard().fitness;
+  return FitnessTargetLink.resolveTargetId({
+    workout,
+    targets: fitness.exerciseTargets,
+    activeCycle: fitness.jessicaReview,
+    userId: state.session?.user?.id
   });
 }
 
 async function saveFitnessEntry(event) {
   event.preventDefault();
-  const draft = normalizeFitnessDraft(event.target);
+  let draft;
+  try {
+    draft = normalizeFitnessDraft(event.target);
+  } catch (error) {
+    state.lastWriteError = friendlyError(error);
+    showToast(state.lastWriteError);
+    render();
+    return;
+  }
   if (!draft) return;
   const existing = currentDashboard().fitness._entries.find((item) => item.id === draft.daily.id);
   await saveOperation("fitness_daily_entries", draft.daily, {
@@ -1473,7 +1500,7 @@ function normalizeDemoData(raw) {
     reviewCards: (raw.english?.reviewCards || []).map((card, index) => normalizeReviewCard({ ...card, sort_order: index + 1 })),
     _reviewEvents: (raw.english?._reviewEvents || []).map(normalizeReviewEvent),
     _selfChecks: (raw.english?._selfChecks || []).map(normalizeSelfCheck),
-    jessicaReview: raw.english?.jessicaReview ? normalizeJessicaReview(raw.english.jessicaReview) : null
+    jessicaReview: raw.english?.jessicaReview ? normalizeJessicaReview({ ...raw.english.jessicaReview, user_id: "demo-preview" }) : null
   };
   data.fitness = recalculateFitness({
     ...data.fitness,
@@ -1481,8 +1508,8 @@ function normalizeDemoData(raw) {
     _entries: (raw.fitness?._entries || []).map(normalizeFitnessEntry),
     _workouts: (raw.fitness?._workouts || []).map(normalizeWorkout),
     planTargets: raw.fitness?.planTargets || [],
-    exerciseTargets: (raw.fitness?.exerciseTargets || []).map(normalizeExerciseTarget),
-    jessicaReview: raw.fitness?.jessicaReview ? normalizeJessicaReview(raw.fitness.jessicaReview) : null
+    exerciseTargets: (raw.fitness?.exerciseTargets || []).map((item) => normalizeExerciseTarget({ ...item, user_id: "demo-preview" })),
+    jessicaReview: raw.fitness?.jessicaReview ? normalizeJessicaReview({ ...raw.fitness.jessicaReview, user_id: "demo-preview" }) : null
   });
   data._source = "demo";
   return composeDashboard(data);
@@ -1584,6 +1611,7 @@ function normalizeReviewCard(item) {
 function normalizeJessicaReview(item) {
   return {
     id: item.id,
+    user_id: item.user_id,
     domain: item.domain,
     status: item.status,
     evidence: item.evidence || {},
@@ -1597,6 +1625,7 @@ function normalizeJessicaReview(item) {
 function normalizeExerciseTarget(item) {
   return {
     id: item.id,
+    user_id: item.user_id,
     review_cycle_id: item.review_cycle_id,
     plan_type: item.plan_type,
     exercise_key: item.exercise_key,

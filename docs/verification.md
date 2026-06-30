@@ -119,6 +119,9 @@ These cannot be completed in demo mode:
 - Suggested exercises and supplements begin unchecked; only explicitly checked values are stored and copied into the saved report.
 - Editing the latest fitness entry reconciles the daily status and its structured exercise rows.
 - An active Jessica Fitness cycle supplies a complete target set, the form uses its exact values, and saved workouts retain `target_id`.
+- A Jessica-generated workout with a blank DOM target still resolves exactly one `target_id` from user + Plan + `exercise_key` + active cycle + effective date before save.
+- Offline insert and retry resolve the same target; editing an already-linked historical workout preserves the link only when owner, Plan, `exercise_key`, and date still match.
+- Zero or multiple target candidates block save/sync and expose an error; the app never guesses from reps or weight.
 - A recovery-day decision overrides reviewed exercise targets without deleting or marking them complete.
 - English and Fitness pages show the active Jessica review date; no cycle displays an explicit awaiting-review state.
 - Inputs remain at 16px or larger on iPhone Safari, date fields do not overflow, and switching tabs clears form focus and returns to the top immediately.

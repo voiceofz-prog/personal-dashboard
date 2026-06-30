@@ -124,6 +124,7 @@ Logout behavior:
 - Pending records created by one logged-in user are not synced under a different local session.
 - The Settings clear action removes only pending records visible to the current local session.
 - Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the previously supported write tables.
+- Fitness workout sync revalidates Jessica target linkage from the current authenticated owner, exact Plan, `exercise_key`, active Fitness cycle, and effective date. A zero-candidate or multi-candidate match remains pending with a visible write warning.
 
 ## 5. Current Limitations
 
