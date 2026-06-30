@@ -2,7 +2,7 @@
 
 ## Now
 
-- [ ] Wait for the next Plan B execution and use its `target_id` results in the second Jessica Fitness review.
+- [ ] Use the linked 2026-06-30 Plan B execution in the second Jessica Fitness review when explicitly requested.
 
 ## Next
 
@@ -54,6 +54,8 @@
 - [x] Published and read back the first real English/Fitness cycles: one active cycle per domain, 8 linked English cards, and 5 targets for each Fitness plan.
 - [x] Verified owner reads/writes, non-owner zero-row reads, non-owner write denial, and target provenance in the mobile flow.
 - [x] Deployed build `2026.06.30.9` and verified the live service worker, compatibility loader, and current dashboard shell.
+- [x] Hardened Fitness Save Today, edit, offline queue, and retry so Jessica-generated workouts require an exact owner/Plan/exercise/cycle/date target match.
+- [x] Verified the five 2026-06-30 Plan B workouts each link to one target without changing workout measurements or status.
 
 ## Decision Log
 

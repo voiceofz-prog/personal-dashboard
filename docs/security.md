@@ -92,6 +92,8 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - `english_review_events`, `english_self_checks`, `fitness_daily_entries`, and `fitness_workouts` support owner-scoped insert/update behavior required by the offline queue.
 - `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and contain only curated low-risk conclusions from projects `01` and `02`.
 - A completed workout may reference `target_id`; the foreign key does not weaken either table's owner RLS.
+- Jessica-generated workouts resolve `target_id` from the authenticated user, exact Plan and `exercise_key`, active Fitness review cycle, and target effective date before both direct writes and pending sync. A missing or ambiguous match blocks the write instead of saving `null`.
+- Editing a linked historical workout preserves its target only when the referenced target still matches the same owner, Plan, `exercise_key`, and workout date. Weight, reps, completion, and workout date are independent workout fields.
 - Frontend files contain no service role key.
 - GitHub Pages artifact contains only the static `app/` folder.
 - GitHub repository settings are reviewed before real use: visibility, Pages source, branch protection, Actions secret names, and workflow permissions.
