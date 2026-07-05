@@ -1,5 +1,6 @@
--- Personal Dashboard PWA - initial Supabase schema and RLS policies.
--- Run in Supabase SQL Editor after creating Vinson's Auth user.
+-- Personal Dashboard PWA - base Supabase schema and RLS policies.
+-- Run in Supabase SQL Editor after creating Vinson's Auth user, then apply
+-- migrations through 009_atomic_fitness_workout_save.sql for the atomic Fitness RPC.
 
 create extension if not exists pgcrypto;
 
@@ -183,7 +184,7 @@ create table if not exists public.fitness_workouts (
   reps_by_set integer[] not null default '{}',
   completed boolean not null default true,
   source text not null default 'manual' check (source in ('manual','text_import')),
-  target_id uuid references public.fitness_exercise_targets(id) on delete set null,
+  target_id uuid references public.fitness_exercise_targets(id) on delete restrict,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -248,18 +249,12 @@ drop policy if exists "jessica_review_cycles_owner_insert" on public.jessica_rev
 drop policy if exists "jessica_review_cycles_owner_update" on public.jessica_review_cycles;
 drop policy if exists "jessica_review_cycles_owner_delete" on public.jessica_review_cycles;
 create policy "jessica_review_cycles_owner_select" on public.jessica_review_cycles for select to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "jessica_review_cycles_owner_insert" on public.jessica_review_cycles for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "jessica_review_cycles_owner_update" on public.jessica_review_cycles for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "jessica_review_cycles_owner_delete" on public.jessica_review_cycles for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 
 drop policy if exists "fitness_exercise_targets_owner_select" on public.fitness_exercise_targets;
 drop policy if exists "fitness_exercise_targets_owner_insert" on public.fitness_exercise_targets;
 drop policy if exists "fitness_exercise_targets_owner_update" on public.fitness_exercise_targets;
 drop policy if exists "fitness_exercise_targets_owner_delete" on public.fitness_exercise_targets;
 create policy "fitness_exercise_targets_owner_select" on public.fitness_exercise_targets for select to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "fitness_exercise_targets_owner_insert" on public.fitness_exercise_targets for insert to authenticated with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "fitness_exercise_targets_owner_update" on public.fitness_exercise_targets for update to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user())) with check ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
-create policy "fitness_exercise_targets_owner_delete" on public.fitness_exercise_targets for delete to authenticated using ((select auth.uid()) = user_id and (select public.is_dashboard_user()));
 
 drop policy if exists "english_focus_owner_select" on public.english_focus_cards;
 drop policy if exists "english_focus_owner_insert" on public.english_focus_cards;
@@ -448,9 +443,13 @@ revoke all on
   public.dashboard_tasks
 from anon;
 grant select on public.dashboard_allowed_users to authenticated;
-grant select, insert, update, delete on
+grant select on
   public.jessica_review_cycles,
-  public.fitness_exercise_targets,
+  public.fitness_exercise_targets
+to authenticated;
+grant update (id) on public.jessica_review_cycles to authenticated;
+grant update (id) on public.fitness_exercise_targets to authenticated;
+grant select, insert, update, delete on
   public.english_focus_cards,
   public.english_sessions,
   public.english_problem_tracker,

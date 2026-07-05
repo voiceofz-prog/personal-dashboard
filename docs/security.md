@@ -87,17 +87,20 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - Logout clears cached cloud data and unsynced local pending records after confirmation.
 - Old pending records without local owner metadata are adopted only by the authenticated private account and only for approved writable tables.
 - Settings distinguishes configured, authenticated, successful cloud read, and failed cloud write states; fixed `Ready` labels are not treated as verification.
-- Fitness quick entry can save to `fitness_daily_entries`; offline saves remain local pending records until sync.
+- Fitness quick entry sends one daily entry and its complete workout set to `save_fitness_entry_atomic`; offline saves remain one local RPC bundle until sync.
 - Only checked exercises are written to `fitness_workouts`; suggested exercises and supplements are not treated as completed activity.
-- `english_review_events`, `english_self_checks`, `fitness_daily_entries`, and `fitness_workouts` support owner-scoped insert/update behavior required by the offline queue.
-- `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and contain only curated low-risk conclusions from projects `01` and `02`.
-- A completed workout may reference `target_id`; the foreign key does not weaken either table's owner RLS.
-- Jessica-generated workouts resolve `target_id` from the authenticated user, exact Plan and `exercise_key`, active Fitness review cycle, and target effective date before both direct writes and pending sync. A missing or ambiguous match blocks the write instead of saving `null`.
-- Editing a linked historical workout preserves its target only when the referenced target still matches the same owner, Plan, `exercise_key`, and workout date. Weight, reps, completion, and workout date are independent workout fields.
+- `english_review_events` and `english_self_checks` keep owner-scoped row writes. Fitness daily entries and workouts are written together through the authenticated, security-invoker atomic RPC.
+- `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and read-only to the authenticated browser. Publication remains connector-only.
+- Their immutable `id` columns carry the minimum UPDATE grant required for the security-invoker RPC's row locks; the absence of UPDATE RLS policies prevents browser row modification.
+- A completed workout may reference `target_id`; `ON DELETE RESTRICT` preserves that historical provenance and the foreign key does not weaken either table's owner RLS.
+- The atomic RPC re-queries and locks the sole active Fitness cycle at write time. Every submitted target must be active, owned by the caller, effective for the workout date, and match the exact Plan and `exercise_key`.
+- A stale UI target, inactive or superseded target, mixed-cycle batch, or zero/multiple active-cycle condition raises an explicit error and rolls back the daily entry and every workout.
+- The deferred `fitness_workouts_validate_active_cycle` constraint trigger provides a database backstop for direct table writes. It does not retroactively invalidate historical rows when a review cycle is later superseded.
+- Weight and reps are actual workout fields only; neither is used to infer or repair target provenance.
 - Frontend files contain no service role key.
 - GitHub Pages artifact contains only the static `app/` folder.
 - GitHub repository settings are reviewed before real use: visibility, Pages source, branch protection, Actions secret names, and workflow permissions.
 
 ## Supabase Advisor Status
 
-The schema and function-security findings are resolved through migrations `004` and `005`. Supabase may still report leaked-password protection as disabled; that Auth feature depends on the project plan and must be enabled in the dashboard when available.
+The schema, function-security, and review-archive authorization findings are resolved through migrations `004`, `005`, and `20260705031641_review_archive_hardening`. Supabase may still report leaked-password protection as disabled; that Auth feature depends on the project plan and must be enabled in the dashboard when available.

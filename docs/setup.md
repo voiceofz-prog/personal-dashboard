@@ -25,7 +25,7 @@ When testing after app updates, reload once while online so the service worker c
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `008` in filename order.
+3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup, then apply any later migration not yet incorporated. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `009` in filename order.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 
@@ -45,7 +45,7 @@ Do not put the service role key in `config.json`. The app rejects service-role-l
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
 
-If an older copy of the schema was already run, apply every migration after its current version. Migration `006` adds the traceable manual Jessica review loop and executable exercise targets; migration `007` removes unnecessary authenticated table privileges.
+If an older copy of the schema was already run, apply every migration after its current version. Migration `006` adds the traceable manual Jessica review loop and executable exercise targets; migration `007` removes unnecessary authenticated table privileges; migration `009` adds the atomic Fitness save RPC and deferred active-cycle invariant.
 
 ## 3. GitHub Pages Deployment
 
@@ -124,7 +124,8 @@ Logout behavior:
 - Pending records created by one logged-in user are not synced under a different local session.
 - The Settings clear action removes only pending records visible to the current local session.
 - Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the previously supported write tables.
-- Fitness workout sync revalidates Jessica target linkage from the current authenticated owner, exact Plan, `exercise_key`, active Fitness cycle, and effective date. A zero-candidate or multi-candidate match remains pending with a visible write warning.
+- Fitness workout sync sends the complete daily entry and workouts through one RPC transaction. The server revalidates the sole active Fitness cycle and every target; stale, inactive, superseded, mixed, zero-candidate, or multi-candidate input is rejected in full with a visible error.
+- Pending Fitness rows created by older builds are not replayed separately because that would violate atomicity. Reopen the entry in the current build and save it again as one batch.
 
 ## 5. Current Limitations
 

@@ -119,10 +119,21 @@ These cannot be completed in demo mode:
 - Suggested exercises and supplements begin unchecked; only explicitly checked values are stored and copied into the saved report.
 - Editing the latest fitness entry reconciles the daily status and its structured exercise rows.
 - An active Jessica Fitness cycle supplies a complete target set, the form uses its exact values, and saved workouts retain `target_id`.
+- After multiple review cycles accumulate, refreshing Fitness still renders exactly five targets for the selected Plan; superseded-cycle targets never appear in the current form.
 - A Jessica-generated workout with a blank DOM target still resolves exactly one `target_id` from user + Plan + `exercise_key` + active cycle + effective date before save.
-- Offline insert and retry resolve the same target; editing an already-linked historical workout preserves the link only when owner, Plan, `exercise_key`, and date still match.
-- Zero or multiple target candidates block save/sync and expose an error; the app never guesses from reps or weight.
+- Stale UI state after a cycle update rejects the complete save instead of preserving a formerly valid target.
+- Mixed target ids, inactive/superseded targets, and zero or multiple active-cycle candidates block the complete batch and expose an error; the app never guesses from reps or weight.
+- The daily entry and all checked workouts are committed by one RPC transaction. A late workout error leaves no daily row or partial workout rows.
+- Offline Fitness saves remain one RPC bundle and retry atomically. Legacy per-row Fitness queue records are blocked with instructions to reopen and resave.
 - A recovery-day decision overrides reviewed exercise targets without deleting or marking them complete.
+
+Run the local target-link regression tests:
+
+```powershell
+node tests/fitness-target-link.test.mjs
+```
+
+Run `tests/fitness-atomic-save.test.sql` in the Supabase SQL editor. It covers current-cycle success, stale UI/cycle updates, mixed target ids, and rollback after a late insert failure; the outer transaction rolls back.
 - English and Fitness pages show the active Jessica review date; no cycle displays an explicit awaiting-review state.
 - Inputs remain at 16px or larger on iPhone Safari, date fields do not overflow, and switching tabs clears form focus and returns to the top immediately.
 - Settings app version and the deployed service-worker cache version match before iPhone acceptance testing.

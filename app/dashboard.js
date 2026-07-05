@@ -1,9 +1,10 @@
-const VERSION = "2026.06.30.10";
+const VERSION = "2026.07.05.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
 const DATA_CACHE_KEY = "jessica-dashboard-last-data-v2";
 const REVIEW_DURATION_MS = 5 * 60 * 1000;
+const FITNESS_BUNDLE_TABLE = "fitness_entry_bundle";
 const WRITABLE_TABLES = new Set([
   "english_review_events",
   "english_self_checks",
@@ -292,8 +293,8 @@ async function fetchFitnessRows() {
     selectRows("fitness_workouts", "select=*&order=workout_date.desc,created_at.desc&limit=200"),
     selectRows("fitness_plan_targets", "select=*&order=sort_order.asc,updated_at.desc"),
     selectRows("fitness_weekly_reviews", "select=*&order=week_start.desc&limit=8"),
-    selectRows("fitness_exercise_targets", "select=*&order=plan_type.asc,sort_order.asc"),
-    selectRows("jessica_review_cycles", "select=*&domain=eq.fitness&status=eq.active&order=reviewed_at.desc&limit=1")
+    selectRows("fitness_exercise_targets", "select=*&active=eq.true&order=plan_type.asc,sort_order.asc"),
+    selectRows("jessica_review_cycles", "select=*&domain=eq.fitness&status=eq.active&order=reviewed_at.desc")
   ]);
   return { dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles };
 }
@@ -339,7 +340,8 @@ function buildFitnessData(rows) {
   }));
   fitness._weeklyReviews = rows.weeklyReviews;
   fitness.exerciseTargets = rows.exerciseTargets.map(normalizeExerciseTarget);
-  fitness.jessicaReview = rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null;
+  fitness.jessicaReviews = rows.reviewCycles.map(normalizeJessicaReview);
+  fitness.jessicaReview = fitness.jessicaReviews.length === 1 ? fitness.jessicaReviews[0] : null;
   return recalculateFitness(fitness);
 }
 
@@ -453,6 +455,16 @@ async function executeOperation(item) {
   const userId = encodeURIComponent(state.session.user.id);
   const rowId = encodeURIComponent(item.row_id);
 
+  if (item.table === FITNESS_BUNDLE_TABLE) {
+    return supabaseFetch("/rest/v1/rpc/save_fitness_entry_atomic", {
+      method: "POST",
+      body: JSON.stringify({
+        p_daily_entry: item.payload.daily,
+        p_workouts: item.payload.workouts
+      })
+    });
+  }
+
   if (item.operation === "delete") {
     return supabaseFetch(`/rest/v1/${item.table}?id=eq.${rowId}&user_id=eq.${userId}`, {
       method: "DELETE",
@@ -484,6 +496,48 @@ function prepareOperationPayload(item) {
   return payload;
 }
 
+async function saveFitnessBundle(draft) {
+  const item = {
+    id: crypto.randomUUID(),
+    operation: "rpc",
+    table: FITNESS_BUNDLE_TABLE,
+    row_id: draft.daily.id,
+    payload: { daily: draft.daily, workouts: draft.exercises },
+    owner_user_id: state.session?.user?.id || null,
+    queued_at: new Date().toISOString()
+  };
+
+  if (state.session?.demo) return { ...item, save_status: "saved" };
+  if (!canUseCloud()) {
+    upsertPendingOperation(item);
+    saveQueue();
+    state.lastWriteError = "Waiting for connection; the complete Fitness entry is pending as one atomic save";
+    return { ...item, save_status: "pending" };
+  }
+
+  try {
+    await refreshAccessTokenIfNeeded();
+    await executeOperation(item);
+    state.pending = state.pending.filter((queued) => !(
+      queued.owner_user_id === item.owner_user_id &&
+      queued.table === item.table &&
+      queued.row_id === item.row_id
+    ));
+    saveQueue();
+    state.lastWriteError = null;
+    return { ...item, save_status: "saved" };
+  } catch (error) {
+    const message = friendlyError(error);
+    state.lastWriteError = message;
+    if (error?.status && error.status < 500) {
+      return { ...item, save_status: "rejected", last_error: message };
+    }
+    upsertPendingOperation({ ...item, last_error: message, last_attempt_at: new Date().toISOString() });
+    saveQueue();
+    return { ...item, save_status: "pending", last_error: message };
+  }
+}
+
 async function syncPending() {
   const visible = pendingForCurrentUser();
   if (!visible.length) {
@@ -510,6 +564,9 @@ async function syncPending() {
 
   for (const item of visible) {
     try {
+      if (item.table === "fitness_daily_entries" || item.table === "fitness_workouts") {
+        throw new Error("Legacy Fitness pending rows cannot sync separately. Reopen the Fitness entry and save it again as one atomic batch.");
+      }
       await executeOperation(item);
       synced += 1;
     } catch (error) {
@@ -557,7 +614,10 @@ async function supabaseFetch(path, options = {}, useAuth = true) {
     const text = await response.text();
     try {
       const details = JSON.parse(text);
-      throw new Error(`${details.code ? `${details.code}: ` : ""}${details.message || response.statusText}`);
+      const error = new Error(`${details.code ? `${details.code}: ` : ""}${details.message || response.statusText}`);
+      error.status = response.status;
+      error.code = details.code || null;
+      throw error;
     } catch (error) {
       if (error instanceof SyntaxError) throw new Error(text || response.statusText);
       throw error;
@@ -1011,7 +1071,7 @@ function computeFitnessRecommendation(fitness) {
   ) mode = "progress";
   else if (moderateRelevant || latest?.recovery_score === 3) mode = "maintain";
 
-  const jessicaTargets = (fitness.exerciseTargets || []).filter((item) => item.plan_type === plan);
+  const jessicaTargets = targetsForPlan(fitness, plan);
   const hasJessicaTargets = jessicaTargets.length > 0;
   const exercises = recommendedExercises(plan, workouts, mode, jessicaTargets);
   const modeLabel = mode === "recovery" ? "Recovery" : hasJessicaTargets ? "Jessica target" : mode === "progress" ? "Progress" : "Maintain";
@@ -1100,9 +1160,12 @@ function recommendedExercises(plan, workouts, mode, reviewedTargets = []) {
 }
 
 function targetsForPlan(fitness, plan) {
-  return (fitness.exerciseTargets || [])
-    .filter((item) => item.active && item.plan_type === plan)
-    .sort((a, b) => a.sort_order - b.sort_order);
+  return FitnessTargetLink.selectActiveTargetsForPlan({
+    targets: fitness.exerciseTargets || [],
+    activeCycle: fitness.jessicaReview,
+    userId: fitness.jessicaReview?.user_id || null,
+    plan
+  });
 }
 
 function renderExerciseInputs(planName, recommendations = null, completedRows = []) {
@@ -1210,7 +1273,7 @@ function resolveWorkoutTargetId(workout) {
   return FitnessTargetLink.resolveTargetId({
     workout,
     targets: fitness.exerciseTargets,
-    activeCycle: fitness.jessicaReview,
+    activeCycles: fitness.jessicaReviews || (fitness.jessicaReview ? [fitness.jessicaReview] : []),
     userId: state.session?.user?.id
   });
 }
@@ -1228,32 +1291,35 @@ async function saveFitnessEntry(event) {
   }
   if (!draft) return;
   const existing = currentDashboard().fitness._entries.find((item) => item.id === draft.daily.id);
-  await saveOperation("fitness_daily_entries", draft.daily, {
-    operation: existing ? "update" : "insert",
-    rowId: draft.daily.id
-  });
-  upsertLocalRow("fitness_daily_entries", { ...draft.daily, created_at: existing?.created_at || new Date().toISOString() });
-
-  const oldRows = currentDashboard().fitness._workouts.filter((item) => item.daily_entry_id === draft.daily.id);
-  const nextKeys = new Set(draft.exercises.map((item) => item.exercise_key));
-  for (const old of oldRows) {
-    if (!nextKeys.has(old.exercise_key)) {
-      await saveOperation("fitness_workouts", {}, { operation: "delete", rowId: old.id });
-      removeLocalRow("fitness_workouts", old.id);
-    }
+  const result = await saveFitnessBundle(draft);
+  if (result.save_status === "rejected") {
+    showToast(`Fitness save rejected; nothing was saved. ${result.last_error}`);
+    render();
+    return;
   }
-  for (const workout of draft.exercises) {
-    const old = oldRows.find((item) => item.exercise_key === workout.exercise_key);
-    await saveOperation("fitness_workouts", workout, { operation: old ? "update" : "insert", rowId: workout.id });
-    upsertLocalRow("fitness_workouts", workout);
-  }
+  replaceLocalFitnessBundle(draft, existing);
 
   state.lastSavedReport = draft.report;
   state.editingFitnessId = null;
-  showToast(existing ? "Fitness record updated" : "Fitness record saved");
+  const action = existing ? "updated" : "saved";
+  showToast(result.save_status === "pending"
+    ? `Fitness record pending; the complete batch will sync atomically`
+    : `Fitness record ${action}`);
   resetFitnessForm({ keepReport: true });
-  if (canUseCloud()) await refreshDashboardData({ silent: true });
+  if (result.save_status === "saved" && canUseCloud()) await refreshDashboardData({ silent: true });
   else render();
+}
+
+function replaceLocalFitnessBundle(draft, existing) {
+  upsertLocalRow("fitness_daily_entries", {
+    ...draft.daily,
+    created_at: existing?.created_at || new Date().toISOString()
+  });
+  const rows = state.data.fitness._workouts;
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    if (rows[index].daily_entry_id === draft.daily.id) rows.splice(index, 1);
+  }
+  draft.exercises.slice().reverse().forEach((workout) => upsertLocalRow("fitness_workouts", workout));
 }
 
 function editLatestFitnessEntry() {
@@ -1455,6 +1521,15 @@ function applyPendingOperations(data) {
     fitness_workouts: data.fitness._workouts
   };
   visible.forEach((item) => {
+    if (item.table === FITNESS_BUNDLE_TABLE && item.operation === "rpc") {
+      const daily = { ...item.payload.daily, _pending: true };
+      const dailyIndex = data.fitness._entries.findIndex((row) => row.id === daily.id);
+      if (dailyIndex >= 0) data.fitness._entries[dailyIndex] = daily;
+      else data.fitness._entries.push(daily);
+      data.fitness._workouts = data.fitness._workouts.filter((row) => row.daily_entry_id !== daily.id);
+      data.fitness._workouts.push(...item.payload.workouts.map((row) => ({ ...row, _pending: true })));
+      return;
+    }
     const rows = mappings[item.table];
     if (!rows) return;
     const index = rows.findIndex((row) => row.id === item.row_id);
@@ -1509,7 +1584,8 @@ function normalizeDemoData(raw) {
     _workouts: (raw.fitness?._workouts || []).map(normalizeWorkout),
     planTargets: raw.fitness?.planTargets || [],
     exerciseTargets: (raw.fitness?.exerciseTargets || []).map((item) => normalizeExerciseTarget({ ...item, user_id: "demo-preview" })),
-    jessicaReview: raw.fitness?.jessicaReview ? normalizeJessicaReview({ ...raw.fitness.jessicaReview, user_id: "demo-preview" }) : null
+    jessicaReview: raw.fitness?.jessicaReview ? normalizeJessicaReview({ ...raw.fitness.jessicaReview, user_id: "demo-preview" }) : null,
+    jessicaReviews: raw.fitness?.jessicaReview ? [normalizeJessicaReview({ ...raw.fitness.jessicaReview, user_id: "demo-preview" })] : []
   });
   data._source = "demo";
   return composeDashboard(data);
@@ -1546,6 +1622,7 @@ function emptyFitness() {
     planTargets: [],
     exerciseTargets: [],
     jessicaReview: null,
+    jessicaReviews: [],
     _entries: [],
     _workouts: [],
     _weeklyReviews: []

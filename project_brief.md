@@ -17,10 +17,10 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 
 | Item | Summary |
 |---|---|
-| Status | Manual cross-project Jessica review loop implemented, published, and deployed as build 2026.06.30.9; awaiting the next Plan B execution. |
-| Last updated | 2026-06-21 |
-| Latest decision | Create a separate `05_personal-dashboard` project. Build a static PWA frontend hosted by GitHub Pages, with Supabase for Auth, RLS-protected data, and cloud sync. |
-| Next action | Record the next Plan B execution, then let `02_Fitness_Nutrition` compare target versus actual and publish the second reviewed cycle. |
+| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.05.1 also prevents superseded target history from leaking into the current Plan form and is locally verified pending deployment. |
+| Last updated | 2026-07-05 |
+| Latest decision | Fitness cycles use two logical zones: one active execution cycle and a non-executable, read-only superseded archive. Historical targets remain for workout provenance but can never return to the current Plan form. |
+| Next action | Deploy build 2026.07.05.1, refresh the iPhone PWA, and verify that each Plan renders exactly five targets from the sole active Fitness cycle. |
 
 ## Key References
 
@@ -29,7 +29,7 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 | App shell | `app/index.html` | Static PWA entrypoint. |
 | App logic | `app/dashboard.js` | Demo data, local queue, cached reading, Supabase REST reads/writes, and reviewed-target execution. `app/app.js` is only a legacy-cache compatibility loader. |
 | Styling | `app/styles.css` | Phone-first UI. |
-| Supabase schema | `supabase/schema.sql` and migrations `001` through `008` | Tables, allowlist, RLS, review-cycle provenance, executable targets, minimum grants, indexes, and triggers. |
+| Supabase schema | `supabase/schema.sql` and migrations `001` through `009` | Tables, allowlist, RLS, review-cycle provenance, executable targets, atomic Fitness RPC, minimum grants, indexes, and triggers. |
 | Supabase seed | `supabase/seed_demo.sql` | Optional low-risk cloud demo rows after Vinson Auth UUID is known. |
 | Data model | `docs/schema.md` | Table map, write paths, and live-read behavior. |
 | Verification | `docs/verification.md` | Repeatable local checks and post-Supabase checks. |

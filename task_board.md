@@ -2,10 +2,11 @@
 
 ## Now
 
-- [ ] Use the linked 2026-06-30 Plan B execution in the second Jessica Fitness review when explicitly requested.
+- [ ] Use the corrected 2026-07-02 Plan A execution in the next fitness-review when explicitly requested.
 
 ## Next
 
+- [ ] Deploy Dashboard build `2026.07.05.1`, then verify that Plan A and Plan B each render only the five targets from the sole active Fitness cycle after refresh.
 - [ ] Enable Supabase leaked-password protection if the project plan exposes that Auth option.
 - [ ] Add a normalized free-text fitness parser in a future phase without changing the storage contract.
 - [ ] Automate the Jessica review trigger only after the manual cycle is proven with real records.
@@ -13,11 +14,14 @@
 
 ## Waiting
 
-- [ ] Physical-device acceptance after build `2026.06.30.9` reaches Safari.
-- [ ] Vinson's next Plan B execution record.
+- [ ] Physical-device acceptance after build `2026.07.02.1` is deployed to Safari.
 
 ## Done
 
+- [x] Applied `20260705031641_review_archive_hardening` plus the minimum immutable-id lock grant in `20260705032043_atomic_review_lock_privilege`: browser writes remain blocked by RLS, connector publication remains authoritative, the atomic save RPC keeps its race-prevention locks, and referenced historical targets cannot be deleted.
+- [x] Formalized the Fitness cycle lifecycle as one active execution zone plus a non-executable superseded archive; physical deletion is forbidden while workouts reference historical targets.
+- [x] Fixed the long-term Fitness target rendering leak: cloud reads now request only active targets, recommendation rendering revalidates owner + active cycle + Plan, duplicate keys fail closed, and regression tests cover accumulated superseded cycles.
+- [x] Replaced per-row Fitness saves with one active-cycle-validated atomic RPC, repaired the three provable 2026-07-02 stale target links without changing actuals, and verified the live readback.
 - [x] Created independent personal dashboard project scaffold.
 - [x] Added phone-first static PWA files.
 - [x] Added demo data for English and fitness modules.
