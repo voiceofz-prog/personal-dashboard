@@ -2,7 +2,7 @@
 
 ## Now
 
-- [ ] Use the corrected 2026-07-02 Plan A execution in the next fitness-review when explicitly requested.
+- [ ] Deploy Dashboard build `2026.07.06.1`, refresh the iPhone PWA, and verify that active recovery cycles force a recovery-only Quick Log with Plan A/B hidden.
 
 ## Next
 
@@ -18,6 +18,7 @@
 
 ## Done
 
+- [x] Closed the 0-target recovery-cycle UI gap: both Plan A and Plan B are disabled during recovery, Quick Log defaults to recovery day, and completed training records cannot be converted into recovery records.
 - [x] Applied `20260705031641_review_archive_hardening` plus the minimum immutable-id lock grant in `20260705032043_atomic_review_lock_privilege`: browser writes remain blocked by RLS, connector publication remains authoritative, the atomic save RPC keeps its race-prevention locks, and referenced historical targets cannot be deleted.
 - [x] Formalized the Fitness cycle lifecycle as one active execution zone plus a non-executable superseded archive; physical deletion is forbidden while workouts reference historical targets.
 - [x] Fixed the long-term Fitness target rendering leak: cloud reads now request only active targets, recommendation rendering revalidates owner + active cycle + Plan, duplicate keys fail closed, and regression tests cover accumulated superseded cycles.

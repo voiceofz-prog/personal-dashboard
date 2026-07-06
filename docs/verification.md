@@ -126,6 +126,9 @@ These cannot be completed in demo mode:
 - The daily entry and all checked workouts are committed by one RPC transaction. A late workout error leaves no daily row or partial workout rows.
 - Offline Fitness saves remain one RPC bundle and retry atomically. Legacy per-row Fitness queue records are blocked with instructions to reopen and resave.
 - A recovery-day decision overrides reviewed exercise targets without deleting or marking them complete.
+- An active 0-target recovery cycle automatically selects recovery day, disables training day, and hides both Plan A and Plan B controls.
+- Attempting to convert an existing completed training entry into a recovery entry is blocked before save.
+- Direct deletion or provenance rebinding of a target-linked workout is rejected by `fitness_workouts_protect_provenance` and rolls back.
 
 Run the local target-link regression tests:
 

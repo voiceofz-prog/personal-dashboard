@@ -72,6 +72,28 @@
     return matches;
   }
 
+  function isRecoveryCycle({ activeCycle, targets = [], userId }) {
+    if (
+      !activeCycle ||
+      !userId ||
+      activeCycle.user_id !== userId ||
+      activeCycle.domain !== "fitness" ||
+      activeCycle.status !== "active"
+    ) return false;
+
+    const decision = activeCycle.evidence?.decision || {};
+    if (
+      decision.recovery_tier !== "recovery_day" ||
+      Number(decision.published_target_count) !== 0
+    ) return false;
+
+    return !targets.some((target) =>
+      target.active === true &&
+      target.user_id === userId &&
+      target.review_cycle_id === activeCycle.id
+    );
+  }
+
   function validateWorkoutBatch({ workouts, targets, activeCycle, activeCycles, userId }) {
     if (!Array.isArray(workouts) || !workouts.length) {
       throw new Error("A trained day requires at least one completed workout");
@@ -96,5 +118,12 @@
     return { cycleId: currentCycle.id, targetIds };
   }
 
-  return { isUuid, requireOneActiveCycle, resolveTargetId, selectActiveTargetsForPlan, validateWorkoutBatch };
+  return {
+    isUuid,
+    requireOneActiveCycle,
+    resolveTargetId,
+    selectActiveTargetsForPlan,
+    isRecoveryCycle,
+    validateWorkoutBatch
+  };
 });

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import "../app/fitness-target-link.js";
 
-const { resolveTargetId, selectActiveTargetsForPlan, validateWorkoutBatch } = globalThis.FitnessTargetLink;
+const { resolveTargetId, selectActiveTargetsForPlan, isRecoveryCycle, validateWorkoutBatch } = globalThis.FitnessTargetLink;
 const userId = "08dc15cb-aa8e-40fe-bfdf-0ef659292e0e";
 const cycle = {
   id: "9ce08ae2-c5b9-495d-a8c8-4eb91cb8b209",
@@ -128,5 +128,36 @@ assert.deepEqual(selectActiveTargetsForPlan({
   userId,
   plan: "Plan A"
 }), []);
+
+const recoveryCycle = {
+  ...cycle,
+  id: "4a7b149c-9139-400f-b090-b96feafc4417",
+  evidence: {
+    decision: {
+      recovery_tier: "recovery_day",
+      published_target_count: 0
+    }
+  }
+};
+assert.equal(isRecoveryCycle({
+  activeCycle: recoveryCycle,
+  targets: [],
+  userId
+}), true);
+assert.equal(isRecoveryCycle({
+  activeCycle: recoveryCycle,
+  targets: [{ ...target, review_cycle_id: recoveryCycle.id }],
+  userId
+}), false);
+assert.equal(isRecoveryCycle({
+  activeCycle: { ...recoveryCycle, status: "superseded" },
+  targets: [],
+  userId
+}), false);
+assert.equal(isRecoveryCycle({
+  activeCycle: cycle,
+  targets: [],
+  userId
+}), false);
 
 console.log("fitness target link tests passed");

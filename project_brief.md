@@ -17,10 +17,10 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 
 | Item | Summary |
 |---|---|
-| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.05.1 also prevents superseded target history from leaking into the current Plan form and is locally verified pending deployment. |
-| Last updated | 2026-07-05 |
-| Latest decision | Fitness cycles use two logical zones: one active execution cycle and a non-executable, read-only superseded archive. Historical targets remain for workout provenance but can never return to the current Plan form. |
-| Next action | Deploy build 2026.07.05.1, refresh the iPhone PWA, and verify that each Plan renders exactly five targets from the sole active Fitness cycle. |
+| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.06.1 also locks Quick Log to recovery-day input while an active recovery cycle has 0 targets. |
+| Last updated | 2026-07-06 |
+| Latest decision | A 0-target recovery cycle is valid but must not leave Plan A/B selectable. During recovery, Quick Log forces recovery day, hides both Plans, and blocks converting an existing completed training record into a recovery record. |
+| Next action | Deploy build 2026.07.06.1, refresh the iPhone PWA, and verify that the recovery cycle shows a recovery-only Quick Log until executable targets are republished. |
 
 ## Key References
 
