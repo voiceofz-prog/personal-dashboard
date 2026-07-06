@@ -74,7 +74,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Legacy pending queue | Ownerless V1 records are adopted only after a real authenticated session exists and only for the approved English self-check and fitness daily-entry tables. |
 | Manual local queue clear | The Settings clear action removes only pending records visible to the current local session. |
 | Wrong RLS policy | Treat as blocking; do not deploy personal data until policy tests pass. |
-| Recovery form overwrites completed training | A recovery cycle forces recovery-only UI. The database provenance trigger rejects deletion or rebinding of every target-linked workout, so converting a completed training entry to recovery rolls back. |
+| Recovery form overwrites completed training | Only a review cycle with explicit `training_lock=true` forces recovery-only UI. The database provenance trigger always rejects deletion or rebinding of every target-linked workout, so converting a completed training entry to recovery rolls back. |
 | Service role leak | Rotate Supabase keys immediately and remove the leak from history if possible. |
 | Public sign-up left open | Disable public sign-ups after Vinson's account exists; RLS still blocks non-allowlisted users from dashboard tables. |
 

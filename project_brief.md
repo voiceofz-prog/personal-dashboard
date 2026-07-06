@@ -17,10 +17,10 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 
 | Item | Summary |
 |---|---|
-| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.06.1 also locks Quick Log to recovery-day input while an active recovery cycle has 0 targets. |
+| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.06.2 separates low-recovery warnings from explicit safety locks. |
 | Last updated | 2026-07-06 |
-| Latest decision | A 0-target recovery cycle is valid but must not leave Plan A/B selectable. During recovery, Quick Log forces recovery day, hides both Plans, and blocks converting an existing completed training record into a recovery record. |
-| Next action | Deploy build 2026.07.06.1, refresh the iPhone PWA, and verify that the recovery cycle shows a recovery-only Quick Log until executable targets are republished. |
+| Latest decision | Recovery 2/5 with at least 6 hours of sleep, energy at least 3/5, and no abnormal pain is a conservative training option, not a prohibition. Quick Log locks only when review evidence explicitly sets `training_lock=true`. |
+| Next action | Deploy build 2026.07.06.2 and verify that a conservative Plan B target remains selectable while the recovery warning and rest option stay visible. |
 
 ## Key References
 
