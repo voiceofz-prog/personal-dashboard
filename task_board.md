@@ -2,7 +2,7 @@
 
 ## Now
 
-- [ ] Deploy Dashboard build `2026.07.06.2`, refresh the iPhone PWA, and verify that low recovery warns without disabling conservative Plan B.
+- [ ] Refresh the iPhone PWA and verify that low recovery warns without disabling conservative Plan B.
 
 ## Next
 
@@ -18,6 +18,7 @@
 
 ## Done
 
+- [x] Deployed and remotely verified Dashboard build `2026.07.06.2`; the live bundle uses explicit `training_lock` logic and the new service-worker cache.
 - [x] Split low-recovery caution from explicit safety locks: only `training_lock=true` disables training, while recovery 2/5 without red flags can retain reduced executable targets.
 - [x] Closed the 0-target recovery-cycle UI gap: both Plan A and Plan B are disabled during recovery, Quick Log defaults to recovery day, and completed training records cannot be converted into recovery records.
 - [x] Applied `20260705031641_review_archive_hardening` plus the minimum immutable-id lock grant in `20260705032043_atomic_review_lock_privilege`: browser writes remain blocked by RLS, connector publication remains authoritative, the atomic save RPC keeps its race-prevention locks, and referenced historical targets cannot be deleted.

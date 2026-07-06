@@ -17,10 +17,10 @@ Build Vinson's private phone-first personal dashboard PWA for English learning a
 
 | Item | Summary |
 |---|---|
-| Status | Live Supabase uses an atomic, active-cycle-validated Fitness save RPC. Frontend build 2026.07.06.2 separates low-recovery warnings from explicit safety locks. |
+| Status | Frontend build 2026.07.06.2 is deployed. Live Supabase cycle `03692c86-9a32-42da-8abb-9161c4ae27cc` provides reduced targets with `training_lock=false`. |
 | Last updated | 2026-07-06 |
 | Latest decision | Recovery 2/5 with at least 6 hours of sleep, energy at least 3/5, and no abnormal pain is a conservative training option, not a prohibition. Quick Log locks only when review evidence explicitly sets `training_lock=true`. |
-| Next action | Deploy build 2026.07.06.2 and verify that a conservative Plan B target remains selectable while the recovery warning and rest option stay visible. |
+| Next action | Refresh the iPhone PWA and verify that conservative Plan B remains selectable while the recovery warning and rest option stay visible. |
 
 ## Key References
 
