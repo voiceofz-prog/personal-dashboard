@@ -74,6 +74,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Legacy pending queue | Ownerless V1 records are adopted only after a real authenticated session exists and only for the approved English self-check and fitness daily-entry tables. |
 | Manual local queue clear | The Settings clear action removes only pending records visible to the current local session. |
 | Wrong RLS policy | Treat as blocking; do not deploy personal data until policy tests pass. |
+| Recovery form overwrites completed training | A recovery cycle forces recovery-only UI. The database provenance trigger rejects deletion or rebinding of every target-linked workout, so converting a completed training entry to recovery rolls back. |
 | Service role leak | Rotate Supabase keys immediately and remove the leak from history if possible. |
 | Public sign-up left open | Disable public sign-ups after Vinson's account exists; RLS still blocks non-allowlisted users from dashboard tables. |
 
@@ -93,6 +94,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and read-only to the authenticated browser. Publication remains connector-only.
 - Their immutable `id` columns carry the minimum UPDATE grant required for the security-invoker RPC's row locks; the absence of UPDATE RLS policies prevents browser row modification.
 - A completed workout may reference `target_id`; `ON DELETE RESTRICT` preserves that historical provenance and the foreign key does not weaken either table's owner RLS.
+- `fitness_workouts_protect_provenance` blocks Dashboard deletion of target-linked workouts and blocks changes to owner, daily entry, date, Plan, `exercise_key`, or `target_id` after linkage.
 - The atomic RPC re-queries and locks the sole active Fitness cycle at write time. Every submitted target must be active, owned by the caller, effective for the workout date, and match the exact Plan and `exercise_key`.
 - A stale UI target, inactive or superseded target, mixed-cycle batch, or zero/multiple active-cycle condition raises an explicit error and rolls back the daily entry and every workout.
 - The deferred `fitness_workouts_validate_active_cycle` constraint trigger provides a database backstop for direct table writes. It does not retroactively invalidate historical rows when a review cycle is later superseded.

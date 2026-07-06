@@ -1,4 +1,4 @@
-const VERSION = "2026.07.05.1";
+const VERSION = "2026.07.06.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -1014,6 +1014,7 @@ function renderFitness() {
   const fitness = currentDashboard().fitness;
   const recommendation = computeFitnessRecommendation(fitness);
   const latest = latestFitnessEntry(fitness._entries);
+  const recoveryCycleActive = isActiveRecoveryCycle(fitness);
   document.getElementById("recoveryBadge").textContent = fitness.recoveryStatus;
   document.getElementById("recoveryBadge").classList.toggle("warning", fitness.recoveryLevel === "warning");
   document.getElementById("fitnessMetrics").innerHTML = [
@@ -1034,16 +1035,23 @@ function renderFitness() {
   document.getElementById("fitnessHistory").innerHTML = latest
     ? listCard(latest.training_status === "trained" ? "Training day" : "Recovery day", fitnessEntrySummary(latest), latest.entry_date)
     : emptyState("No fitness record yet", "Save body and recovery status to prepare the next session.");
-  document.getElementById("editFitnessEntry").hidden = !latest;
+  const editButton = document.getElementById("editFitnessEntry");
+  editButton.hidden = !latest;
+  editButton.disabled = Boolean(latest && recoveryCycleActive && latest.training_status === "trained");
+  editButton.textContent = editButton.disabled ? "Training Record Locked During Recovery" : "Edit Latest Record";
   document.getElementById("savedFitnessReport").hidden = !state.lastSavedReport;
   document.getElementById("fitnessReportOutput").textContent = state.lastSavedReport;
 
   const form = document.getElementById("fitnessReportForm");
+  if (recoveryCycleActive && !state.editingFitnessId) {
+    setRadioValue(form, "day_type", "rest");
+  }
   if (!state.editingFitnessId && !form.dataset.touched) {
     form.elements.plan_template.value = recommendation.plan === "Recovery" ? inferNextPlanFromFitness(fitness) : recommendation.plan;
     renderExerciseInputs(form.elements.plan_template.value, recommendation.exercises);
     form.dataset.touched = "true";
   }
+  updateFitnessFormVisibility();
 }
 
 function computeFitnessRecommendation(fitness) {
@@ -1168,6 +1176,14 @@ function targetsForPlan(fitness, plan) {
   });
 }
 
+function isActiveRecoveryCycle(fitness = currentDashboard()?.fitness || emptyFitness()) {
+  return FitnessTargetLink.isRecoveryCycle({
+    activeCycle: fitness.jessicaReview,
+    targets: fitness.exerciseTargets || [],
+    userId: fitness.jessicaReview?.user_id || state.session?.user?.id || null
+  });
+}
+
 function renderExerciseInputs(planName, recommendations = null, completedRows = []) {
   const picker = document.getElementById("exercisePicker");
   const fitness = currentDashboard()?.fitness || emptyFitness();
@@ -1187,15 +1203,43 @@ function exerciseInput(item, completed) {
 
 function updateFitnessFormVisibility() {
   const form = document.getElementById("fitnessReportForm");
-  const trained = getRadioValue(form, "day_type") === "trained";
+  const recoveryCycleActive = isActiveRecoveryCycle();
+  const trainedOption = form.querySelector('input[name="day_type"][value="trained"]');
+  if (trainedOption) trainedOption.disabled = recoveryCycleActive;
+  if (recoveryCycleActive && getRadioValue(form, "day_type") === "trained") {
+    setRadioValue(form, "day_type", "rest");
+  }
+  const trained = !recoveryCycleActive && getRadioValue(form, "day_type") === "trained";
   document.getElementById("planTemplateLabel").hidden = !trained;
   document.getElementById("exercisePicker").hidden = !trained;
+  form.elements.plan_template.disabled = !trained;
 }
 
 function normalizeFitnessDraft(form) {
   if (!form.reportValidity()) return null;
   const dayType = getRadioValue(form, "day_type") || "rest";
   const entryId = form.elements.id.value || crypto.randomUUID();
+  const existing = currentDashboard().fitness._entries.find((item) => item.id === entryId);
+  const existingWorkouts = currentDashboard().fitness._workouts.filter((item) => item.daily_entry_id === entryId);
+  if (isActiveRecoveryCycle() && dayType === "trained") {
+    showToast("Recovery cycle is active. Record a recovery day before training.");
+    return null;
+  }
+  if (existing?.training_status === "trained" && dayType === "rest" && existingWorkouts.length) {
+    showToast("A completed training record cannot be converted to a recovery day.");
+    return null;
+  }
+  if (
+    dayType === "rest" &&
+    !existing &&
+    currentDashboard().fitness._entries.some((item) =>
+      item.entry_date === (form.elements.entry_date.value || todayISO()) &&
+      item.training_status === "trained"
+    )
+  ) {
+    showToast("This date already has a completed training record. Use the next recovery date.");
+    return null;
+  }
   const plan = form.elements.plan_template.value;
   const exercises = dayType === "trained" ? collectCompletedExercises(form, plan, entryId) : [];
   if (dayType === "trained" && !exercises.length) {
@@ -1326,6 +1370,10 @@ function editLatestFitnessEntry() {
   const data = currentDashboard().fitness;
   const latest = latestFitnessEntry(data._entries);
   if (!latest) return;
+  if (isActiveRecoveryCycle(data) && latest.training_status === "trained") {
+    showToast("The completed training record is locked while a recovery cycle is active.");
+    return;
+  }
   const form = document.getElementById("fitnessReportForm");
   state.editingFitnessId = latest.id;
   form.elements.id.value = latest.id;
@@ -1362,6 +1410,7 @@ function resetFitnessForm(options = {}) {
   document.getElementById("saveFitnessEntry").textContent = "Save Today";
   document.getElementById("cancelFitnessEdit").hidden = true;
   const recommendation = computeFitnessRecommendation(currentDashboard().fitness);
+  if (isActiveRecoveryCycle()) setRadioValue(form, "day_type", "rest");
   const plan = recommendation.plan === "Recovery" ? inferNextPlanFromFitness(currentDashboard().fitness) : recommendation.plan;
   form.elements.plan_template.value = plan;
   renderExerciseInputs(plan, recommendation.exercises);
