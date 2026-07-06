@@ -1,4 +1,4 @@
-const VERSION = "2026.07.06.1";
+const VERSION = "2026.07.06.2";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -1014,7 +1014,7 @@ function renderFitness() {
   const fitness = currentDashboard().fitness;
   const recommendation = computeFitnessRecommendation(fitness);
   const latest = latestFitnessEntry(fitness._entries);
-  const recoveryCycleActive = isActiveRecoveryCycle(fitness);
+  const trainingLocked = isTrainingLockedCycle(fitness);
   document.getElementById("recoveryBadge").textContent = fitness.recoveryStatus;
   document.getElementById("recoveryBadge").classList.toggle("warning", fitness.recoveryLevel === "warning");
   document.getElementById("fitnessMetrics").innerHTML = [
@@ -1037,13 +1037,13 @@ function renderFitness() {
     : emptyState("No fitness record yet", "Save body and recovery status to prepare the next session.");
   const editButton = document.getElementById("editFitnessEntry");
   editButton.hidden = !latest;
-  editButton.disabled = Boolean(latest && recoveryCycleActive && latest.training_status === "trained");
+  editButton.disabled = Boolean(latest && trainingLocked && latest.training_status === "trained");
   editButton.textContent = editButton.disabled ? "Training Record Locked During Recovery" : "Edit Latest Record";
   document.getElementById("savedFitnessReport").hidden = !state.lastSavedReport;
   document.getElementById("fitnessReportOutput").textContent = state.lastSavedReport;
 
   const form = document.getElementById("fitnessReportForm");
-  if (recoveryCycleActive && !state.editingFitnessId) {
+  if (trainingLocked && !state.editingFitnessId) {
     setRadioValue(form, "day_type", "rest");
   }
   if (!state.editingFitnessId && !form.dataset.touched) {
@@ -1063,14 +1063,18 @@ function computeFitnessRecommendation(fitness) {
   const sorenessAreas = latest?.soreness_areas || [];
   const relevantSoreness = sorenessAreas.some((area) => relevantAreas.includes(area));
   const lowSleep = latest?.sleep_hours !== null && latest?.sleep_hours < 6;
-  const lowRecovery = latest?.recovery_score !== null && latest?.recovery_score <= 2;
+  const veryLowRecovery = latest?.recovery_score !== null && latest?.recovery_score <= 1;
+  const lowRecovery = latest?.recovery_score === 2;
+  const lowEnergy = latest?.energy_score !== null && latest?.energy_score <= 2;
   const severe = latest?.soreness_level === "severe";
   const moderateRelevant = latest?.soreness_level === "moderate" && relevantSoreness;
+  const trainingLocked = isTrainingLockedCycle(fitness);
   const latestPlanWorkouts = latestWorkoutsForPlan(workouts, oppositePlan(plan));
   const completedLastPlan = latestPlanWorkouts.length > 0 && latestPlanWorkouts.every((item) => item.completed);
 
   let mode = "maintain";
-  if (lowSleep || lowRecovery || severe) mode = "recovery";
+  if (trainingLocked || severe || veryLowRecovery || (lowSleep && lowEnergy)) mode = "recovery";
+  else if (lowRecovery || lowSleep) mode = "caution";
   else if (
     latest?.recovery_score >= 4 &&
     latest?.energy_score >= 4 &&
@@ -1082,7 +1086,11 @@ function computeFitnessRecommendation(fitness) {
   const jessicaTargets = targetsForPlan(fitness, plan);
   const hasJessicaTargets = jessicaTargets.length > 0;
   const exercises = recommendedExercises(plan, workouts, mode, jessicaTargets);
-  const modeLabel = mode === "recovery" ? "Recovery" : hasJessicaTargets ? "Jessica target" : mode === "progress" ? "Progress" : "Maintain";
+  const modeLabel = mode === "recovery"
+    ? "Recovery"
+    : mode === "caution"
+      ? "Conservative"
+      : hasJessicaTargets ? "Jessica target" : mode === "progress" ? "Progress" : "Maintain";
   const reason = !latest
     ? "No body-status record yet; start with the baseline and confirm actual completion."
     : [
@@ -1126,7 +1134,9 @@ function computeFitnessRecommendation(fitness) {
     modeLabel,
     title: `${plan} · ${modeLabel}`,
     summary: `${plan} ${modeLabel.toLowerCase()}`,
-    detail: hasJessicaTargets
+    detail: mode === "caution"
+      ? "Rest is valid. If you choose to train, follow Jessica's reduced target, add no load or reps, keep 2–3 reps in reserve, and stop if form or alertness declines."
+      : hasJessicaTargets
       ? "Follow Jessica's reviewed target exactly; record actual reps and do not exceed the reviewed ceiling."
       : mode === "progress"
         ? "Keep the same load and add 1–2 reps to the final set of the main exercise only if form stays clean."
@@ -1176,8 +1186,8 @@ function targetsForPlan(fitness, plan) {
   });
 }
 
-function isActiveRecoveryCycle(fitness = currentDashboard()?.fitness || emptyFitness()) {
-  return FitnessTargetLink.isRecoveryCycle({
+function isTrainingLockedCycle(fitness = currentDashboard()?.fitness || emptyFitness()) {
+  return FitnessTargetLink.isTrainingLockedCycle({
     activeCycle: fitness.jessicaReview,
     targets: fitness.exerciseTargets || [],
     userId: fitness.jessicaReview?.user_id || state.session?.user?.id || null
@@ -1203,13 +1213,13 @@ function exerciseInput(item, completed) {
 
 function updateFitnessFormVisibility() {
   const form = document.getElementById("fitnessReportForm");
-  const recoveryCycleActive = isActiveRecoveryCycle();
+  const trainingLocked = isTrainingLockedCycle();
   const trainedOption = form.querySelector('input[name="day_type"][value="trained"]');
-  if (trainedOption) trainedOption.disabled = recoveryCycleActive;
-  if (recoveryCycleActive && getRadioValue(form, "day_type") === "trained") {
+  if (trainedOption) trainedOption.disabled = trainingLocked;
+  if (trainingLocked && getRadioValue(form, "day_type") === "trained") {
     setRadioValue(form, "day_type", "rest");
   }
-  const trained = !recoveryCycleActive && getRadioValue(form, "day_type") === "trained";
+  const trained = !trainingLocked && getRadioValue(form, "day_type") === "trained";
   document.getElementById("planTemplateLabel").hidden = !trained;
   document.getElementById("exercisePicker").hidden = !trained;
   form.elements.plan_template.disabled = !trained;
@@ -1221,8 +1231,8 @@ function normalizeFitnessDraft(form) {
   const entryId = form.elements.id.value || crypto.randomUUID();
   const existing = currentDashboard().fitness._entries.find((item) => item.id === entryId);
   const existingWorkouts = currentDashboard().fitness._workouts.filter((item) => item.daily_entry_id === entryId);
-  if (isActiveRecoveryCycle() && dayType === "trained") {
-    showToast("Recovery cycle is active. Record a recovery day before training.");
+  if (isTrainingLockedCycle() && dayType === "trained") {
+    showToast("Training is locked by the current safety review. Record recovery status before training.");
     return null;
   }
   if (existing?.training_status === "trained" && dayType === "rest" && existingWorkouts.length) {
@@ -1370,8 +1380,8 @@ function editLatestFitnessEntry() {
   const data = currentDashboard().fitness;
   const latest = latestFitnessEntry(data._entries);
   if (!latest) return;
-  if (isActiveRecoveryCycle(data) && latest.training_status === "trained") {
-    showToast("The completed training record is locked while a recovery cycle is active.");
+  if (isTrainingLockedCycle(data) && latest.training_status === "trained") {
+    showToast("The completed training record is locked while a safety stop is active.");
     return;
   }
   const form = document.getElementById("fitnessReportForm");
@@ -1410,7 +1420,7 @@ function resetFitnessForm(options = {}) {
   document.getElementById("saveFitnessEntry").textContent = "Save Today";
   document.getElementById("cancelFitnessEdit").hidden = true;
   const recommendation = computeFitnessRecommendation(currentDashboard().fitness);
-  if (isActiveRecoveryCycle()) setRadioValue(form, "day_type", "rest");
+  if (isTrainingLockedCycle()) setRadioValue(form, "day_type", "rest");
   const plan = recommendation.plan === "Recovery" ? inferNextPlanFromFitness(currentDashboard().fitness) : recommendation.plan;
   form.elements.plan_template.value = plan;
   renderExerciseInputs(plan, recommendation.exercises);

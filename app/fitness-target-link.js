@@ -72,7 +72,7 @@
     return matches;
   }
 
-  function isRecoveryCycle({ activeCycle, targets = [], userId }) {
+  function isTrainingLockedCycle({ activeCycle, targets = [], userId }) {
     if (
       !activeCycle ||
       !userId ||
@@ -83,7 +83,7 @@
 
     const decision = activeCycle.evidence?.decision || {};
     if (
-      decision.recovery_tier !== "recovery_day" ||
+      decision.training_lock !== true ||
       Number(decision.published_target_count) !== 0
     ) return false;
 
@@ -123,7 +123,7 @@
     requireOneActiveCycle,
     resolveTargetId,
     selectActiveTargetsForPlan,
-    isRecoveryCycle,
+    isTrainingLockedCycle,
     validateWorkoutBatch
   };
 });
