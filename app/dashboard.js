@@ -715,7 +715,6 @@ function renderHome() {
   document.getElementById("todaySummary").textContent =
     `English: ${progress.reviewed} cards reviewed in 7 days. Fitness: ${recommendation.summary}.`;
   document.getElementById("dataSource").textContent = dataSourceLabel(data);
-  document.getElementById("homeEnglishBadge").textContent = progress.reviewed ? `${progress.reviewed} reviewed` : "Start review";
   document.getElementById("homeFitnessBadge").textContent = recommendation.modeLabel;
   document.getElementById("recentStatus").textContent = data.home.recentUpdates.length ? "Latest" : "Empty";
 
@@ -735,11 +734,6 @@ function renderHome() {
   if (pendingCount) metrics.push(metric("Sync", pendingCount, "pending"));
   document.getElementById("homeMetrics").innerHTML = metrics.join("");
 
-  document.getElementById("homeEnglishStatus").innerHTML = [
-    listCard("Current", data.english.currentFocus, data.english.cefr),
-    listCard("Evidence", progress.reviewed ? `${progress.masteredRate}% mastered; ${progress.again} marked again.` : "No review evidence in the last 7 days.", "7 days"),
-    listCard("Next", progress.nextFocus, "Commute")
-  ].join("");
   document.getElementById("homeFitnessStatus").innerHTML = [
     listCard("Current", latestBodyState(data.fitness), data.fitness.recoveryStatus),
     listCard("Evidence", latestTrainingEvidence(data.fitness), "Latest"),
