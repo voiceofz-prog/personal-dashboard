@@ -72,6 +72,7 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Pending queue ownership | New pending records are tagged with the current Supabase user id and are synced only when that same user is logged in. |
 | Idempotent offline writes | Client-generated UUIDs and upsert-based inserts prevent a retry from creating duplicate review, daily-entry, or workout rows. |
 | Legacy pending queue | Ownerless V1 records are adopted only after a real authenticated session exists and only for the approved English self-check and fitness daily-entry tables. |
+| Student Learning Map stale display | The browser reads the authenticated active-cycle snapshot only; it does not cache a Learning Map or use older snapshots, Review Pack rows, or Mika feedback to recreate one. |
 | Manual local queue clear | The Settings clear action removes only pending records visible to the current local session. |
 | Wrong RLS policy | Treat as blocking; do not deploy personal data until policy tests pass. |
 | Recovery form overwrites completed training | Only a review cycle with explicit `training_lock=true` forces recovery-only UI. The database provenance trigger always rejects deletion or rebinding of every target-linked workout, so converting a completed training entry to recovery rolls back. |
@@ -92,6 +93,8 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 - Only checked exercises are written to `fitness_workouts`; suggested exercises and supplements are not treated as completed activity.
 - `english_review_events` and `english_self_checks` keep owner-scoped row writes. Fitness daily entries and workouts are written together through the authenticated, security-invoker atomic RPC.
 - `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and read-only to the authenticated browser. Publication remains connector-only.
+- `english_learning_map_snapshots` is read-only in the Dashboard. It is queried with the authenticated owner filter and an inner active-English-cycle relation; the browser has no Learning Map publication or inference path.
+- Learning Map cache fallback is prohibited: offline, demo, missing, failed, and contract-mismatched reads show only the Learning Map unavailable state and leave other English features usable.
 - Their immutable `id` columns carry the minimum UPDATE grant required for the security-invoker RPC's row locks; the absence of UPDATE RLS policies prevents browser row modification.
 - A completed workout may reference `target_id`; `ON DELETE RESTRICT` preserves that historical provenance and the foreign key does not weaken either table's owner RLS.
 - `fitness_workouts_protect_provenance` blocks Dashboard deletion of target-linked workouts and blocks changes to owner, daily entry, date, Plan, `exercise_key`, or `target_id` after linkage.

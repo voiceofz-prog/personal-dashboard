@@ -27,6 +27,7 @@ This schema stores only V1 dashboard data for English learning summaries and fit
 | `english_review_cards` | Commute cards, mistake cards, Mika warm-up prompts, and 30-second self-test prompts. | No; maintained as curated dashboard summary data. |
 | `english_review_events` | One rating per reviewed card with a session id and content snapshots. | Yes; offline-capable insert. |
 | `english_self_checks` | Editable completion summaries for English review sessions. | Yes; offline-capable insert/update. |
+| `english_learning_map_snapshots` | Active Student Learning Map published by the English source project. | No; authenticated browser read-only. |
 | `jessica_review_cycles` | Traceable English/Fitness evidence review, conclusion, and next focus. | Jessica publishes through the authorized connector; browser role is read-only. |
 | `fitness_daily_entries` | Daily bodyweight, sleep, energy, recovery, soreness, and nutrition status. | Yes; offline-capable insert/update. |
 | `fitness_workouts` | Structured Plan A/B exercise weight, reps by set, completion, date relation, and reviewed target provenance. | Only through the atomic Fitness RPC in the V1 UI. |
@@ -45,6 +46,7 @@ After login, the app reads these tables through Supabase REST:
 - `english_review_cards`
 - `english_review_events`
 - `english_self_checks`
+- `english_learning_map_snapshots` joined to the sole active English review cycle
 - `jessica_review_cycles`
 - `fitness_daily_entries`
 - `fitness_workouts`
@@ -84,6 +86,17 @@ The English dashboard is a commute-first review surface. The source project shou
 - `english_problem_tracker` and `english_sessions`: learning analysis for Jessica and progress context; these should not be treated as the first-screen review experience.
 
 Supabase is the sync layer, not the content judge. The English learning project is responsible for turning Mika feedback into a curated commute review pack before writing rows here.
+
+## Student Learning Map Read Contract
+
+`english_learning_map_snapshots` is a read-only, source-project-published contract. The Dashboard reads one snapshot per refresh by joining it to the sole active `jessica_review_cycles` row where `domain = english`. It displays no snapshot linked to a superseded or inactive review cycle.
+
+The Dashboard reads only these published fields: `current_stage`, `current_main_module`, `building_capability`, `why_current_module`, `demonstrated_skills`, `remaining_skills`, `exit_criteria`, `exit_readiness`, `next_main_module`, `recent_progress_summary`, `repetition_risk`, `repetition_note`, `recommendation_disposition`, `recommendation_reason`, `evidence_period`, and `updated_at`.
+
+- `next_main_module = null` is displayed exactly as 「尚待判定」.
+- A missing active snapshot is an empty Learning Map; the Dashboard must not present an older snapshot as current.
+- A failed, offline, demo, or contract-mismatched read affects only Learning Map UI. Existing English review data remains independently available.
+- Learning Map data is excluded from the local dashboard cache. The Dashboard never derives readiness, skills, next module, repetition risk, or progress from Review Pack cards, Mika feedback, or other English rows.
 
 ## Write And Offline Contract
 

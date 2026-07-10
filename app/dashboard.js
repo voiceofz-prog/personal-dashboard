@@ -72,6 +72,9 @@ function bindNavigation() {
   document.querySelectorAll("[data-jump]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.jump));
   });
+  document.getElementById("homeLearningMap").addEventListener("click", (event) => {
+    if (event.target.closest("[data-jump-learning-map]")) openLearningMap();
+  });
 }
 
 function bindAuthAndSettings() {
@@ -97,7 +100,11 @@ function bindNetworkEvents() {
     await syncPending();
     await refreshDashboardData({ silent: true });
   });
-  window.addEventListener("offline", renderNetwork);
+  window.addEventListener("offline", () => {
+    if (state.data?.english) state.data.english.learningMap = emptyLearningMap("offline");
+    renderNetwork();
+    render();
+  });
 }
 
 async function loadConfig() {
@@ -144,12 +151,14 @@ async function loadDashboardData() {
 
   if (state.session?.demo) {
     state.data = clone(state.demoData);
+    state.data.english.learningMap = emptyLearningMap("offline");
     state.moduleStatus.english = { ok: true, error: null, updatedAt: new Date().toISOString() };
     state.moduleStatus.fitness = { ok: true, error: null, updatedAt: new Date().toISOString() };
     return;
   }
 
   state.data = loadCachedData() || emptyDashboard();
+  state.data.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
 }
 
 function restoreSession() {
@@ -228,6 +237,7 @@ function logout() {
 
 async function refreshDashboardData(options = {}) {
   if (!canUseCloud()) {
+    if (state.data?.english) state.data.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
     render();
     return;
   }
@@ -240,11 +250,16 @@ async function refreshDashboardData(options = {}) {
     return;
   }
 
-  const [englishResult, fitnessResult] = await Promise.allSettled([
-    fetchEnglishRows(),
-    fetchFitnessRows()
-  ]);
   const next = clone(state.data || emptyDashboard());
+  next.english.learningMap = emptyLearningMap("loading");
+  state.data = composeDashboard(next);
+  render();
+
+  const [englishResult, fitnessResult, learningMapResult] = await Promise.allSettled([
+    fetchEnglishRows(),
+    fetchFitnessRows(),
+    fetchEnglishLearningMap()
+  ]);
   const now = new Date().toISOString();
 
   if (englishResult.status === "fulfilled") {
@@ -261,6 +276,12 @@ async function refreshDashboardData(options = {}) {
   } else {
     const message = friendlyError(fitnessResult.reason);
     state.moduleStatus.fitness = { ...state.moduleStatus.fitness, ok: false, error: message };
+  }
+
+  if (learningMapResult.status === "fulfilled") {
+    next.english.learningMap = learningMapResult.value;
+  } else {
+    next.english.learningMap = emptyLearningMap("error", friendlyError(learningMapResult.reason));
   }
 
   next._source = "cloud";
@@ -285,6 +306,15 @@ async function fetchEnglishRows() {
     selectRows("jessica_review_cycles", "select=*&domain=eq.english&status=eq.active&order=reviewed_at.desc&limit=1")
   ]);
   return { focus, sessions, problems, reviewCards, reviewEvents, selfChecks, reviewCycles };
+}
+
+async function fetchEnglishLearningMap() {
+  const snapshots = await selectRows(
+    "english_learning_map_snapshots",
+    "select=*,jessica_review_cycles!inner(domain,status)&jessica_review_cycles.domain=eq.english&jessica_review_cycles.status=eq.active&order=updated_at.desc&limit=1"
+  );
+  if (!snapshots.length) return emptyLearningMap("empty");
+  return { status: "ready", data: normalizeLearningMap(snapshots[0]), error: null };
 }
 
 async function fetchFitnessRows() {
@@ -325,7 +355,8 @@ function buildEnglishData(rows) {
     reviewCards: rows.reviewCards.map(normalizeReviewCard),
     _reviewEvents: rows.reviewEvents.map(normalizeReviewEvent),
     _selfChecks: rows.selfChecks.map(normalizeSelfCheck),
-    jessicaReview: rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null
+    jessicaReview: rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null,
+    learningMap: emptyLearningMap(learningMapUnavailableStatus())
   };
 }
 
@@ -694,6 +725,7 @@ function renderHome() {
   if (state.moduleStatus.fitness.error) alerts.push(listCard("Fitness unavailable", state.moduleStatus.fitness.error, "Module"));
   document.getElementById("homeAlerts").hidden = !alerts.length;
   document.getElementById("homeAlertList").innerHTML = alerts.join("");
+  renderHomeLearningMap(data.english.learningMap);
 
   const metrics = [
     metric("English", progress.reviewed, "cards / 7 days"),
@@ -718,6 +750,115 @@ function renderHome() {
     : emptyState("No personal records yet", "Complete an English review or save a fitness record.");
 }
 
+function openLearningMap() {
+  switchView("english");
+  window.requestAnimationFrame(() => {
+    const target = document.getElementById("englishLearningMap");
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function renderHomeLearningMap(learningMap) {
+  const element = document.getElementById("homeLearningMap");
+  if (learningMap.status !== "ready") {
+    element.innerHTML = learningMapStatusMarkup(learningMap.status, "home");
+    return;
+  }
+
+  const map = learningMap.data;
+  const riskNotice = map.repetition_risk === "elevated" || map.repetition_risk === "high"
+    ? `<p class="learning-map-risk learning-map-clamp">${escapeHtml(map.repetition_note)}</p>`
+    : "";
+  element.innerHTML = `
+    <div class="section-heading"><div><p class="eyebrow">English direction</p><h2>Learning Map</h2></div><span class="mini-status">${escapeHtml(readinessLabel(map.exit_readiness))}</span></div>
+    <p class="learning-map-module">${escapeHtml(map.current_main_module)}</p>
+    <p class="learning-map-copy learning-map-clamp">${escapeHtml(map.current_stage)}</p>
+    <p class="learning-map-copy learning-map-clamp">${escapeHtml(map.building_capability)}</p>
+    <div class="learning-map-home-meta">
+      <div><span class="label">Exit readiness</span><span class="value">${escapeHtml(readinessLabel(map.exit_readiness))}</span></div>
+      <div><span class="label">Next module</span><span class="value">${escapeHtml(nextModuleLabel(map.next_main_module))}</span></div>
+    </div>
+    ${riskNotice}
+    <button class="secondary-action" type="button" data-jump-learning-map>查看完整 Learning Map</button>
+  `;
+}
+
+function renderEnglishLearningMap(learningMap) {
+  const element = document.getElementById("englishLearningMap");
+  if (learningMap.status !== "ready") {
+    element.innerHTML = learningMapStatusMarkup(learningMap.status, "full");
+    return;
+  }
+
+  const map = learningMap.data;
+  element.innerHTML = `
+    <div class="section-heading"><div><p class="eyebrow">English direction</p><h2>Student Learning Map</h2></div><span class="mini-status">${escapeHtml(readinessLabel(map.exit_readiness))}</span></div>
+    <p class="learning-map-module">${escapeHtml(map.current_stage)}</p>
+    <p class="learning-map-label">Current module</p><p class="learning-map-copy">${escapeHtml(map.current_main_module)}</p>
+    <p class="learning-map-label">Building capability</p><p class="learning-map-copy">${escapeHtml(map.building_capability)}</p>
+    <p class="learning-map-label">Why this module remains active</p><p class="learning-map-copy">${escapeHtml(map.why_current_module)}</p>
+    <div class="learning-map-summary-grid">
+      ${learningMapListCard("Already demonstrated", map.demonstrated_skills.slice(0, 2))}
+      ${learningMapListCard("Still building", map.remaining_skills.slice(0, 2))}
+      ${learningMapDetailCard("Exit readiness", readinessLabel(map.exit_readiness))}
+      ${learningMapDetailCard("Next main module", nextModuleLabel(map.next_main_module))}
+      ${learningMapDetailCard("Repetition risk", `${riskLabel(map.repetition_risk)}${map.repetition_note ? ` · ${map.repetition_note}` : ""}`, "wide")}
+    </div>
+    <details class="learning-map-disclosure">
+      <summary>完整依據</summary>
+      <div class="learning-map-detail-grid">
+        ${learningMapListCard("All demonstrated skills", map.demonstrated_skills)}
+        ${learningMapListCard("All remaining skills", map.remaining_skills)}
+        ${learningMapListCard("Exit criteria", map.exit_criteria, "wide")}
+        ${learningMapDetailCard("Recent progress summary", map.recent_progress_summary, "wide")}
+        ${learningMapDetailCard("Mika recommendation disposition", recommendationDispositionLabel(map.recommendation_disposition))}
+        ${learningMapDetailCard("Recommendation reason", map.recommendation_reason)}
+        ${learningMapDetailCard("Evidence period", formatEvidencePeriod(map.evidence_period), "wide")}
+        ${learningMapDetailCard("Last updated", formatDateTime(map.updated_at), "wide")}
+      </div>
+    </details>
+  `;
+}
+
+function learningMapStatusMarkup(status, variant) {
+  const content = {
+    loading: ["Learning Map", "正在讀取 Learning Map…"],
+    empty: ["Learning Map", "Learning Map 尚未提供"],
+    error: ["Learning Map", "Learning Map 暫時無法讀取，其他功能仍可使用。"],
+    offline: ["Learning Map", "需連線取得目前 Learning Map"]
+  }[status] || ["Learning Map", "Learning Map 尚未提供"];
+  const skeleton = status === "loading" ? '<div class="learning-map-skeleton"><span></span><span></span><span></span></div>' : "";
+  return `<div class="learning-map-status learning-map-status-${escapeHtml(variant)}"><p class="eyebrow">English direction</p><h2>${escapeHtml(content[0])}</h2><p>${escapeHtml(content[1])}</p>${skeleton}</div>`;
+}
+
+function learningMapListCard(title, items, extraClass = "") {
+  const list = items.length
+    ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : '<p>Not provided.</p>';
+  return `<article class="learning-map-skill-card ${escapeHtml(extraClass)}"><h3>${escapeHtml(title)}</h3>${list}</article>`;
+}
+
+function learningMapDetailCard(title, detail, extraClass = "") {
+  return `<article class="learning-map-detail-card ${escapeHtml(extraClass)}"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(detail)}</p></article>`;
+}
+
+function nextModuleLabel(value) {
+  return value === null ? "尚待判定" : value;
+}
+
+function readinessLabel(value) {
+  return { building: "建立中", near: "接近退出", met: "已達退出標準", exited: "已退出" }[value] || value;
+}
+
+function riskLabel(value) {
+  return { low: "Low", elevated: "Elevated", high: "High" }[value] || value;
+}
+
+function recommendationDispositionLabel(value) {
+  return String(value).replace(/_/g, " ");
+}
+
 function bindEnglishReview() {
   document.getElementById("startReviewSession").addEventListener("click", startReviewSession);
   document.getElementById("revealReviewAnswer").addEventListener("click", revealReviewAnswer);
@@ -733,6 +874,7 @@ function bindEnglishReview() {
 function renderEnglish() {
   const data = currentDashboard().english;
   const progress = englishProgressStats(data);
+  renderEnglishLearningMap(data.learningMap);
   document.getElementById("cefrBadge").textContent = data.cefr;
   document.getElementById("englishFocus").textContent = data.currentFocus;
   document.getElementById("englishJessicaReview").textContent = data.jessicaReview
@@ -1663,7 +1805,8 @@ function emptyDashboard() {
       reviewCards: [],
       _reviewEvents: [],
       _selfChecks: [],
-      jessicaReview: null
+      jessicaReview: null,
+      learningMap: emptyLearningMap("loading")
     },
     fitness: emptyFitness(),
     _source: "empty"
@@ -1801,6 +1944,87 @@ function normalizeSelfCheck(item) {
   };
 }
 
+function emptyLearningMap(status, error = null) {
+  return { status, data: null, error };
+}
+
+function learningMapUnavailableStatus() {
+  return state.session?.demo || !navigator.onLine || !state.supabaseReady ? "offline" : "loading";
+}
+
+function normalizeLearningMap(item) {
+  const requiredStrings = [
+    "current_stage",
+    "current_main_module",
+    "building_capability",
+    "why_current_module",
+    "recent_progress_summary",
+    "repetition_note",
+    "recommendation_reason",
+    "updated_at"
+  ];
+  requiredStrings.forEach((field) => {
+    if (typeof item?.[field] !== "string" || !item[field].trim()) {
+      throw new Error(`Learning Map contract mismatch: ${field}`);
+    }
+  });
+
+  const listFields = ["demonstrated_skills", "remaining_skills", "exit_criteria"];
+  listFields.forEach((field) => {
+    if (!Array.isArray(item?.[field]) || item[field].some((value) => typeof value !== "string" || !value.trim())) {
+      throw new Error(`Learning Map contract mismatch: ${field}`);
+    }
+  });
+
+  if (!["building", "near", "met", "exited"].includes(item.exit_readiness)) {
+    throw new Error("Learning Map contract mismatch: exit_readiness");
+  }
+  if (item.next_main_module !== null && (typeof item.next_main_module !== "string" || !item.next_main_module.trim())) {
+    throw new Error("Learning Map contract mismatch: next_main_module");
+  }
+  if (!["low", "elevated", "high"].includes(item.repetition_risk)) {
+    throw new Error("Learning Map contract mismatch: repetition_risk");
+  }
+  if (!["adopted", "partially_adopted", "not_adopted", "not_provided"].includes(item.recommendation_disposition)) {
+    throw new Error("Learning Map contract mismatch: recommendation_disposition");
+  }
+  if (!item.evidence_period || typeof item.evidence_period !== "object" || Number.isNaN(new Date(item.updated_at).getTime())) {
+    throw new Error("Learning Map contract mismatch: evidence_period or updated_at");
+  }
+
+  return {
+    current_stage: item.current_stage.trim(),
+    current_main_module: item.current_main_module.trim(),
+    building_capability: item.building_capability.trim(),
+    why_current_module: item.why_current_module.trim(),
+    demonstrated_skills: item.demonstrated_skills.map((value) => value.trim()),
+    remaining_skills: item.remaining_skills.map((value) => value.trim()),
+    exit_criteria: item.exit_criteria.map((value) => value.trim()),
+    exit_readiness: item.exit_readiness,
+    next_main_module: item.next_main_module === null ? null : item.next_main_module.trim(),
+    recent_progress_summary: item.recent_progress_summary.trim(),
+    repetition_risk: item.repetition_risk,
+    repetition_note: item.repetition_note.trim(),
+    recommendation_disposition: item.recommendation_disposition,
+    recommendation_reason: item.recommendation_reason.trim(),
+    evidence_period: item.evidence_period,
+    updated_at: item.updated_at
+  };
+}
+
+function formatEvidencePeriod(value) {
+  if (Array.isArray(value)) return value.map(formatEvidencePeriodValue).join(" · ");
+  return Object.entries(value)
+    .map(([key, detail]) => `${String(key).replace(/_/g, " ")}: ${formatEvidencePeriodValue(detail)}`)
+    .join(" · ");
+}
+
+function formatEvidencePeriodValue(value) {
+  if (Array.isArray(value)) return value.map(formatEvidencePeriodValue).join(", ");
+  if (value && typeof value === "object") return Object.entries(value).map(([key, detail]) => `${String(key).replace(/_/g, " ")}: ${formatEvidencePeriodValue(detail)}`).join(", ");
+  return String(value);
+}
+
 function renderReviewCardGroup(elementId, cards, type) {
   const group = cards.filter((item) => item.type === type);
   document.getElementById(elementId).innerHTML = group.length
@@ -1934,11 +2158,18 @@ function saveQueue() {
 }
 
 function loadCachedData() {
-  return loadJson(DATA_CACHE_KEY, null);
+  const cached = loadJson(DATA_CACHE_KEY, null);
+  if (!cached) return null;
+  const safeCached = clone(cached);
+  safeCached.english = safeCached.english || {};
+  safeCached.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
+  return safeCached;
 }
 
 function saveCachedData(data) {
-  localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+  const safeCached = clone(data);
+  if (safeCached.english) delete safeCached.english.learningMap;
+  localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(safeCached));
 }
 
 function loadJson(key, fallback) {

@@ -45,6 +45,7 @@
         <div class="hero-actions"><span id="dataSource" class="mini-status">Local</span><button class="primary-action" type="button" data-jump="fitness">Quick Entry</button></div>
       </div>
       <section class="panel alert-panel" id="homeAlerts" hidden><div id="homeAlertList" class="stack-list"></div></section>
+      <section class="panel learning-map-panel learning-map-home" id="homeLearningMap" aria-live="polite"></section>
       <div class="metric-grid" id="homeMetrics"></div>
       <section class="panel"><div class="section-heading"><h2>English Status</h2><span id="homeEnglishBadge" class="mini-status">Loading</span></div><div id="homeEnglishStatus" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div></section>
@@ -62,6 +63,7 @@
         </div>
         <div id="reviewComplete" hidden><div id="reviewSessionSummary" class="metric-grid"></div><form id="englishCheckForm" class="form-stack"><input type="hidden" name="id"><input type="hidden" name="session_id"><label>Full answer chain<select name="answer_chain" required><option value="">Choose</option><option value="yes">yes</option><option value="partly">partly</option><option value="not yet">not yet</option></select></label><label>Correct future action<select name="future_action" required><option value="">Choose</option><option value="yes">yes</option><option value="partly">partly</option><option value="not yet">not yet</option></select></label><label>Note<textarea name="note" rows="3" placeholder="One useful note from this review"></textarea></label><div class="button-row"><button class="primary-action" type="submit">Save Review Summary</button><button class="secondary-action" id="cancelEnglishEdit" type="button" hidden>Cancel</button></div></form></div>
       </section>
+      <section class="panel learning-map-panel learning-map-full" id="englishLearningMap" tabindex="-1" aria-live="polite"></section>
       <section class="panel"><div class="section-heading"><h2>Last 7 Days</h2><span id="englishProgressBadge" class="mini-status">Progress</span></div><div id="englishProgress" class="metric-grid"></div><div id="englishProgressDetail" class="stack-list"></div><button class="secondary-action" id="editEnglishSummary" type="button" hidden>Edit Latest Summary</button></section>
       <section class="panel"><div class="section-heading"><h2>Today's Speaking Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><p id="englishJessicaReview" class="review-source muted"></p><div id="englishTags" class="tag-row"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
