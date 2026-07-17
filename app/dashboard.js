@@ -1,8 +1,9 @@
-const VERSION = "2026.07.06.2";
+const VERSION = "2026.07.17.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
 const DATA_CACHE_KEY = "jessica-dashboard-last-data-v2";
+const SessionSecurity = globalThis.DashboardSessionSecurity;
 const REVIEW_DURATION_MS = 5 * 60 * 1000;
 const FITNESS_BUNDLE_TABLE = "fitness_entry_bundle";
 const WRITABLE_TABLES = new Set([
@@ -16,6 +17,7 @@ const state = {
   activeView: "home",
   config: null,
   session: null,
+  authResolved: false,
   demoData: null,
   data: null,
   pending: loadQueue(),
@@ -52,8 +54,10 @@ async function init() {
   bindEnglishReview();
   bindFitnessForm();
   bindNetworkEvents();
+  render();
   await loadConfig();
-  restoreSession();
+  await restoreSession();
+  state.authResolved = true;
 
   if (state.session) {
     adoptLegacyPendingRecords();
@@ -92,6 +96,7 @@ function bindAuthAndSettings() {
   document.getElementById("refreshButton").addEventListener("click", () => refreshDashboardData());
   document.getElementById("clearLocalButton").addEventListener("click", clearLocalQueue);
   document.getElementById("problemFilter").addEventListener("change", renderEnglish);
+  window.addEventListener("storage", handleSessionStorageChange);
 }
 
 function bindNetworkEvents() {
@@ -161,17 +166,29 @@ async function loadDashboardData() {
   state.data.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
 }
 
-function restoreSession() {
+async function restoreSession() {
   const raw = localStorage.getItem(TOKEN_KEY);
   if (!raw) return;
   try {
-    state.session = JSON.parse(raw);
-    if (state.session?.demo && state.supabaseReady) {
-      state.session = null;
-      localStorage.removeItem(TOKEN_KEY);
+    const stored = JSON.parse(raw);
+    if (stored?.demo && !state.supabaseReady) {
+      state.session = stored;
+      return;
     }
+    if (!state.supabaseReady) throw new Error("Supabase configuration unavailable");
+    const verifiedSession = await SessionSecurity?.verifyStoredSession(stored, {
+      refreshSession: async (candidate) => {
+        state.session = candidate;
+        await refreshAccessTokenIfNeeded();
+        return state.session;
+      },
+      getUser: async () => supabaseFetch("/auth/v1/user", { method: "GET" }, true)
+    });
+    if (!verifiedSession) throw new Error("Stored session could not be verified");
+    state.session = verifiedSession;
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
   } catch (error) {
-    localStorage.removeItem(TOKEN_KEY);
+    clearInvalidStoredSession();
   }
 }
 
@@ -220,8 +237,16 @@ async function login(email, password) {
   render();
 }
 
-function logout() {
+async function logout() {
   if (pendingForCurrentUser().length && !window.confirm("Logout will clear this session's unsynced records. Continue?")) return;
+  let remoteLogoutError = null;
+  if (state.supabaseReady && state.session && !state.session.demo) {
+    try {
+      await supabaseFetch("/auth/v1/logout?scope=local", { method: "POST" }, true);
+    } catch (error) {
+      remoteLogoutError = error;
+    }
+  }
   stopReviewTimer();
   state.session = null;
   state.data = null;
@@ -232,7 +257,26 @@ function logout() {
   localStorage.removeItem(DATA_CACHE_KEY);
   saveQueue();
   render();
-  showToast("Logged out");
+  showToast(remoteLogoutError ? "Logged out locally; remote session revocation failed" : "Logged out");
+}
+
+function handleSessionStorageChange(event) {
+  if (event.key !== TOKEN_KEY || event.newValue !== null || !state.session) return;
+  stopReviewTimer();
+  state.session = null;
+  state.data = null;
+  state.demoData = null;
+  state.pending = loadQueue();
+  state.reviewSession = null;
+  render();
+  showToast("Logged out in another tab");
+}
+
+function clearInvalidStoredSession() {
+  state.session = null;
+  state.data = null;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(DATA_CACHE_KEY);
 }
 
 async function refreshDashboardData(options = {}) {
@@ -245,6 +289,9 @@ async function refreshDashboardData(options = {}) {
   try {
     await refreshAccessTokenIfNeeded();
   } catch (error) {
+    if ([400, 401, 403].includes(error?.status)) {
+      clearInvalidStoredSession();
+    }
     state.lastReadError = friendlyError(error);
     render();
     return;
@@ -618,17 +665,25 @@ async function refreshAccessTokenIfNeeded() {
   if (!state.session?.refresh_token) return;
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (state.session.expires_at && state.session.expires_at - nowSeconds > 60) return;
-  const result = await supabaseFetch(
-    "/auth/v1/token?grant_type=refresh_token",
-    { method: "POST", body: JSON.stringify({ refresh_token: state.session.refresh_token }) },
-    false
-  );
-  state.session = {
+  let result;
+  try {
+    result = await supabaseFetch(
+      "/auth/v1/token?grant_type=refresh_token",
+      { method: "POST", body: JSON.stringify({ refresh_token: state.session.refresh_token }) },
+      false
+    );
+  } catch (error) {
+    if ([400, 401, 403].includes(error?.status)) clearInvalidStoredSession();
+    throw error;
+  }
+  const refreshedSession = SessionSecurity?.normalizeStoredSession({
     access_token: result.access_token,
     refresh_token: result.refresh_token || state.session.refresh_token,
     expires_at: Math.floor(Date.now() / 1000) + Number(result.expires_in || 3600),
     user: result.user || state.session.user
-  };
+  });
+  if (!refreshedSession) throw new Error("Supabase returned an invalid refreshed session");
+  state.session = refreshedSession;
   localStorage.setItem(TOKEN_KEY, JSON.stringify(state.session));
 }
 
@@ -642,6 +697,7 @@ async function supabaseFetch(path, options = {}, useAuth = true) {
   if (useAuth && state.session?.access_token) headers.Authorization = `Bearer ${state.session.access_token}`;
   const response = await fetch(`${baseUrl}${path}`, { ...options, headers });
   if (!response.ok) {
+    if (useAuth && response.status === 401) clearInvalidStoredSession();
     const text = await response.text();
     try {
       const details = JSON.parse(text);
@@ -661,7 +717,7 @@ async function supabaseFetch(path, options = {}, useAuth = true) {
 function render() {
   renderNetwork();
   renderAuthGate();
-  if (!state.session) return;
+  if (!state.authResolved || !state.session) return;
   renderHome();
   renderEnglish();
   renderFitness();
@@ -669,7 +725,7 @@ function render() {
 }
 
 function renderAuthGate() {
-  const authenticated = Boolean(state.session);
+  const authenticated = Boolean(state.authResolved && state.session);
   document.body.classList.toggle("login-only", !authenticated);
   document.body.classList.toggle("authenticated", authenticated);
   document.getElementById("loginGate").hidden = authenticated;
@@ -679,7 +735,9 @@ function renderAuthGate() {
   const demoButton = document.getElementById("demoModeButton");
   demoButton.hidden = authenticated || state.supabaseReady;
   if (!authenticated) {
-    document.getElementById("loginGateStatus").textContent = state.supabaseReady
+    document.getElementById("loginGateStatus").textContent = !state.authResolved
+      ? "Checking saved session..."
+      : state.supabaseReady
       ? "Sign in to continue."
       : "Supabase is unavailable. Use Demo Preview for low-risk sample data.";
   }
@@ -2152,8 +2210,14 @@ function saveQueue() {
 }
 
 function loadCachedData() {
-  const cached = loadJson(DATA_CACHE_KEY, null);
-  if (!cached) return null;
+  const userId = state.session?.demo ? null : state.session?.user?.id;
+  if (!userId) return null;
+  const envelope = loadJson(DATA_CACHE_KEY, null);
+  const cached = SessionSecurity?.readOwnedCache(envelope, userId);
+  if (!cached) {
+    if (envelope) localStorage.removeItem(DATA_CACHE_KEY);
+    return null;
+  }
   const safeCached = clone(cached);
   safeCached.english = safeCached.english || {};
   safeCached.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
@@ -2161,9 +2225,12 @@ function loadCachedData() {
 }
 
 function saveCachedData(data) {
+  const userId = state.session?.demo ? null : state.session?.user?.id;
+  if (!userId) return;
   const safeCached = clone(data);
   if (safeCached.english) delete safeCached.english.learningMap;
-  localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(safeCached));
+  const envelope = SessionSecurity?.createOwnedCache(safeCached, userId);
+  if (envelope) localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(envelope));
 }
 
 function loadJson(key, fallback) {

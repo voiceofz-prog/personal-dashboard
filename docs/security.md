@@ -1,14 +1,19 @@
 # Security Model
 
+## Position
+
+This document governs the current formal GitHub Pages + Supabase Dashboard while it remains active. It does not require Supabase, GitHub Pages, Auth, RLS, RPC, or offline sync to be permanent features of every future display layer. For long-term platform direction and ChatGPT Sites positioning, follow `project_brief.md`.
+
 ## Core Rule
 
-The dashboard is a private-login PWA. The website shell may be visible at a URL, but personal data must be protected by Supabase Auth and Row Level Security.
+The current Dashboard is a private-login PWA. The website shell may be visible at a URL, but personal data must be protected by Supabase Auth and Row Level Security while this implementation is formal.
 
 ## Required Controls
 
 | Control | Requirement |
 |---|---|
 | Authentication | Supabase Auth login for Vinson. |
+| Session restoration | A stored browser session is untrusted until its shape is valid and Supabase `/auth/v1/user` confirms the same user id. The app shell stays login-only while this check is pending. |
 | Authorization | RLS enabled on every personal data table. |
 | Ownership | Every row has `user_id`. |
 | Account allowlist | `dashboard_allowed_users` must contain Vinson's Auth user UUID. |
@@ -21,6 +26,8 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | Public content | Login-first shell before authentication; no real personal cloud data before Supabase Auth. |
 | Login-first UI | Unauthenticated visitors see a neutral login screen. If no Supabase runtime config exists, the app may offer Demo Preview with committed low-risk demo data only. |
 | Browser hardening | `index.html` includes a restrictive CSP meta policy and no-referrer policy. |
+| Local cache ownership | Cached cloud dashboard data is stored in a versioned envelope with `owner_user_id` and is loaded only for the currently verified Supabase user. Ownerless legacy cache is discarded. |
+| Logout revocation | Explicit logout calls Supabase Auth with local scope before clearing browser state. Browser state is cleared even if the remote request fails, and other open tabs react to token removal. |
 | Search indexing | `robots.txt` disallows crawling; this is privacy hygiene, not a security boundary. |
 
 ## GitHub Security Layer
@@ -68,7 +75,9 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 | GitHub repository is public | Source and docs are public; keep the repository free of secrets, raw transcripts, and private records. Prefer making the repo private if GitHub Pages availability and account plan allow it. |
 | Workflow secret misconfiguration | Deployment fails if config secrets are missing, placeholder-like, malformed, or service-role-like. |
 | iPhone offline cache | Cached data may remain on the device. Protect the device with passcode/Face ID. |
-| Explicit logout | The app clears its cached cloud dashboard data and local pending queue on logout. If unsynced records exist, logout asks for confirmation first. |
+| Explicit logout | The app asks Supabase to revoke the current session, then clears its cached cloud dashboard data and local pending queue. If unsynced records exist, logout asks for confirmation first. Supabase access-token JWTs can remain valid until their configured expiry, so short access-token lifetime remains important. |
+| Stored-session tampering or expiry | Startup validates the stored session with Supabase before showing the dashboard. Malformed, expired, revoked, unverifiable, or user-mismatched sessions are cleared together with cached dashboard data. |
+| Stale PWA assets | The service worker uses network-first handling for navigation and app-shell assets, updates the active cache version, and falls back to one complete installed shell while offline. |
 | Pending queue ownership | New pending records are tagged with the current Supabase user id and are synced only when that same user is logged in. |
 | Idempotent offline writes | Client-generated UUIDs and upsert-based inserts prevent a retry from creating duplicate review, daily-entry, or workout rows. |
 | Legacy pending queue | Ownerless V1 records are adopted only after a real authenticated session exists and only for the approved English self-check and fitness daily-entry tables. |
@@ -82,11 +91,14 @@ The dashboard is a private-login PWA. The website shell may be visible at a URL,
 ## Required Validation Before Real Use
 
 - Logged-out browser cannot read rows.
+- A malformed, expired, revoked, or user-mismatched browser session cannot open the dashboard UI; startup remains login-only until Supabase confirms the stored session.
+- Cached cloud data is accepted only when its `owner_user_id` matches the currently verified Supabase user; ownerless and cross-user cache envelopes are rejected.
 - A different test user cannot read Vinson's rows.
 - A different test user cannot insert dashboard rows unless allowlisted.
 - Inserts fail if `user_id` does not match `auth.uid()`.
 - Live read requests include a `user_id` filter matching the logged-in user.
 - Logout clears cached cloud data and unsynced local pending records after confirmation.
+- Logout requests local-scope Supabase session revocation and an open sibling tab returns to the login gate when the token is removed.
 - Old pending records without local owner metadata are adopted only by the authenticated private account and only for approved writable tables.
 - Settings distinguishes configured, authenticated, successful cloud read, and failed cloud write states; fixed `Ready` labels are not treated as verification.
 - Fitness quick entry sends one daily entry and its complete workout set to `save_fitness_entry_atomic`; offline saves remain one local RPC bundle until sync.

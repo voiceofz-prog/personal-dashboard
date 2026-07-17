@@ -1,4 +1,9 @@
 // Compatibility entry for devices whose old app shell still references app.js.
+const sessionSecurityScript = document.createElement("script");
+sessionSecurityScript.src = "session-security.js";
+sessionSecurityScript.async = false;
+document.head.appendChild(sessionSecurityScript);
+
 const fitnessTargetLinkScript = document.createElement("script");
 fitnessTargetLinkScript.src = "fitness-target-link.js";
 fitnessTargetLinkScript.async = false;

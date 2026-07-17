@@ -1,4 +1,4 @@
-const CACHE_NAME = "jessica-dashboard-v2026-07-06-2";
+const CACHE_NAME = "jessica-dashboard-v2026-07-17-1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "./ios-fixes.css",
   "./product.css",
   "./app.js",
+  "./session-security.js",
   "./fitness-target-link.js",
   "./dashboard.js",
   "./manifest.webmanifest",
@@ -35,6 +36,29 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (event.request.url.includes("/auth/v1/") || event.request.url.includes("/rest/v1/")) return;
   if (event.request.url.endsWith("/config.json")) return;
+
+  const url = new URL(event.request.url);
+  const isAppShellRequest = event.request.mode === "navigate"
+    || (url.origin === self.location.origin && APP_SHELL.some((path) => url.pathname.endsWith(path.replace("./", "/"))));
+
+  if (isAppShellRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === "navigate") return caches.match("./index.html");
+          return new Response("", { status: 504, statusText: "Offline" });
+        }))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

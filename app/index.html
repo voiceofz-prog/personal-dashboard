@@ -24,7 +24,7 @@
       <p class="eyebrow">Jessica Dashboard</p>
       <h1>Personal Dashboard</h1>
       <p id="loginGateStatus" class="muted">Sign in to continue.</p>
-      <form id="loginForm" class="form-stack">
+      <form id="loginForm" class="form-stack" method="post">
         <label>Email <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
         <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
         <button class="primary-action" type="submit">Login</button>
@@ -107,6 +107,7 @@
 
   <nav class="bottom-nav" id="bottomNav" aria-label="Main navigation" hidden><button class="nav-item active" type="button" data-view="home">Home</button><button class="nav-item" type="button" data-view="english">English</button><button class="nav-item" type="button" data-view="fitness">Fitness</button><button class="nav-item" type="button" data-view="settings">Settings</button></nav>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="session-security.js" defer></script>
   <script src="fitness-target-link.js" defer></script>
   <script src="dashboard.js" defer></script>
 </body>
