@@ -65,6 +65,7 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 ## BC-P0-005 - Characterize Fitness Decisions And Drafts
 
 - Commit: This bounded Fitness-characterization commit.
+- Current status: Partially superseded by `BC-P1-004`. The recommendation-mode, recovery-judgment, and Plan-advancement assertions were removed after P1 Discovery found unresolved Dashboard/Fitness authority conflicts. Safe report-formatting, draft-value, and trained-to-rest protection coverage remains.
 - Goals: `S1`, `S3`, `S6`, `M2`, `M6`.
 - Before: Fitness recommendation thresholds, explicit training-lock behavior, report text, numeric normalization, and trained-to-rest protection were embedded in the monolith without direct behavior snapshots.
 - After: Tests lock pending, maintain, progress, conservative, recovery, and explicit-lock decisions; trained/rest report output; rest-draft field semantics; and rejection of converting a target-linked trained entry into a recovery entry.
@@ -170,3 +171,27 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: `node tests/english-characterization.test.mjs`, `node tests/dashboard-composition-characterization.test.mjs`, and `node scripts/verify.mjs` passed. Local Chrome at `http://127.0.0.1:5191/` passed Login, Demo initialization, Home, English, existing and empty English data states, card ordering, seven-day statistics, grouping, Home summary, reload, and `390x844` navigation/input checks with zero Dashboard-origin console errors or warnings.
 - Risk: Low code-change risk. Physical iPhone and real Supabase read-only checks remain unverified. The previously used `5187` origin served the old script from persisted PWA cache, so fresh-origin success is not same-origin deployment cache-upgrade evidence.
 - Rollback: Revert this commit to return to remote checkpoint `017c2f0`; no data, SQL, cache-version, or production rollback is required.
+
+## BC-P1-004 - Add Fitness Safe Characterization Safety Net
+
+- Commit: `03a8d00`.
+- Goals: `S1`, `S2`, `S6`, `M2`, `M6`.
+- Before: Existing Fitness characterization mixed safe Dashboard projection/formatting behavior with assertions that froze disputed recovery judgment and one-row Plan advancement as correct contracts. Target projection, latest-row selectors, display fallbacks, and non-mutation had incomplete direct coverage.
+- After: One focused test locks only target filtering/projection, fail-closed owner/cycle handling, distinct-date selection, report and summary fallbacks, deterministic output where a contract exists, and non-mutation. Disputed recommendation and Plan assertions are removed rather than preserved as green tests.
+- Complexity and duplication: Adds 257 test-side lines and removes 92. Eight existing functions are exposed only inside the VM harness, while the disputed `computeFitnessRecommendation` export is removed. No production abstraction, copied implementation, shared formatter, class, wrapper, or framework is added.
+- Affected files: `tests/fitness-projection-characterization.test.mjs`, `tests/fitness-characterization.test.mjs`, `tests/dashboard-composition-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs`.
+- Verification: Main Codex and independent validation ran the four required individual tests, the new projection test, and `node scripts/verify.mjs`; all passed, with verify reporting 5 scripts and 9 tests.
+- Risk: Low production risk because `app/` is unchanged. VM stubs do not prove browser startup/rendering, edit preservation, real RPC/provenance behavior, offline reconnection, timezone/device behavior, or physical iPhone behavior. The SQL atomic test remains outside verify discovery.
+- Rollback: Revert `03a8d00`; production code and data remain unchanged.
+
+## BC-P1-005 - Record The P1-Fitness Test Safety-Net Gate
+
+- Commit: This bounded gate-report commit.
+- Goals: `S1`, `S2`, `S6`, `M2`, `M4`.
+- Before: Agent evidence, deliberately unlocked risky contracts, VM/runtime limits, SQL discovery gap, four independent high-risk workstreams, and the stop decision existed only in the active review context.
+- After: One report records the accepted test boundary, commands and results, independent validation, main final review, remaining integration risks, rollback, and explicit rejection of Candidate 2 until the contract/data gates are resolved.
+- Complexity and duplication: Adds one durable report and updates this log. It introduces no production code, test behavior, Roadmap architecture, schema, queue, PWA, or deployment change.
+- Affected files: `docs/p1-fitness-test-safety-net-gate-report.md`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; confirm the documentation diff is the only change after `03a8d00` and no production or cross-project path changed.
+- Risk: Low runtime risk. Process risk remains if a later stage treats projection tests as approval of disputed Fitness business rules or treats VM evidence as browser, SQL, Supabase, PWA, or physical-device acceptance.
+- Rollback: Revert this documentation commit; `03a8d00` remains independently reviewable and reversible.
