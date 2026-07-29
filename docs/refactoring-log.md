@@ -25,3 +25,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Every numbered P0/P1/P2 item was enumerated with `rg` and has at least one goal ID; `git diff --check` passed; status contains only these two documentation files.
 - Risk: Low runtime risk; medium governance risk if the staged gate or goal mapping is later bypassed.
 - Rollback: Revert this bounded documentation commit; `42a79cd` remains independently reversible.
+
+## BC-P0-002 - Add One Automated Verification Command
+
+- Commit: This bounded verification-command commit.
+- Goals: `S1`, `S2`, `S5`, `S6`, `M1`, `M2`.
+- Before: JavaScript syntax, JSON parsing, three Node tests, version matching, PWA file presence, manifest icons, Service Worker app-shell coverage, and whitespace required separate manual commands or review.
+- After: `node scripts/verify.mjs` discovers all root `app/*.js` files and `tests/*.test.mjs` tests, runs the checks, and returns one non-zero gate result on failure without changing project files.
+- Complexity and duplication: Adds one dependency-free verification script to replace repeated command lists and manual version/asset comparisons. Application runtime code is unchanged.
+- Affected files: `scripts/verify.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; confirm all scripts, JSON files, tests, version checks, PWA contracts, and `git diff --check` pass.
+- Risk: Low runtime risk. Main residual risk is a false sense of coverage for behavior not yet characterized in P0-3.
+- Rollback: Revert this bounded commit; the previous individual checks remain available.
