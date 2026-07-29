@@ -142,6 +142,7 @@ check("Pages deployment gate order", () => {
 
 const p0EvidenceFiles = [
   "docs/iphone-acceptance.md",
+  "docs/p0-gate-report.md",
   "docs/visual-baselines/p0/README.md",
   "docs/visual-baselines/p0/phone-width-login.jpg",
   "docs/visual-baselines/p0/phone-width-home.jpg",

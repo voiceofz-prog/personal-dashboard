@@ -109,3 +109,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; the legacy queue test and every earlier check must pass.
 - Risk: Low production risk. Real historical browser payload variants outside the current allowlist remain a manual compatibility risk.
 - Rollback: Revert this bounded commit; no browser storage or user data is modified by the test.
+
+## BC-P0-009 - Record The P0 Gate
+
+- Commit: This bounded gate-report commit.
+- Goals: `S6`, `M2`, `M4`.
+- Before: P0 results, uncovered risks, P1 candidates, compatibility evidence, and rollback details were spread across command output and individual change records.
+- After: One gate report records the verified baseline, local/remote/deployment state, test results, complete file list, uncovered risks, proposed P1 boundaries, compatibility analysis, and rollback plan. The Roadmap is marked stopped at P0.
+- Complexity and duplication: Adds one durable report, two Roadmap status lines, and one evidence-presence check. No runtime code, schema, or production system changes.
+- Affected files: `docs/p0-gate-report.md`, `docs/refactoring-roadmap.md`, `scripts/verify.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; confirm a clean branch, no `app/` or `supabase/` diff from `e23f6a2`, and unchanged remote `main`/latest Pages run.
+- Risk: Low runtime risk. The main residual risk is treating locally passing evidence as equivalent to hosted CI, live Supabase, or physical iPhone acceptance; the report explicitly keeps those states separate.
+- Rollback: Revert this bounded gate-report commit; earlier P0 commits remain independently reviewable and reversible.

@@ -16,10 +16,11 @@ The technical debt recorded here remains real. The change is priority and activa
 | Approved | 2026-07-10 |
 | Historical baseline | `main` commit `548102181d67c07dfe8c9a05985bc21f3f182bcb` and frontend build `2026.07.06.2`. |
 | Reactivation baseline | Local HEAD, remote `main`, and deployed Pages build were verified on 2026-07-29 as commit `e23f6a2ec16fc5a36736e04cfdb552583127a8a5`, frontend build `2026.07.29.3`. |
-| Execution status | Reactivated on 2026-07-29 under staged approval. Only P0 items 0 through 4 are currently approved. |
+| Execution status | P0 items 0 through 4 completed locally on the isolated branch on 2026-07-29; stopped at the P0 gate. |
 | Approval gate | Stop after P0 and obtain Vinson's explicit approval before any P1 or P2 work. |
 | Production deployment | Not authorized as part of P0. |
 | Platform position | GitHub Pages + Supabase remains the formal system during this work; long-term platform selection remains open. |
+| P0 gate evidence | [p0-gate-report.md](p0-gate-report.md) |
 
 ## Continuity Rule
 
@@ -173,4 +174,4 @@ The roadmap is complete when:
 
 ## Deferred Work Record
 
-P0 items 0 through 4 are active under the 2026-07-29 staged approval. Stop at the P0 gate; P1 and P2 remain deferred until Vinson approves the next stage. Do not jump directly to file splitting without the safety rails.
+P0 items 0 through 4 are complete on the isolated branch and stopped at the P0 gate. P1 and P2 remain deferred until Vinson approves the next stage. Do not jump directly to file splitting without the safety rails.
