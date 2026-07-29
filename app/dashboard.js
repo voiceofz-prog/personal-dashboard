@@ -401,9 +401,9 @@ function buildEnglishData(rows) {
       title: item.topic || "English practice",
       detail: [item.improvement, item.next_focus].filter(Boolean).join(" Next: ") || item.main_bottleneck || "Session summary saved."
     })),
-    reviewCards: rows.reviewCards.map(normalizeReviewCard),
-    _reviewEvents: rows.reviewEvents.map(normalizeReviewEvent),
-    _selfChecks: rows.selfChecks.map(normalizeSelfCheck),
+    reviewCards: rows.reviewCards.map(EnglishDomain.normalizeReviewCard),
+    _reviewEvents: rows.reviewEvents.map((item) => EnglishDomain.normalizeReviewEvent(item)),
+    _selfChecks: rows.selfChecks.map((item) => EnglishDomain.normalizeSelfCheck(item)),
     jessicaReview: rows.reviewCycles[0] ? normalizeJessicaReview(rows.reviewCycles[0]) : null,
     learningMap: emptyLearningMap(learningMapUnavailableStatus())
   };
@@ -427,7 +427,7 @@ function buildFitnessData(rows) {
 
 function composeDashboard(data) {
   const result = clone(data);
-  const progress = englishProgressStats(result.english);
+  const progress = EnglishDomain.progressStats(result.english);
   const recommendation = computeFitnessRecommendation(result.fitness);
   const updates = buildRecentUpdates(result);
   result.home = {
@@ -440,7 +440,7 @@ function composeDashboard(data) {
 
 function buildRecentUpdates(data) {
   const updates = [];
-  const sessions = groupReviewEventsBySession(data.english._reviewEvents || []);
+  const sessions = EnglishDomain.groupReviewEventsBySession(data.english._reviewEvents || []);
   sessions.slice(0, 3).forEach((session) => {
     updates.push({
       date: dateOnly(session.reviewedAt),
@@ -448,7 +448,7 @@ function buildRecentUpdates(data) {
       detail: `${session.count} cards: ${session.mastered} mastered, ${session.again} to review again.`
     });
   });
-  sortedSelfChecks(data.english._selfChecks).slice(0, 2).forEach((item) => {
+  EnglishDomain.sortedSelfChecks(data.english._selfChecks).slice(0, 2).forEach((item) => {
     updates.push({
       date: item.check_date,
       title: "English review summary",
@@ -767,7 +767,7 @@ function renderNetwork() {
 
 function renderHome() {
   const data = currentDashboard();
-  const progress = englishProgressStats(data.english);
+  const progress = EnglishDomain.progressStats(data.english);
   const recommendation = computeFitnessRecommendation(data.fitness);
   const pendingCount = pendingForCurrentUser().length;
   const todayFocus = progress.nextFocus || recommendation.title || "Choose one useful action for today.";
@@ -928,7 +928,7 @@ function bindEnglishReview() {
 
 function renderEnglish() {
   const data = currentDashboard().english;
-  const progress = englishProgressStats(data);
+  const progress = EnglishDomain.progressStats(data);
   renderEnglishLearningMap(data.learningMap);
   document.getElementById("cefrBadge").textContent = data.cefr;
   document.getElementById("englishFocus").textContent = data.currentFocus;
@@ -972,7 +972,7 @@ function renderEnglish() {
 
 function startReviewSession() {
   const data = currentDashboard().english;
-  const cards = orderReviewCards(data.reviewCards, data._reviewEvents);
+  const cards = EnglishDomain.orderReviewCards(data.reviewCards, data._reviewEvents);
   if (!cards.length) {
     showToast("No active review cards");
     return;
@@ -994,27 +994,6 @@ function startReviewSession() {
   stopReviewTimer();
   state.reviewTimerId = window.setInterval(updateReviewTimer, 1000);
   renderEnglish();
-}
-
-function orderReviewCards(cards, events) {
-  const latest = new Map();
-  [...events].sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at)).forEach((event) => {
-    const key = event.review_card_id || event.card_title_snapshot;
-    if (!latest.has(key)) latest.set(key, event);
-  });
-  const now = Date.now();
-  return [...cards].sort((a, b) => {
-    const aEvent = latest.get(a.id || a.title);
-    const bEvent = latest.get(b.id || b.title);
-    const score = (event) => {
-      if (!event) return 1;
-      if (event.result === "again") return 0;
-      if (event.result === "hard") return 2;
-      const ageDays = (now - new Date(event.reviewed_at).getTime()) / 86400000;
-      return ageDays >= 3 ? 3 : 4;
-    };
-    return score(aEvent) - score(bEvent) || a.sortOrder - b.sortOrder;
-  });
 }
 
 function renderReviewWorkspace(data) {
@@ -1125,7 +1104,7 @@ async function saveEnglishSummary(event) {
 }
 
 function editLatestEnglishSummary() {
-  const latest = sortedSelfChecks(currentDashboard().english._selfChecks)[0];
+  const latest = EnglishDomain.sortedSelfChecks(currentDashboard().english._selfChecks)[0];
   if (!latest) return;
   stopReviewTimer();
   state.reviewSession = {
@@ -1156,32 +1135,6 @@ function resetEnglishSummaryEditor() {
   document.getElementById("cancelEnglishEdit").hidden = true;
   if (state.reviewSession?.completed && !state.reviewSession.cards.length) state.reviewSession = null;
   renderEnglish();
-}
-
-function englishProgressStats(english) {
-  const cutoff = Date.now() - 7 * 86400000;
-  const events = (english._reviewEvents || []).filter((item) => new Date(item.reviewed_at).getTime() >= cutoff);
-  const mastered = events.filter((item) => item.result === "mastered").length;
-  const again = events.filter((item) => item.result === "again").length;
-  const difficult = new Map();
-  events.filter((item) => item.result !== "mastered").forEach((item) => {
-    difficult.set(item.card_type_snapshot, (difficult.get(item.card_type_snapshot) || 0) + 1);
-  });
-  const difficultType = [...difficult.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]?.replace("_", " ") || "No difficult type yet";
-  const latestCheck = sortedSelfChecks(english._selfChecks)[0];
-  return {
-    reviewed: events.length,
-    masteredRate: events.length ? Math.round((mastered / events.length) * 100) : 0,
-    again,
-    sessions: new Set(events.map((item) => item.session_id)).size,
-    difficultType,
-    latestCheck: latestCheck
-      ? `${latestCheck.check_date}: answer chain ${latestCheck.answer_chain || "not rated"}, future action ${latestCheck.future_action || "not rated"}.`
-      : "No self-check yet.",
-    nextFocus: events.length && difficultType !== "No difficult type yet"
-      ? `Review ${difficultType} cards first.`
-      : english.currentFocus
-  };
 }
 
 function bindFitnessForm() {
@@ -1834,9 +1787,9 @@ function normalizeDemoData(raw) {
   data.english = {
     ...data.english,
     ...(raw.english || {}),
-    reviewCards: (raw.english?.reviewCards || []).map((card, index) => normalizeReviewCard({ ...card, sort_order: index + 1 })),
-    _reviewEvents: (raw.english?._reviewEvents || []).map(normalizeReviewEvent),
-    _selfChecks: (raw.english?._selfChecks || []).map(normalizeSelfCheck),
+    reviewCards: (raw.english?.reviewCards || []).map((card, index) => EnglishDomain.normalizeReviewCard({ ...card, sort_order: index + 1 })),
+    _reviewEvents: (raw.english?._reviewEvents || []).map((item) => EnglishDomain.normalizeReviewEvent(item)),
+    _selfChecks: (raw.english?._selfChecks || []).map((item) => EnglishDomain.normalizeSelfCheck(item)),
     jessicaReview: raw.english?.jessicaReview ? normalizeJessicaReview({ ...raw.english.jessicaReview, user_id: "demo-preview" }) : null
   };
   data.fitness = recalculateFitness({
@@ -1936,18 +1889,6 @@ function normalizeWorkout(item) {
   };
 }
 
-function normalizeReviewCard(item) {
-  return {
-    id: item.id || null,
-    type: item.card_type || item.type || "commute",
-    title: item.title || "Review card",
-    prompt: item.prompt || "",
-    answerHint: item.answer_hint || item.answerHint || "",
-    tags: normalizeArray(item.tags, []),
-    sortOrder: Number(item.sort_order || item.sortOrder || 100)
-  };
-}
-
 function normalizeJessicaReview(item) {
   return {
     id: item.id,
@@ -1976,32 +1917,6 @@ function normalizeExerciseTarget(item) {
     sort_order: Number(item.sort_order || 100),
     active: item.active !== false,
     effective_from: item.effective_from || todayISO()
-  };
-}
-
-function normalizeReviewEvent(item) {
-  return {
-    id: item.id,
-    review_card_id: item.review_card_id || null,
-    session_id: item.session_id,
-    result: item.result,
-    card_type_snapshot: item.card_type_snapshot || "commute",
-    card_title_snapshot: item.card_title_snapshot || "Review card",
-    tags_snapshot: normalizeArray(item.tags_snapshot, []),
-    reviewed_at: item.reviewed_at || item.created_at || new Date().toISOString()
-  };
-}
-
-function normalizeSelfCheck(item) {
-  return {
-    id: item.id,
-    session_id: item.session_id || null,
-    check_date: item.check_date || dateOnly(item.created_at),
-    answer_chain: item.answer_chain || "",
-    future_action: item.future_action || "",
-    note: item.note || "",
-    created_at: item.created_at || new Date().toISOString(),
-    updated_at: item.updated_at || item.created_at || new Date().toISOString()
   };
 }
 
@@ -2093,31 +2008,127 @@ function renderReviewCardGroup(elementId, cards, type) {
     : emptyState("No cards yet", "Jessica can publish the next curated card.");
 }
 
-function groupReviewEventsBySession(events) {
-  const sessions = new Map();
-  events.forEach((event) => {
-    const session = sessions.get(event.session_id) || {
-      sessionId: event.session_id,
-      reviewedAt: event.reviewed_at,
-      count: 0,
-      mastered: 0,
-      hard: 0,
-      again: 0
+const EnglishDomain = (() => {
+  function normalizeReviewCard(item) {
+    return {
+      id: item.id || null,
+      type: item.card_type || item.type || "commute",
+      title: item.title || "Review card",
+      prompt: item.prompt || "",
+      answerHint: item.answer_hint || item.answerHint || "",
+      tags: normalizeArray(item.tags, []),
+      sortOrder: Number(item.sort_order || item.sortOrder || 100)
     };
-    session.count += 1;
-    session[event.result] += 1;
-    if (new Date(event.reviewed_at) > new Date(session.reviewedAt)) session.reviewedAt = event.reviewed_at;
-    sessions.set(event.session_id, session);
-  });
-  return [...sessions.values()].sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt));
-}
+  }
 
-function sortedSelfChecks(checks = []) {
-  return [...checks].sort((a, b) =>
-    new Date(b.updated_at || b.created_at || b.check_date) -
-    new Date(a.updated_at || a.created_at || a.check_date)
-  );
-}
+  function normalizeReviewEvent(item, nowIso) {
+    return {
+      id: item.id,
+      review_card_id: item.review_card_id || null,
+      session_id: item.session_id,
+      result: item.result,
+      card_type_snapshot: item.card_type_snapshot || "commute",
+      card_title_snapshot: item.card_title_snapshot || "Review card",
+      tags_snapshot: normalizeArray(item.tags_snapshot, []),
+      reviewed_at: item.reviewed_at || item.created_at || nowIso || new Date().toISOString()
+    };
+  }
+
+  function normalizeSelfCheck(item, nowIso) {
+    return {
+      id: item.id,
+      session_id: item.session_id || null,
+      check_date: item.check_date || dateOnly(item.created_at),
+      answer_chain: item.answer_chain || "",
+      future_action: item.future_action || "",
+      note: item.note || "",
+      created_at: item.created_at || nowIso || new Date().toISOString(),
+      updated_at: item.updated_at || item.created_at || nowIso || new Date().toISOString()
+    };
+  }
+
+  function orderReviewCards(cards, events, now = Date.now()) {
+    const latest = new Map();
+    [...events].sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at)).forEach((event) => {
+      const key = event.review_card_id || event.card_title_snapshot;
+      if (!latest.has(key)) latest.set(key, event);
+    });
+    return [...cards].sort((a, b) => {
+      const aEvent = latest.get(a.id || a.title);
+      const bEvent = latest.get(b.id || b.title);
+      const score = (event) => {
+        if (!event) return 1;
+        if (event.result === "again") return 0;
+        if (event.result === "hard") return 2;
+        const ageDays = (now - new Date(event.reviewed_at).getTime()) / 86400000;
+        return ageDays >= 3 ? 3 : 4;
+      };
+      return score(aEvent) - score(bEvent) || a.sortOrder - b.sortOrder;
+    });
+  }
+
+  function progressStats(english, now = Date.now()) {
+    const cutoff = now - 7 * 86400000;
+    const events = (english._reviewEvents || []).filter((item) => new Date(item.reviewed_at).getTime() >= cutoff);
+    const mastered = events.filter((item) => item.result === "mastered").length;
+    const again = events.filter((item) => item.result === "again").length;
+    const difficult = new Map();
+    events.filter((item) => item.result !== "mastered").forEach((item) => {
+      difficult.set(item.card_type_snapshot, (difficult.get(item.card_type_snapshot) || 0) + 1);
+    });
+    const difficultType = [...difficult.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]?.replace("_", " ") || "No difficult type yet";
+    const latestCheck = sortedSelfChecks(english._selfChecks)[0];
+    return {
+      reviewed: events.length,
+      masteredRate: events.length ? Math.round((mastered / events.length) * 100) : 0,
+      again,
+      sessions: new Set(events.map((item) => item.session_id)).size,
+      difficultType,
+      latestCheck: latestCheck
+        ? `${latestCheck.check_date}: answer chain ${latestCheck.answer_chain || "not rated"}, future action ${latestCheck.future_action || "not rated"}.`
+        : "No self-check yet.",
+      nextFocus: events.length && difficultType !== "No difficult type yet"
+        ? `Review ${difficultType} cards first.`
+        : english.currentFocus
+    };
+  }
+
+  function groupReviewEventsBySession(events) {
+    const sessions = new Map();
+    events.forEach((event) => {
+      const session = sessions.get(event.session_id) || {
+        sessionId: event.session_id,
+        reviewedAt: event.reviewed_at,
+        count: 0,
+        mastered: 0,
+        hard: 0,
+        again: 0
+      };
+      session.count += 1;
+      session[event.result] += 1;
+      if (new Date(event.reviewed_at) > new Date(session.reviewedAt)) session.reviewedAt = event.reviewed_at;
+      sessions.set(event.session_id, session);
+    });
+    return [...sessions.values()].sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt));
+  }
+
+  function sortedSelfChecks(checks = []) {
+    return [...checks].sort((a, b) =>
+      new Date(b.updated_at || b.created_at || b.check_date) -
+      new Date(a.updated_at || a.created_at || a.check_date)
+    );
+  }
+
+  return {
+    normalizeReviewCard,
+    normalizeReviewEvent,
+    normalizeSelfCheck,
+    orderReviewCards,
+    progressStats,
+    groupReviewEventsBySession,
+    sortedSelfChecks
+  };
+})();
 
 function latestFitnessEntry(entries) {
   return [...(entries || [])].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0] || null;
