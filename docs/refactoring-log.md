@@ -85,3 +85,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; all queue outcomes and previous checks must pass.
 - Risk: Low production risk because `app/` is unchanged. Medium test risk remains for real-browser storage events, true network interruption timing, and live Supabase/RLS behavior.
 - Rollback: Revert this bounded commit; no local or remote user data is changed.
+
+## BC-P0-007 - Separate Visual And Physical-Device Evidence
+
+- Commit: This bounded P0 acceptance-evidence commit.
+- Goals: `S4`, `S5`, `S6`, `M2`, `M4`.
+- Before: Phone-width reference images were not stored, and physical iPhone checks were mixed into a long verification list without a separate pass state.
+- After: Four authored-text phone-width JPEGs cover Login, Home, English, and Fitness; an independent physical iPhone checklist remains explicitly not run; verification documentation separates automated, visual, and physical-device evidence.
+- Complexity and duplication: Adds four binary reference files, two focused evidence documents, one documentation cross-reference, and two lightweight artifact-format checks. No application runtime code changes.
+- Affected files: `docs/visual-baselines/p0/*`, `docs/iphone-acceptance.md`, `docs/verification.md`, `scripts/verify.mjs`, `docs/refactoring-log.md`.
+- Verification: Confirm `app/` has no diff; run `node scripts/verify.mjs`; inspect all four JPEGs for clipping, overlap, overflow, information hierarchy, and bottom-navigation alignment.
+- Risk: Medium evidence risk. Chrome's actual capture area is shorter than a full iPhone viewport, so these images prove phone-width layout only; physical Safari and Home Screen behavior remains untested.
+- Rollback: Revert this bounded commit to remove the evidence artifacts and checks; no application or user data rollback is required.

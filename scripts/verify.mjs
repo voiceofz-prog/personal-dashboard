@@ -140,6 +140,50 @@ check("Pages deployment gate order", () => {
   assert(verifyIndex < deployIndex, "Verification must run before Pages deployment");
 });
 
+const p0EvidenceFiles = [
+  "docs/iphone-acceptance.md",
+  "docs/visual-baselines/p0/README.md",
+  "docs/visual-baselines/p0/phone-width-login.jpg",
+  "docs/visual-baselines/p0/phone-width-home.jpg",
+  "docs/visual-baselines/p0/phone-width-english.jpg",
+  "docs/visual-baselines/p0/phone-width-fitness.jpg"
+];
+
+check("P0 acceptance evidence files", () => {
+  const missing = p0EvidenceFiles.filter((path) => !existsSync(join(root, path)));
+  assert(missing.length === 0, `Missing: ${missing.join(", ")}`);
+});
+
+check("phone-width visual baseline JPEGs", () => {
+  const startOfFrameMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+  for (const path of p0EvidenceFiles.filter((item) => item.endsWith(".jpg"))) {
+    const image = readFileSync(join(root, path));
+    assert(image[0] === 0xff && image[1] === 0xd8, `${path} is not a JPEG`);
+    let offset = 2;
+    let width = 0;
+    let height = 0;
+    while (offset + 8 < image.length) {
+      if (image[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+      const marker = image[offset + 1];
+      offset += 2;
+      if (marker === 0xd8 || marker === 0xd9) continue;
+      const segmentLength = image.readUInt16BE(offset);
+      if (startOfFrameMarkers.has(marker)) {
+        height = image.readUInt16BE(offset + 3);
+        width = image.readUInt16BE(offset + 5);
+        break;
+      }
+      offset += segmentLength;
+    }
+    assert(width && height, `${path} dimensions could not be read`);
+    assert(width >= 360 && width <= 430, `${path} width ${width} is outside the phone-width baseline range`);
+    assert(height >= 320, `${path} height ${height} is too small for a viewport reference`);
+  }
+});
+
 check("Git whitespace", () => run("git", ["diff", "--check"]));
 
 if (failures.length > 0) {
