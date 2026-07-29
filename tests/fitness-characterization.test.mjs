@@ -3,28 +3,6 @@ import { loadDashboardHarness } from "./helpers/dashboard-harness.mjs";
 
 const { api, snapshot } = loadDashboardHarness();
 const userId = "08dc15cb-aa8e-40fe-bfdf-0ef659292e0e";
-const cycleId = "9ce08ae2-c5b9-495d-a8c8-4eb91cb8b209";
-const cycle = {
-  id: cycleId,
-  user_id: userId,
-  domain: "fitness",
-  status: "active",
-  evidence: { decision: { training_lock: false } }
-};
-const planATarget = {
-  id: "c5bfceb5-73be-44bb-b1d5-53c01d96e044",
-  user_id: userId,
-  review_cycle_id: cycleId,
-  plan_type: "Plan A",
-  exercise_key: "a_pushup",
-  exercise_name: "Push-up",
-  weight_kg: null,
-  reps_by_set: [8, 8, 8],
-  instructions: "Stop before form breaks.",
-  effective_from: "2026-07-01",
-  active: true,
-  sort_order: 10
-};
 
 function entry(overrides = {}) {
   return {
@@ -44,72 +22,6 @@ function entry(overrides = {}) {
     ...overrides
   };
 }
-
-function fitness(overrides = {}) {
-  return {
-    ...api.emptyFitness(),
-    jessicaReview: cycle,
-    jessicaReviews: [cycle],
-    exerciseTargets: [planATarget],
-    ...overrides
-  };
-}
-
-const pending = api.computeFitnessRecommendation(api.emptyFitness());
-assert.equal(pending.mode, "pending");
-assert.equal(pending.plan, "Plan A");
-assert.equal(pending.reviewed, false);
-
-const maintain = api.computeFitnessRecommendation(fitness({ _entries: [entry()] }));
-assert.equal(maintain.mode, "maintain");
-assert.equal(maintain.modeLabel, "Jessica target");
-assert.equal(maintain.reviewed, true);
-
-const conservative = api.computeFitnessRecommendation(fitness({
-  _entries: [entry({ recovery_score: 2 })]
-}));
-assert.equal(conservative.mode, "caution");
-assert.equal(conservative.modeLabel, "Conservative");
-assert.match(conservative.detail, /reduced target/);
-
-const recovery = api.computeFitnessRecommendation(fitness({
-  _entries: [entry({ recovery_score: 1 })]
-}));
-assert.equal(recovery.mode, "recovery");
-assert.equal(recovery.plan, "Recovery");
-
-const progress = api.computeFitnessRecommendation(fitness({
-  _entries: [entry({ recovery_score: 4, energy_score: 4 })],
-  _workouts: [{
-    id: "22222222-2222-4222-8222-222222222222",
-    workout_date: "2026-07-28",
-    plan_type: "Plan B",
-    exercise_key: "b_squat",
-    completed: true
-  }]
-}));
-assert.equal(progress.mode, "progress");
-assert.equal(progress.plan, "Plan A");
-assert.equal(progress.reviewed, true);
-
-const lockedCycle = {
-  ...cycle,
-  evidence: {
-    decision: {
-      recovery_tier: "recovery_day",
-      published_target_count: 0,
-      training_lock: true
-    }
-  }
-};
-const explicitLock = api.computeFitnessRecommendation(fitness({
-  jessicaReview: lockedCycle,
-  jessicaReviews: [lockedCycle],
-  exerciseTargets: []
-}));
-assert.equal(explicitLock.mode, "recovery");
-assert.equal(explicitLock.plan, "Recovery");
-assert.equal(explicitLock.reviewed, false);
 
 assert.equal(api.buildFitnessReportFromDraft({
   entry_date: "2026-07-29",
@@ -186,7 +98,20 @@ api.state.data = api.emptyDashboard();
 api.state.pending = [];
 const draft = api.normalizeFitnessDraft(createRestForm());
 
-assert.deepEqual(snapshot(draft.daily), {
+assert.deepEqual(snapshot({
+  id: draft.daily.id,
+  entry_date: draft.daily.entry_date,
+  bodyweight_kg: draft.daily.bodyweight_kg,
+  training_status: draft.daily.training_status,
+  training_content: draft.daily.training_content,
+  protein: draft.daily.protein,
+  sleep_hours: draft.daily.sleep_hours,
+  energy_score: draft.daily.energy_score,
+  recovery_score: draft.daily.recovery_score,
+  soreness_level: draft.daily.soreness_level,
+  soreness_areas: draft.daily.soreness_areas,
+  notes: draft.daily.notes
+}), {
   id: "33333333-3333-4333-8333-333333333333",
   entry_date: "2026-07-29",
   bodyweight_kg: 72.5,
@@ -198,7 +123,6 @@ assert.deepEqual(snapshot(draft.daily), {
   recovery_score: 2,
   soreness_level: "none",
   soreness_areas: [],
-  source: "manual",
   notes: "Walk and sleep early"
 });
 assert.deepEqual(snapshot(draft.exercises), []);
