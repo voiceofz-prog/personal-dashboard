@@ -1,18 +1,28 @@
 # Official Refactoring Roadmap
 
+## Current Position
+
+`project_brief.md` is now the higher authority for Personal Dashboard direction.
+
+This roadmap is preserved as the engineering improvement plan only if the GitHub Pages + Supabase Dashboard continues as the long-term formal system, or if Vinson explicitly reactivates it after ChatGPT Sites validation fails.
+
+The technical debt recorded here remains real. The change is priority and activation condition, not denial of the findings.
+
 ## Status
 
 | Item | Decision |
 |---|---|
-| Authority | This is the official refactoring roadmap for the Personal Dashboard project. |
+| Authority | Conditional roadmap under `project_brief.md`. |
 | Approved | 2026-07-10 |
 | Baseline | `main` commit `548102181d67c07dfe8c9a05985bc21f3f182bcb` and frontend build `2026.07.06.2`. |
-| Execution status | Deferred. Do not start refactoring while primary product work has higher priority. |
-| Start condition | Begin when the main feature set is complete or a suitable development gap is available. |
+| Execution status | Deferred and conditional. Do not start refactoring while the project is validating whether the display layer should move away from the current architecture. |
+| Start condition | Begin only if the GitHub Pages Dashboard is confirmed as the long-term formal system, if Sites replacement fails and Vinson reactivates this plan, or if a serious current-system issue requires one of these safety rails. |
 
 ## Continuity Rule
 
-Use this roadmap as the default basis for future refactoring work. Do not repeat a full-project architectural analysis before starting or continuing an item unless the architecture has materially changed.
+If this conditional roadmap is reactivated, the platform-independent curated display-content boundary remains governed by [dashboard-display-contract.md](dashboard-display-contract.md). Do not reintroduce a second display schema through PWA refactoring work.
+
+Use this roadmap as the basis for future refactoring only after its start condition is met. Do not repeat a full-project architectural analysis before starting or continuing an item unless the architecture has materially changed.
 
 Routine feature additions, bug fixes, copy changes, styling changes, and small schema additions do not by themselves invalidate this roadmap. Reassess only the affected sections when possible.
 
@@ -28,7 +38,14 @@ A broader reassessment is justified when one or more of these changes occur:
 
 Reduce maintenance cost and improve module boundaries without changing current user-visible behavior, offline behavior, security boundaries, or stored-data semantics.
 
-This is an incremental refactor, not a rewrite. Preserve the static phone-first PWA, iPhone Safari compatibility, GitHub Pages deployment, Supabase RLS, offline queue ownership, and atomic Fitness save contract unless a separate product decision explicitly changes them.
+This is an incremental refactor, not a rewrite. Preserve the static phone-first PWA, iPhone Safari compatibility, GitHub Pages deployment, Supabase RLS, offline queue ownership, and atomic Fitness save contract while the current Dashboard remains the formal system unless a separate product decision explicitly changes them.
+
+This roadmap is not the current inevitable next phase. The higher-priority path is:
+
+1. Keep the current formal system usable.
+2. Define a platform-independent display contract.
+3. Validate ChatGPT Sites as a pure-display replacement candidate when Vinson explicitly starts that work.
+4. Reactivate this roadmap only if GitHub Pages remains long-term or Sites replacement fails.
 
 ## Execution Principles
 
