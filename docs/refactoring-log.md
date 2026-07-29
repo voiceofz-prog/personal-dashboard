@@ -160,13 +160,13 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 
 ## BC-P1-003 - Fix EnglishDomain Startup Initialization Order
 
-- Commit: This bounded startup-order fix commit.
+- Commit: `916abf1`.
 - Goals: `S5`, `S6`, `M2`.
 - Before: `init();` executed near the top of `app/dashboard.js`. Real browser startup reached `composeDashboard` before the later lexical `EnglishDomain` constant was initialized and stopped with a `ReferenceError`; the VM tests removed `init()` and did not detect the order dependency.
-- After: The same single `init();` call runs at the end of the classic script after every top-level lexical initialization. The English characterization test requires exactly one init call and verifies that EnglishDomain is initialized first. The Runtime Gate remains pending until a clean browser rerun passes.
+- After: The same single `init();` call runs at the end of the classic script after every top-level lexical initialization. The English characterization test requires exactly one init call and verifies that EnglishDomain is initialized first. A fresh-origin local Chrome rerun passes the authorized Demo Preview Runtime Gate.
 - Complexity and duplication: Moves one existing statement and adds one focused source-order assertion. It adds no runtime abstraction, fallback path, wrapper, or behavior branch.
 - Affected files: `app/dashboard.js`, `tests/english-characterization.test.mjs`, `docs/p1-english-gate-report.md`, `docs/refactoring-log.md`.
 - Unchanged areas: EnglishDomain function bodies, Fitness, Supabase API, offline queue, Service Worker, SQL, RPC, RLS, migrations, UI behavior, persistence, and data flow.
-- Verification: Run `node tests/english-characterization.test.mjs`, `node tests/dashboard-composition-characterization.test.mjs`, and `node scripts/verify.mjs`; then rerun the complete clean-browser P1-English Runtime Gate.
-- Risk: Low code-change risk, but gate risk remains high until browser startup, Demo, Home, English, refresh, phone-width interaction, and console are verified after the fix.
+- Verification: `node tests/english-characterization.test.mjs`, `node tests/dashboard-composition-characterization.test.mjs`, and `node scripts/verify.mjs` passed. Local Chrome at `http://127.0.0.1:5191/` passed Login, Demo initialization, Home, English, existing and empty English data states, card ordering, seven-day statistics, grouping, Home summary, reload, and `390x844` navigation/input checks with zero Dashboard-origin console errors or warnings.
+- Risk: Low code-change risk. Physical iPhone and real Supabase read-only checks remain unverified. The previously used `5187` origin served the old script from persisted PWA cache, so fresh-origin success is not same-origin deployment cache-upgrade evidence.
 - Rollback: Revert this commit to return to remote checkpoint `017c2f0`; no data, SQL, cache-version, or production rollback is required.

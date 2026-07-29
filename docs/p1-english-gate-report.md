@@ -2,15 +2,17 @@
 
 ## Gate Decision
 
-The P1-English bounded change is accepted by the main Codex final review and stopped at the P1-English gate. Fitness, Supabase API, offline queue, database work, P2, `main` merge, production deployment, and formal Supabase changes remain unauthorized.
+The P1-English bounded change and its startup-order fix are accepted by the main Codex final review and stopped at the P1-English Runtime Gate. Fitness, Supabase API, offline queue, database work, P2, `main` merge, production deployment, and formal Supabase changes remain unauthorized.
 
-The accepted runtime/test commit is `b3dd100` (`refactor: isolate English domain logic`). The remote refactoring branch checkpoint is `017c2f0`; nothing was merged or deployed.
+The English extraction commit is `b3dd100` (`refactor: isolate English domain logic`), and the standalone startup-order fix is `916abf1` (`fix: run dashboard init after EnglishDomain initialization`). Both are on `origin/refactor/p0-safety-rails-20260729`; nothing was merged or deployed.
 
 ## Runtime Gate Status
 
-The P1-English Runtime Gate is not passed. A real local-browser launch found `ReferenceError: Cannot access 'EnglishDomain' before initialization` because the top-level `init();` call ran before the later `const EnglishDomain` initialization. The VM characterization harness removes `init();`, so the original automated gate did not exercise this startup order.
+The P1-English Runtime Gate passes for the committed artifact in local Chrome with Demo Preview. A fresh origin at `http://127.0.0.1:5191/` showed Login, initialized Demo Preview, opened Home and English, loaded existing English records, produced the expected latest-event card order, displayed the empty seven-day state, preserved grouped Home records and Home summary, accepted non-submitted form input, and reinitialized after reload. The same flow passed at a `390x844` viewport with navigation, locator-driven scrolling, input, and reload.
 
-A minimal local candidate fix moves the one `init();` call to the end of `app/dashboard.js` and adds a source-order regression assertion to the English characterization test. The fix does not alter EnglishDomain logic, Fitness, Supabase API, offline queue, Service Worker, SQL, RPC, RLS, migration, UI behavior, or data flow. Automated tests pass after the candidate fix, but post-fix browser runtime is not yet verified. Fitness Discovery and every other refactoring stage remain paused.
+The Dashboard-origin console had zero errors or warnings, including no undefined function or initialization error. Chrome's installed Grammarly extension produced five extension-origin messages; these were separated from application evidence. Physical iPhone and real Supabase read-only checks were not run and remain explicitly unverified. Fitness Discovery and every other refactoring stage remain paused pending new approval.
+
+The first rerun on the previously used `5187` origin served the pre-fix script from persisted local PWA cache and reproduced the old error. The browser was then tested against unused port `5191`, which provided a clean origin for the committed files. This confirms the source fix and also preserves a deployment risk: a future release must verify cache-version/update behavior on the real origin rather than treating this fresh-origin test as PWA upgrade evidence.
 
 ## Task And Agent Split
 
@@ -29,7 +31,9 @@ The model choices used the capability descriptions exposed by the active environ
 |---|---|---|
 | `af9e491` | Record the formal P1/P2 lead-and-review governance and current approval gate. | `docs/refactoring-roadmap.md`, `docs/refactoring-log.md` |
 | `b3dd100` | Isolate English pure logic and strengthen characterization evidence. | `app/dashboard.js`, `tests/english-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs` |
-| This gate commit | Record the result and stop state. | `docs/p1-english-gate-report.md`, `docs/refactoring-roadmap.md`, `docs/refactoring-log.md` |
+| `017c2f0` | Record the initial P1-English gate and stop state. | `docs/p1-english-gate-report.md`, `docs/refactoring-roadmap.md`, `docs/refactoring-log.md` |
+| `916abf1` | Move the one startup call after EnglishDomain initialization and add regression coverage. | `app/dashboard.js`, `tests/english-characterization.test.mjs`, `docs/p1-english-gate-report.md`, `docs/refactoring-log.md` |
+| This runtime-evidence commit | Record the clean-origin Chrome verification result. | `docs/p1-english-gate-report.md`, `docs/refactoring-log.md` |
 
 No file under `supabase/`, `.github/`, Language, or Fitness changed. No index, Service Worker, manifest, CSS, demo-data, display-contract, API, queue, SQL, RLS, or deployment file changed.
 
@@ -70,13 +74,18 @@ The runtime increase is the namespace and injectable time seams. Most added code
 | `node scripts/verify.mjs` | Pass: 5 application scripts and 8 test files, plus PWA/version/cache/deployment-order/whitespace checks |
 | Main Codex forbidden-dependency scan | Pass: no DOM, state, storage, network, Supabase, or Fitness reference inside EnglishDomain |
 | Independent Validation Agent | No High, Medium, or Low findings |
+| Local Chrome, Demo Preview, desktop viewport | Pass: Login, Home, English, data, sort, seven-day empty state, grouping, Home summary, form input/cancel, and reload |
+| Local Chrome, `390x844` viewport | Pass: Home/English navigation, locator-driven scroll, form input/cancel, and reload |
+| Dashboard-origin console | Pass: 0 errors and 0 warnings |
 
 The main Codex rejected the first implementation because `progressStats` depended on `this.sortedSelfChecks`, which made the function receiver-dependent. The Implementation Agent replaced it with lexical named functions and added the missing cutoff/self-check tests. The main Codex then reviewed the revised diff and reran all commands before commit. The independent Validation Agent reviewed the commit afterward and raised no further objections.
 
 ## Remaining Risks
 
-- No browser end-to-end, physical iPhone Safari, focus/timer, visual, or offline-reopen acceptance was run for this local-only structural change.
-- The first real browser launch found an EnglishDomain initialization-order regression. The minimal fix has automated coverage but still requires a clean-browser runtime rerun before this gate can pass.
+- Physical iPhone Safari was not run. The `390x844` Chrome check is phone-width evidence only and does not replace it.
+- Real Supabase read-only access was not run because this flow used Demo Preview. No live Auth, RLS, owner-isolation, RPC, or persistence claim is made.
+- The old `5187` origin retained the pre-fix asset through local PWA cache. Fresh-origin `5191` proves the committed source behavior but not a same-origin deployed cache upgrade.
+- Chrome's Grammarly extension emitted its own warnings/errors. The Dashboard origin emitted none, but a browser profile without unrelated extensions was not available through the connected Chrome session.
 - Tests do not exhaust every equal-priority tie, invalid timestamp, or falsy normalization combination. These paths are statically unchanged but not individually characterized.
 - Supabase persistence was not exercised. Payloads, tables, write orchestration, owner isolation, queue behavior, RPC, and RLS were not changed.
 - The internal boundary improves responsibility ownership and tests but does not yet reduce the physical size of the deployed monolith. Creating an external source module would require a separately justified PWA/build compatibility change.
@@ -84,8 +93,8 @@ The main Codex rejected the first implementation because `progressStats` depende
 
 ## Rollback
 
-No database or production rollback is required. The remote pre-fix checkpoint is `017c2f0`. Revert the standalone startup-order fix commit to return to that checkpoint, then revert `b3dd100` only if the complete EnglishDomain extraction must also be withdrawn. Revert `af9e491` separately only if the formal agent-governance rule itself should also be removed.
+No database or production rollback is required. The remote pre-fix checkpoint is `017c2f0`. Revert `916abf1` to return to that checkpoint, then revert `b3dd100` only if the complete EnglishDomain extraction must also be withdrawn. Revert `af9e491` separately only if the formal agent-governance rule itself should also be removed.
 
 ## Next Recommendation
 
-Do not approve Fitness Discovery until the startup-order fix is committed, pushed, and verified through a clean local-browser Runtime Gate. Physical iPhone and real Supabase read-only acceptance remain separate evidence and cannot be replaced by phone-width demo testing.
+The local Demo Preview Runtime Gate now supports asking Vinson to re-approve Fitness Discovery. Do not begin it without that explicit approval. Physical iPhone, real Supabase read-only access, and same-origin PWA cache upgrade acceptance remain separate evidence and cannot be replaced by phone-width fresh-origin testing.
