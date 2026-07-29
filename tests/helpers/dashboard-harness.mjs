@@ -155,6 +155,7 @@ export function loadDashboardHarness(options = {}) {
   const exports = `
 globalThis.DashboardCharacterization = {
   state,
+  adoptLegacyPendingRecords,
   applyPendingOperations,
   buildFitnessReportFromDraft,
   composeDashboard,

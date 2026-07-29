@@ -97,3 +97,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Confirm `app/` has no diff; run `node scripts/verify.mjs`; inspect all four JPEGs for clipping, overlap, overflow, information hierarchy, and bottom-navigation alignment.
 - Risk: Medium evidence risk. Chrome's actual capture area is shorter than a full iPhone viewport, so these images prove phone-width layout only; physical Safari and Home Screen behavior remains untested.
 - Rollback: Revert this bounded commit to remove the evidence artifacts and checks; no application or user data rollback is required.
+
+## BC-P0-008 - Characterize Legacy Queue Adoption
+
+- Commit: This bounded legacy-compatibility test commit.
+- Goals: `S1`, `S2`, `S5`, `S6`, `M2`.
+- Before: The current queue path was characterized, but legacy ownerless-record adoption and its table allowlist were not directly covered.
+- After: Tests lock adoption of supported ownerless records to the current user, preservation of an existing different owner, rejection of unsupported/malformed records, removal of the legacy key, and persistence to the current queue key.
+- Complexity and duplication: Adds one focused test and exposes the existing adoption function only inside the VM harness. Production code and storage contracts are unchanged.
+- Affected files: `tests/legacy-queue-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; the legacy queue test and every earlier check must pass.
+- Risk: Low production risk. Real historical browser payload variants outside the current allowlist remain a manual compatibility risk.
+- Rollback: Revert this bounded commit; no browser storage or user data is modified by the test.
