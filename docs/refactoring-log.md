@@ -49,3 +49,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; its Pages-order check must pass. Review the workflow diff and confirm no deployment or secret-handling step changed.
 - Risk: Medium CI risk because a verification defect can block deployment; production runtime risk is low because no app artifact changed.
 - Rollback: Revert this bounded commit to restore the prior workflow; no production data rollback is required.
+
+## BC-P0-004 - Characterize English And Home Composition
+
+- Commit: This bounded characterization-test commit.
+- Goals: `S1`, `S6`, `M2`, `M6`.
+- Before: English review ordering, seven-day statistics, demo normalization, and Home composition were embedded in `app/dashboard.js` without direct automated behavior snapshots.
+- After: A test-only VM harness executes the current functions without running Dashboard initialization or changing production code. Tests lock review priority, latest-event selection, seven-day calculations, actual demo normalization, Home summary composition, and non-mutation of source data.
+- Complexity and duplication: Adds one reusable test harness plus two focused test files. The harness removes the need to copy production logic into tests and avoids adding a runtime test API.
+- Affected files: `tests/helpers/dashboard-harness.mjs`, `tests/english-characterization.test.mjs`, `tests/dashboard-composition-characterization.test.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; all pre-existing tests and both new characterization files must pass.
+- Risk: Low production risk because `app/` is unchanged. Medium test-harness risk because the VM harness intentionally skips only the single top-level `init()` call.
+- Rollback: Revert this bounded commit; the application artifact and existing verification command remain unchanged.
