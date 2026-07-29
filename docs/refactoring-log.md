@@ -133,3 +133,27 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Review the documentation diff; run `node scripts/verify.mjs`; confirm no file under `app/`, `supabase/`, `.github/`, Language, or Fitness changed.
 - Risk: Low runtime risk. Process risk remains if future agent prompts or main review fail to enforce the documented boundaries; each gate report must include the actual assignments and exceptions.
 - Rollback: Revert this bounded governance commit. The accepted P0 checkpoint remains at commit `6a97c1e` locally and on the remote branch.
+
+## BC-P1-001 - Isolate English Domain Logic
+
+- Commit: `b3dd100`.
+- Goals: `S6`, `M2`, `M6`.
+- Before: English card/event/self-check normalization, card ordering, seven-day progress, session grouping, and self-check ordering were seven top-level functions scattered across `app/dashboard.js`. Tests exposed two individual functions through the VM harness.
+- After: One internal lexical `EnglishDomain` owns those seven behaviors. Callers retain DOM, state, storage, network, persistence, and cross-domain composition. The harness exposes the one boundary, and characterization tests cover normalization, latest-event ordering, inclusive cutoff, progress, grouping, self-check ordering, and non-mutation.
+- Complexity and duplication: Runtime code increases by 11 lines for the namespace and injectable clock seams; the English test increases by 117 lines and the harness decreases by one. Old top-level implementations were removed, so no wrapper or duplicate logic remains. No external script, class, adapter, build step, or Service Worker change was added.
+- Affected files: `app/dashboard.js`, `tests/english-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs`.
+- Verification: Main and independent agents ran `node tests/english-characterization.test.mjs`, `node tests/dashboard-composition-characterization.test.mjs`, and `node scripts/verify.mjs`; all passed. Independent validation reported no findings.
+- Risk: Low runtime risk because inputs, outputs, wording, persistence, and production clock defaults are unchanged. Residual risk remains for browser/iPhone behavior and uncharacterized invalid timestamps or normalization combinations.
+- Rollback: Revert `b3dd100`; no SQL, data, cache-version, or production rollback is required.
+
+## BC-P1-002 - Record The P1-English Gate
+
+- Commit: This bounded gate-report commit.
+- Goals: `S6`, `M2`, `M4`.
+- Before: Agent assignments, rejected implementation detail, final diff review, code-size evidence, validation result, remaining risks, and stop state existed only in thread/tool output.
+- After: One report records the complete P1-English evidence, the Roadmap is stopped at the gate, and all later domains and production actions remain explicitly deferred.
+- Complexity and duplication: Adds one report and updates existing status/log text. No runtime, test, PWA, schema, or production-system behavior changes.
+- Affected files: `docs/p1-english-gate-report.md`, `docs/refactoring-roadmap.md`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; review `af9e491..HEAD`; confirm the branch is clean, the remote branch remains at `6a97c1e`, and no unauthorized path changed.
+- Risk: Low runtime risk. Process risk remains if a later stage treats this local gate as deployment, physical-device, or live-Supabase acceptance; the report explicitly keeps those unverified.
+- Rollback: Revert this gate-report commit; `b3dd100` remains independently reviewable and reversible.

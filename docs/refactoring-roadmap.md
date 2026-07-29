@@ -16,11 +16,12 @@ The technical debt recorded here remains real. The change is priority and activa
 | Approved | 2026-07-10 |
 | Historical baseline | `main` commit `548102181d67c07dfe8c9a05985bc21f3f182bcb` and frontend build `2026.07.06.2`. |
 | Reactivation baseline | Local HEAD, remote `main`, and deployed Pages build were verified on 2026-07-29 as commit `e23f6a2ec16fc5a36736e04cfdb552583127a8a5`, frontend build `2026.07.29.3`. |
-| Execution status | P0 items 0 through 4 were accepted on 2026-07-30. P1-English discovery and one bounded pure-logic extraction are authorized on the isolated branch. |
+| Execution status | P0 is accepted. P1-English pure-logic extraction completed locally on 2026-07-30 and is stopped at its gate after main and independent review. |
 | Approval gate | Stop at the P1-English gate. Fitness, data access, offline queue, database, P2, `main` merge, and production deployment require new explicit approval. |
 | Production deployment | Not authorized during P1-English. |
 | Platform position | GitHub Pages + Supabase remains the formal system during this work; long-term platform selection remains open. |
 | P0 gate evidence | [p0-gate-report.md](p0-gate-report.md) |
+| P1-English gate evidence | [p1-english-gate-report.md](p1-english-gate-report.md) |
 
 ## Continuity Rule
 
@@ -103,7 +104,7 @@ Agent reports must be compressed into findings, changes, evidence, tests, risks,
 
 - P0 items 0 through 4 were accepted on 2026-07-30. Commit `6a97c1e` is the accepted local/remote P0 checkpoint on `refactor/p0-safety-rails-20260729`.
 - Automated tests, physical iPhone acceptance, and phone-width visual baselines are separate evidence sets and must be reported separately.
-- The only current P1 authorization is Dashboard English pure-logic discovery, extraction, independent validation, and final review.
+- The P1-English bounded change is complete locally at commit `b3dd100` and accepted by main final review after independent validation reported no findings.
 - Do not modify the Language or Fitness projects, Fitness Dashboard behavior, Supabase API, offline queue, SQL, RLS, Service Worker, deployment configuration, or shared display contract in this bounded change.
 - Stop at the P1-English gate and report agent/model assignments, commits/files, before/after responsibility and code size, removed duplication, added abstractions, tests, validation objections and resolutions, remaining risks, rollback, and the recommendation on whether to authorize Fitness next.
 - Do not merge `main`, deploy production, or modify the formal Supabase project without separate approval.
@@ -195,4 +196,4 @@ The roadmap is complete when:
 
 ## Deferred Work Record
 
-P0 items 0 through 4 are accepted. Only the first P1 bounded change, Dashboard English pure-logic modularization, is active and must stop at its gate. Fitness, Supabase API, offline queue, database work, P2, `main` merge, and production deployment remain deferred. Do not jump directly to file splitting without Discovery evidence and main-Codex boundary approval.
+P0 items 0 through 4 and the local P1-English bounded change are accepted. Work is stopped at the P1-English gate. Fitness, Supabase API, offline queue, database work, P2, `main` merge, and production deployment remain deferred pending explicit approval. Do not jump directly to file splitting without Discovery evidence and main-Codex boundary approval.
