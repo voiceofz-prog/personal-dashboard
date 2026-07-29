@@ -20,6 +20,21 @@ textarea {
   font-size: 16px;
 }
 
+/* iPad Safari can let the native date editor keep an intrinsic width. */
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+}
+
 .view,
 .panel,
 .form-stack,

@@ -1,4 +1,4 @@
-const VERSION = "2026.07.17.1";
+const VERSION = "2026.07.29.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -49,6 +49,8 @@ init();
 
 async function init() {
   setDefaultDates();
+  document.addEventListener("visibilitychange", syncDefaultDate);
+  window.addEventListener("pageshow", syncDefaultDate);
   bindNavigation();
   bindAuthAndSettings();
   bindEnglishReview();
@@ -745,6 +747,7 @@ function renderAuthGate() {
 
 function switchView(view) {
   if (!views[view]) return;
+  if (view === "fitness") syncDefaultDate();
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   state.activeView = view;
   Object.entries(views).forEach(([key, element]) => element.classList.toggle("active", key === view));
@@ -1184,6 +1187,11 @@ function englishProgressStats(english) {
 function bindFitnessForm() {
   const form = document.getElementById("fitnessReportForm");
   form.addEventListener("submit", saveFitnessEntry);
+  const markDateTouched = () => {
+    form.dataset.dateTouched = "true";
+  };
+  form.elements.entry_date.addEventListener("input", markDateTouched);
+  form.elements.entry_date.addEventListener("change", markDateTouched);
   form.addEventListener("change", (event) => {
     if (event.target.name === "day_type") updateFitnessFormVisibility();
     if (event.target.name === "plan_template") {
@@ -1608,6 +1616,7 @@ function editLatestFitnessEntry() {
 function resetFitnessForm(options = {}) {
   const form = document.getElementById("fitnessReportForm");
   form.reset();
+  delete form.dataset.dateTouched;
   form.elements.id.value = "";
   form.elements.entry_date.value = todayISO();
   state.editingFitnessId = null;
@@ -2246,6 +2255,14 @@ function setDefaultDates() {
   if (input && !input.value) input.value = todayISO();
 }
 
+function syncDefaultDate() {
+  const form = document.getElementById("fitnessReportForm");
+  const input = form?.elements.entry_date;
+  if (!input || state.editingFitnessId || form.dataset.dateTouched === "true") return;
+  const today = todayISO();
+  if (input.value !== today) input.value = today;
+}
+
 function formToObject(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
@@ -2331,8 +2348,11 @@ function formatNumber(value) {
 
 function todayISO() {
   const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
 }
 
 function dateOnly(value) {
