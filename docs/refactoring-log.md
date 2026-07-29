@@ -121,3 +121,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; confirm a clean branch, no `app/` or `supabase/` diff from `e23f6a2`, and unchanged remote `main`/latest Pages run.
 - Risk: Low runtime risk. The main residual risk is treating locally passing evidence as equivalent to hosted CI, live Supabase, or physical iPhone acceptance; the report explicitly keeps those states separate.
 - Rollback: Revert this bounded gate-report commit; earlier P0 commits remain independently reviewable and reversible.
+
+## BC-P1-000 - Adopt Lead-And-Review Execution Governance
+
+- Commit: This bounded P1 governance commit.
+- Goals: `S6`, `M2`, `M4`.
+- Before: The Roadmap required bounded changes and approval gates but did not define formal main-Codex ownership, delegated-agent scopes, ordered discovery/implementation/validation phases, parallel-write limits, or model-selection evidence.
+- After: P1 and P2 require main-Codex planning and final review, single-scope agent assignments, independent validation, ordered gates, restricted parallelism, capability-based model selection, and compressed evidence reports. The current approval is limited to P1-English and stops before every later domain or deployment action.
+- Complexity and duplication: Adds one governance section and updates existing status/gate text. It introduces no runtime abstraction, application code, test fixture, or production-system change.
+- Affected files: `docs/refactoring-roadmap.md`, `docs/refactoring-log.md`.
+- Verification: Review the documentation diff; run `node scripts/verify.mjs`; confirm no file under `app/`, `supabase/`, `.github/`, Language, or Fitness changed.
+- Risk: Low runtime risk. Process risk remains if future agent prompts or main review fail to enforce the documented boundaries; each gate report must include the actual assignments and exceptions.
+- Rollback: Revert this bounded governance commit. The accepted P0 checkpoint remains at commit `6a97c1e` locally and on the remote branch.
