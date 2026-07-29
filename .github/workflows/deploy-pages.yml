@@ -7,6 +7,8 @@ on:
       - main
     paths:
       - "app/**"
+      - "scripts/**"
+      - "tests/**"
       - ".github/workflows/deploy-pages.yml"
 
 permissions:
@@ -48,6 +50,9 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Verify application
+        run: node scripts/verify.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -37,3 +37,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; confirm all scripts, JSON files, tests, version checks, PWA contracts, and `git diff --check` pass.
 - Risk: Low runtime risk. Main residual risk is a false sense of coverage for behavior not yet characterized in P0-3.
 - Rollback: Revert this bounded commit; the previous individual checks remain available.
+
+## BC-P0-003 - Put Verification Before Pages Deployment
+
+- Commit: This bounded deployment-gate commit.
+- Goals: `S6`, `M2`, `M4`.
+- Before: The Pages workflow validated repository hygiene, generated runtime config, uploaded the app, and deployed without running the local application checks. Changes limited to tests or verification scripts did not trigger the workflow.
+- After: `node scripts/verify.mjs` runs before runtime-config generation, artifact upload, and deployment. Changes under `scripts/**` and `tests/**` trigger the same gate.
+- Complexity and duplication: Adds one workflow step, two path filters, and one self-check that keeps the deployment order explicit. No production runtime code changes.
+- Affected files: `.github/workflows/deploy-pages.yml`, `scripts/verify.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; its Pages-order check must pass. Review the workflow diff and confirm no deployment or secret-handling step changed.
+- Risk: Medium CI risk because a verification defect can block deployment; production runtime risk is low because no app artifact changed.
+- Rollback: Revert this bounded commit to restore the prior workflow; no production data rollback is required.

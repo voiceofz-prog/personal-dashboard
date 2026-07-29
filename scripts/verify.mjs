@@ -128,6 +128,18 @@ check("Service Worker app-shell coverage", () => {
   assert(missing.length === 0, `Not cached: ${missing.join(", ")}`);
 });
 
+check("Pages deployment gate order", () => {
+  const workflow = read(".github/workflows/deploy-pages.yml");
+  const verifyIndex = workflow.indexOf("node scripts/verify.mjs");
+  const configIndex = workflow.indexOf("- name: Create runtime config");
+  const uploadIndex = workflow.indexOf("- name: Upload app folder");
+  const deployIndex = workflow.indexOf("- name: Deploy to GitHub Pages");
+  assert(verifyIndex >= 0, "Verification command is missing from the Pages workflow");
+  assert(verifyIndex < configIndex, "Verification must run before runtime config generation");
+  assert(verifyIndex < uploadIndex, "Verification must run before artifact upload");
+  assert(verifyIndex < deployIndex, "Verification must run before Pages deployment");
+});
+
 check("Git whitespace", () => run("git", ["diff", "--check"]));
 
 if (failures.length > 0) {
