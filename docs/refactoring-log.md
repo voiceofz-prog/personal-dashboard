@@ -61,3 +61,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; all pre-existing tests and both new characterization files must pass.
 - Risk: Low production risk because `app/` is unchanged. Medium test-harness risk because the VM harness intentionally skips only the single top-level `init()` call.
 - Rollback: Revert this bounded commit; the application artifact and existing verification command remain unchanged.
+
+## BC-P0-005 - Characterize Fitness Decisions And Drafts
+
+- Commit: This bounded Fitness-characterization commit.
+- Goals: `S1`, `S3`, `S6`, `M2`, `M6`.
+- Before: Fitness recommendation thresholds, explicit training-lock behavior, report text, numeric normalization, and trained-to-rest protection were embedded in the monolith without direct behavior snapshots.
+- After: Tests lock pending, maintain, progress, conservative, recovery, and explicit-lock decisions; trained/rest report output; rest-draft field semantics; and rejection of converting a target-linked trained entry into a recovery entry.
+- Complexity and duplication: Adds one focused test file that calls existing behavior through the shared test harness. No production logic or duplicate implementation is introduced.
+- Affected files: `tests/fitness-characterization.test.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; the new Fitness characterization test and all earlier checks must pass.
+- Risk: Low production risk because `app/` is unchanged. Medium specification risk because the tests intentionally freeze current thresholds and wording for later behavior-neutral extraction.
+- Rollback: Revert this bounded commit; no application or data rollback is required.
