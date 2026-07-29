@@ -73,3 +73,15 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; the new Fitness characterization test and all earlier checks must pass.
 - Risk: Low production risk because `app/` is unchanged. Medium specification risk because the tests intentionally freeze current thresholds and wording for later behavior-neutral extraction.
 - Rollback: Revert this bounded commit; no application or data rollback is required.
+
+## BC-P0-006 - Characterize Queue Ownership And Atomic Outcomes
+
+- Commit: This bounded queue-characterization commit.
+- Goals: `S1`, `S2`, `S3`, `S6`, `M2`, `M6`.
+- Before: Queue merge, owner filtering, pending overlays, retry classification, explicit rejection, and atomic Fitness RPC payload behavior were not covered together by local executable tests.
+- After: Tests lock same-owner merge and insert-delete cancellation, cross-owner separation, current-owner overlays, pre-network owner rejection, HTTP 4xx `rejected` without queuing, HTTP 5xx `pending`, successful `syncPending()` retry, and one RPC body containing the complete daily entry plus workouts.
+- Complexity and duplication: Adds one focused test file and exposes the existing `syncPending` function only inside the test VM. Production code remains unchanged and no queue logic is copied.
+- Affected files: `tests/offline-queue-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; all queue outcomes and previous checks must pass.
+- Risk: Low production risk because `app/` is unchanged. Medium test risk remains for real-browser storage events, true network interruption timing, and live Supabase/RLS behavior.
+- Rollback: Revert this bounded commit; no local or remote user data is changed.

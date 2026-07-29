@@ -168,6 +168,7 @@ globalThis.DashboardCharacterization = {
   orderReviewCards,
   pendingForCurrentUser,
   saveFitnessBundle,
+  syncPending,
   upsertPendingOperation
 };`;
   vm.runInContext(`${withoutInit}\n${exports}`, context, { filename: "app/dashboard.js" });
