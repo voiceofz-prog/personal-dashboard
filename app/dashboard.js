@@ -45,8 +45,6 @@ const views = {
 const pageTitle = document.getElementById("pageTitle");
 const toast = document.getElementById("toast");
 
-init();
-
 async function init() {
   setDefaultDates();
   document.addEventListener("visibilitychange", syncDefaultDate);
@@ -2446,3 +2444,5 @@ function clone(value) {
 function registerServiceWorker() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
+
+init();

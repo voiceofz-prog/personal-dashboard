@@ -4,7 +4,13 @@
 
 The P1-English bounded change is accepted by the main Codex final review and stopped at the P1-English gate. Fitness, Supabase API, offline queue, database work, P2, `main` merge, production deployment, and formal Supabase changes remain unauthorized.
 
-The accepted runtime/test commit is `b3dd100` (`refactor: isolate English domain logic`). The remote branch remains at the accepted P0 checkpoint `6a97c1e`; no P1 commit was pushed, merged, or deployed.
+The accepted runtime/test commit is `b3dd100` (`refactor: isolate English domain logic`). The remote refactoring branch checkpoint is `017c2f0`; nothing was merged or deployed.
+
+## Runtime Gate Status
+
+The P1-English Runtime Gate is not passed. A real local-browser launch found `ReferenceError: Cannot access 'EnglishDomain' before initialization` because the top-level `init();` call ran before the later `const EnglishDomain` initialization. The VM characterization harness removes `init();`, so the original automated gate did not exercise this startup order.
+
+A minimal local candidate fix moves the one `init();` call to the end of `app/dashboard.js` and adds a source-order regression assertion to the English characterization test. The fix does not alter EnglishDomain logic, Fitness, Supabase API, offline queue, Service Worker, SQL, RPC, RLS, migration, UI behavior, or data flow. Automated tests pass after the candidate fix, but post-fix browser runtime is not yet verified. Fitness Discovery and every other refactoring stage remain paused.
 
 ## Task And Agent Split
 
@@ -70,6 +76,7 @@ The main Codex rejected the first implementation because `progressStats` depende
 ## Remaining Risks
 
 - No browser end-to-end, physical iPhone Safari, focus/timer, visual, or offline-reopen acceptance was run for this local-only structural change.
+- The first real browser launch found an EnglishDomain initialization-order regression. The minimal fix has automated coverage but still requires a clean-browser runtime rerun before this gate can pass.
 - Tests do not exhaust every equal-priority tie, invalid timestamp, or falsy normalization combination. These paths are statically unchanged but not individually characterized.
 - Supabase persistence was not exercised. Payloads, tables, write orchestration, owner isolation, queue behavior, RPC, and RLS were not changed.
 - The internal boundary improves responsibility ownership and tests but does not yet reduce the physical size of the deployed monolith. Creating an external source module would require a separately justified PWA/build compatibility change.
@@ -77,9 +84,8 @@ The main Codex rejected the first implementation because `progressStats` depende
 
 ## Rollback
 
-No database or production rollback is required. Revert the gate-document commit if necessary, then revert `b3dd100` to restore the previous runtime, tests, and harness. Revert `af9e491` separately only if the formal agent-governance rule itself should also be removed. The remote backup remains at P0 commit `6a97c1e`.
+No database or production rollback is required. The remote pre-fix checkpoint is `017c2f0`. Revert the standalone startup-order fix commit to return to that checkpoint, then revert `b3dd100` only if the complete EnglishDomain extraction must also be withdrawn. Revert `af9e491` separately only if the formal agent-governance rule itself should also be removed.
 
 ## Next Recommendation
 
-The main Codex recommends considering Fitness pure-logic Discovery as the next separately approved bounded change because the ordered agent workflow caught and corrected an abstraction defect before acceptance. Fitness has more business-rule and target-link risk than English, so any approval should begin read-only, keep `fitness-target-link.js` unchanged, and prohibit API, queue, RPC, RLS, migration, and source-project changes.
-
+Do not approve Fitness Discovery until the startup-order fix is committed, pushed, and verified through a clean local-browser Runtime Gate. Physical iPhone and real Supabase read-only acceptance remain separate evidence and cannot be replaced by phone-width demo testing.

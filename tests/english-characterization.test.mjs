@@ -1,5 +1,14 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadDashboardHarness } from "./helpers/dashboard-harness.mjs";
+
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const dashboardSource = readFileSync(join(root, "app", "dashboard.js"), "utf8");
+const initCalls = dashboardSource.match(/^init\(\);\r?$/gm) || [];
+assert.equal(initCalls.length, 1);
+assert.ok(dashboardSource.indexOf("const EnglishDomain =") < dashboardSource.indexOf(initCalls[0]));
 
 const { api, snapshot } = loadDashboardHarness();
 const now = Date.parse("2026-07-29T12:00:00.000Z");
