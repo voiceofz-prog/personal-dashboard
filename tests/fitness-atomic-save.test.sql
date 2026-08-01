@@ -24,6 +24,10 @@ declare
   v_current_two public.fitness_exercise_targets%rowtype;
   v_stale public.fitness_exercise_targets%rowtype;
   v_entry_date date := current_date;
+  v_daily_payload jsonb;
+  v_workouts_payload jsonb;
+  v_daily_before jsonb;
+  v_workouts_before jsonb;
   v_result jsonb;
 begin
   select id, user_id
@@ -113,6 +117,115 @@ begin
   exception when others then
     if sqlerrm <> 'ROLLBACK_SUCCESS_CASE' then raise; end if;
   end;
+
+  -- A new create remains valid and provides synthetic rows for the edit guard checks.
+  v_daily_payload := jsonb_build_object(
+    'id', '00000000-0000-4000-8000-000000000941',
+    'entry_date', v_entry_date,
+    'training_status', 'trained',
+    'training_content', 'synthetic create-only fixture',
+    'soreness_level', 'none',
+    'soreness_areas', jsonb_build_array(),
+    'source', 'test-fixture'
+  );
+  v_workouts_payload := jsonb_build_array(
+    jsonb_build_object(
+      'id', '00000000-0000-4000-8000-000000000942',
+      'daily_entry_id', '00000000-0000-4000-8000-000000000941',
+      'workout_date', v_entry_date,
+      'plan_type', v_current_one.plan_type,
+      'exercise_key', v_current_one.exercise_key,
+      'exercise', 'synthetic fixture one',
+      'target_id', v_current_one.id
+    ),
+    jsonb_build_object(
+      'id', '00000000-0000-4000-8000-000000000943',
+      'daily_entry_id', '00000000-0000-4000-8000-000000000941',
+      'workout_date', v_entry_date,
+      'plan_type', v_current_two.plan_type,
+      'exercise_key', v_current_two.exercise_key,
+      'exercise', 'synthetic fixture two',
+      'target_id', v_current_two.id
+    )
+  );
+
+  v_result := public.save_fitness_entry_atomic(v_daily_payload, v_workouts_payload);
+  set constraints fitness_workouts_validate_active_cycle immediate;
+  if v_result ->> 'daily_entry_id' <> '00000000-0000-4000-8000-000000000941'
+     or v_result ->> 'workout_count' <> '2' then
+    raise exception 'new create did not return the expected result';
+  end if;
+
+  select to_jsonb(d)
+    into v_daily_before
+  from public.fitness_daily_entries d
+  where d.id = '00000000-0000-4000-8000-000000000941'::uuid;
+
+  select jsonb_agg(to_jsonb(w) order by w.id)
+    into v_workouts_before
+  from public.fitness_workouts w
+  where w.daily_entry_id = '00000000-0000-4000-8000-000000000941'::uuid;
+
+  -- Even an identical replay is ambiguous under v1 and must fail closed.
+  begin
+    perform public.save_fitness_entry_atomic(v_daily_payload, v_workouts_payload);
+    raise exception 'identical replay was accepted';
+  exception when sqlstate 'P0001' then
+    if position('FITNESS_V1_UPGRADE_REQUIRED' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  -- A changed daily payload with an omitted workout must not update or reconcile rows.
+  begin
+    perform public.save_fitness_entry_atomic(
+      v_daily_payload || jsonb_build_object('training_content', 'unsafe replacement attempt'),
+      jsonb_build_array(v_workouts_payload -> 0)
+    );
+    raise exception 'existing daily edit was accepted';
+  exception when sqlstate 'P0001' then
+    if position('FITNESS_V1_UPGRADE_REQUIRED' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  if (select to_jsonb(d) from public.fitness_daily_entries d where d.id = '00000000-0000-4000-8000-000000000941'::uuid)
+       is distinct from v_daily_before then
+    raise exception 'existing daily row changed after rejected edit';
+  end if;
+
+  if (select jsonb_agg(to_jsonb(w) order by w.id) from public.fitness_workouts w where w.daily_entry_id = '00000000-0000-4000-8000-000000000941'::uuid)
+       is distinct from v_workouts_before then
+    raise exception 'workout rows changed or an omitted workout was deleted after rejected edit';
+  end if;
+
+  -- Reusing an existing workout id with a new daily id must fail without a partial daily row.
+  begin
+    perform public.save_fitness_entry_atomic(
+      v_daily_payload || jsonb_build_object('id', '00000000-0000-4000-8000-000000000951'),
+      jsonb_build_array(
+        (v_workouts_payload -> 0) || jsonb_build_object(
+          'daily_entry_id', '00000000-0000-4000-8000-000000000951'
+        )
+      )
+    );
+    raise exception 'existing workout id was accepted';
+  exception when sqlstate 'P0001' then
+    if position('FITNESS_V1_UPGRADE_REQUIRED' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  if exists (
+    select 1
+    from public.fitness_daily_entries d
+    where d.id = '00000000-0000-4000-8000-000000000951'::uuid
+  ) then
+    raise exception 'rejected existing-workout save left a partial daily row';
+  end if;
+
+  if not exists (
+    select 1
+    from public.fitness_workouts w
+    where w.id = '00000000-0000-4000-8000-000000000942'::uuid
+      and w.daily_entry_id = '00000000-0000-4000-8000-000000000941'::uuid
+  ) then
+    raise exception 'rejected existing-workout save changed the original workout linkage';
+  end if;
 
   -- A stale UI target from a superseded cycle must fail.
   begin
