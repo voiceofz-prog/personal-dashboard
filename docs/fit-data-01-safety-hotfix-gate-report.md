@@ -116,4 +116,3 @@ If a future approved deployment applies the migration, database rollback must be
 ## Next Decision
 
 Do not start permanent v2, queue v3, corrections, merge, or deployment. The next required evidence is an authorized disposable/local Supabase runtime that can apply repository migrations and execute `tests/fitness-atomic-save.test.sql`. After that passes, rerun the fresh-origin runtime gate and return for explicit approval.
-

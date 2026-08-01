@@ -45,4 +45,3 @@ The source query used only fixed buckets (`missing`, `manual`, `non_manual_other
 ## Boundaries And Rollback
 
 This gate made no repository or production change, so there is no data rollback. Its SQL can be rerun read-only if aggregate counts need refresh, but raw-row or second-stage detail access requires a separate approval. Permanent v2, queue v3, corrections, source-schema changes, repair, merge, and deployment remain unapproved.
-
