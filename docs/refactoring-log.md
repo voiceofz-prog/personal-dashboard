@@ -195,3 +195,39 @@ Use one entry per bounded change. Each entry must identify the governing Roadmap
 - Verification: Run `node scripts/verify.mjs`; confirm the documentation diff is the only change after `03a8d00` and no production or cross-project path changed.
 - Risk: Low runtime risk. Process risk remains if a later stage treats projection tests as approval of disputed Fitness business rules or treats VM evidence as browser, SQL, Supabase, PWA, or physical-device acceptance.
 - Rollback: Revert this documentation commit; `03a8d00` remains independently reviewable and reversible.
+
+## BC-P1-006 - Make Legacy Fitness RPC Create-Only
+
+- Commit: `6d47ca7`.
+- Goals: `S1`, `S2`, `S3`, `S6`, `M2`.
+- Before: RPC v1 replaced every submitted daily/workout field and deleted omitted workouts. Existing ids and ambiguous retries could silently overwrite snapshots, hidden fields, source, and provenance-related payload values.
+- After: Existing daily/workout ids and ambiguous replays fail with `FITNESS_V1_UPGRADE_REQUIRED`. Daily/workout writes are insert-only with conflict row-count checks, and omission delete reconciliation is removed. Owner, allowlist, active-cycle, target, RLS, grant, and transaction boundaries remain unchanged.
+- Complexity and duplication: Adds a full replacement function migration because applied migrations remain immutable. The duplicated function body is migration history, not a new runtime abstraction; its additional lines preserve existing validation while narrowing writes to create-only.
+- Affected files: `supabase/migrations/20260801014145_fitness_v1_existing_edit_guard.sql`, `tests/fitness-atomic-save.test.sql`.
+- Verification: Static/main/independent diff review passed. The SQL fixture covers create, replay/edit rejection, omission preservation, workout-id rejection, and rollback evidence but is not executed because no authorized non-production PostgreSQL runtime is available.
+- Risk: High until SQL runtime execution. The candidate is committed but the Safety Hotfix Gate remains open and nothing is deployed.
+- Rollback: Before deployment, revert `6d47ca7`. After deployment, use a new reviewed migration; never restore unsafe v1 replacement silently.
+
+## BC-P1-007 - Lock Existing Fitness Edit And Isolate Old Bundles
+
+- Commit: `432197f`.
+- Goals: `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `M2`.
+- Before: Existing Fitness entries could enter the reduced edit form, normalize omitted fields, call RPC or queue, and replace local rows. Old atomic bundles were retried without an explicit create/edit classification.
+- After: Existing-entry edit/save returns before normalization, RPC, queue, or local replacement and shows a history-protection message. New bundles carry create intent; old/unclassified bundles remain pending, do not call RPC or overlay the read model, and show a Settings warning. App/SW versions advance together to `2026.08.01.1`.
+- Complexity and duplication: Adds three focused constants, one small intent predicate, two early guards, queue warning projection, and targeted tests. It adds no v2/v3 contract, class, adapter, repository, or Fitness business-rule abstraction.
+- Affected files: `app/dashboard.js`, `app/service-worker.js`, `tests/fitness-edit-lock-characterization.test.mjs`, `tests/offline-queue-characterization.test.mjs`, `tests/helpers/dashboard-harness.mjs`.
+- Verification: Node hotfix/Fitness/English/composition tests and `node scripts/verify.mjs` pass. Independent validation reported no blocking finding. Fresh-origin demo runtime and `390x844` smoke checks pass with no console warning/error.
+- Risk: Real authenticated RPC, physical iPhone, old deployed PWA cache, and same-origin cache upgrade remain unverified. SQL execution remains the blocking gate item.
+- Rollback: Revert `432197f` before deployment. If the server guard is deployed, do not remove it while reverting the client lock.
+
+## BC-P1-008 - Record FIT-DATA-01 Safety And Production Impact Gates
+
+- Commit: This bounded documentation commit.
+- Goals: `S1`, `S2`, `S3`, `S5`, `S6`, `M2`, `M4`.
+- Before: Candidate hotfix evidence, the incomplete agent attempts, aggregate production impact, runtime evidence, and the blocking SQL-runtime gap existed only in the active task context.
+- After: Separate reports preserve Safety Hotfix and production read-only evidence. Security documentation records create-only v1, edit lock, and queue isolation. The Safety gate is explicitly not passed; permanent v2, merge, and deployment remain stopped.
+- Complexity and duplication: Adds two evidence reports and focused security/log updates. No application, migration, test, Roadmap direction, source project, or production system changes.
+- Affected files: `docs/security.md`, `docs/fit-data-01-safety-hotfix-gate-report.md`, `docs/fit-data-01-production-read-only-impact-gate-report.md`, `docs/refactoring-log.md`.
+- Verification: Run `node scripts/verify.mjs`; review the documentation diff; confirm remote branch remains at `7486edc`, production migrations are unchanged, and the worktree is clean after commit.
+- Risk: Evidence risk if the unexecuted SQL fixture is mistaken for a pass. Both reports explicitly keep it blocking.
+- Rollback: Revert this documentation commit; candidate code commits remain independently reviewable.
