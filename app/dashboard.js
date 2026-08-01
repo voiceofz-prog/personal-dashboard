@@ -1,4 +1,4 @@
-const VERSION = "2026.08.01.1";
+const VERSION = "2026.08.01.2";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -533,6 +533,7 @@ async function executeOperation(item) {
   if (!item.owner_user_id || item.owner_user_id !== state.session.user.id) {
     throw new Error("Pending operation is not owned by this session");
   }
+  if (isUnsafeFitnessPendingItem(item)) throw new Error(FITNESS_QUEUE_REVIEW_MESSAGE);
   const userId = encodeURIComponent(state.session.user.id);
   const rowId = encodeURIComponent(item.row_id);
 
@@ -575,6 +576,19 @@ function isFitnessCreateOperation(item) {
   return item?.table === FITNESS_BUNDLE_TABLE
     && item.operation === "rpc"
     && item.intent === FITNESS_CREATE_INTENT;
+}
+
+function isUnsafeFitnessPendingItem(item) {
+  return item?.table === FITNESS_BUNDLE_TABLE
+    ? !isFitnessCreateOperation(item)
+    : item?.table === "fitness_daily_entries" || item?.table === "fitness_workouts";
+}
+
+function fitnessQueueWarning(item) {
+  const priorError = typeof item?.last_error === "string" ? item.last_error : "";
+  if (!priorError) return FITNESS_QUEUE_REVIEW_MESSAGE;
+  if (priorError.startsWith(FITNESS_QUEUE_REVIEW_MESSAGE)) return priorError;
+  return `${FITNESS_QUEUE_REVIEW_MESSAGE} Previous sync error: ${priorError}`;
 }
 
 function prepareOperationPayload(item) {
@@ -639,6 +653,20 @@ async function syncPending() {
     return;
   }
 
+  const unsafeFitnessItems = visible.filter(isUnsafeFitnessPendingItem);
+  if (unsafeFitnessItems.length === visible.length) {
+    const message = fitnessQueueWarning(unsafeFitnessItems[0]);
+    const visibleSet = new Set(visible);
+    state.pending = state.pending.map((item) => visibleSet.has(item)
+      ? { ...item, last_error: fitnessQueueWarning(item) }
+      : item);
+    state.lastWriteError = message;
+    saveQueue();
+    showToast(`0 synced; ${visible.length} still pending`);
+    render();
+    return;
+  }
+
   try {
     await refreshAccessTokenIfNeeded();
   } catch (error) {
@@ -654,13 +682,10 @@ async function syncPending() {
 
   for (const item of visible) {
     try {
-      if (item.table === "fitness_daily_entries" || item.table === "fitness_workouts") {
-        throw new Error("Legacy Fitness pending rows cannot sync separately. Reopen the Fitness entry and save it again as one atomic batch.");
-      }
       await executeOperation(item);
       synced += 1;
     } catch (error) {
-      const message = friendlyError(error);
+      const message = isUnsafeFitnessPendingItem(item) ? fitnessQueueWarning(item) : friendlyError(error);
       firstError ||= message;
       remaining.push({ ...item, last_error: message, last_attempt_at: new Date().toISOString() });
     }
@@ -1677,8 +1702,8 @@ function renderSettings() {
   if (state.lastSync) syncParts.push(`last refresh ${formatDateTime(state.lastSync)}`);
   if (state.lastReadError) syncParts.push(`read warning: ${state.lastReadError}`);
   if (state.lastWriteError) syncParts.push(`write warning: ${state.lastWriteError}`);
-  const unsafeFitnessItem = pending.find((item) => item.table === FITNESS_BUNDLE_TABLE && !isFitnessCreateOperation(item));
-  const queueWarning = unsafeFitnessItem?.last_error || (unsafeFitnessItem ? FITNESS_QUEUE_REVIEW_MESSAGE : null);
+  const unsafeFitnessItem = pending.find(isUnsafeFitnessPendingItem);
+  const queueWarning = unsafeFitnessItem ? fitnessQueueWarning(unsafeFitnessItem) : null;
   if (queueWarning && queueWarning !== state.lastWriteError) syncParts.push(`queue warning: ${queueWarning}`);
   document.getElementById("syncStatus").textContent = `${syncParts.join(" · ")}.`;
   document.getElementById("syncButton").hidden = !pendingCount;
@@ -1727,6 +1752,7 @@ function applyPendingOperations(data) {
     fitness_workouts: data.fitness._workouts
   };
   visible.forEach((item) => {
+    if (isUnsafeFitnessPendingItem(item)) return;
     if (isFitnessCreateOperation(item)) {
       const daily = { ...item.payload.daily, _pending: true };
       const dailyIndex = data.fitness._entries.findIndex((row) => row.id === daily.id);

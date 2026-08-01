@@ -113,15 +113,20 @@ await assert.rejects(
 assert.equal(networkCalls, 0);
 
 resetState();
-const unknownBundle = { ...bundle };
+const unknownBundle = { ...bundle, last_error: "temporary network failure" };
 delete unknownBundle.intent;
 api.state.pending = [unknownBundle];
 const unknownOverlay = api.emptyDashboard();
 api.applyPendingOperations(unknownOverlay);
 assert.equal(unknownOverlay.fitness._entries.length, 0);
 assert.equal(unknownOverlay.fitness._workouts.length, 0);
+api.renderSettings();
+assert.match(document.getElementById("syncStatus").textContent, /older build.*cannot be synced safely/i);
+assert.match(document.getElementById("syncStatus").textContent, /temporary network failure/i);
 
 let unknownNetworkCalls = 0;
+api.state.session.refresh_token = "unknown-refresh-token";
+api.state.session.expires_at = 0;
 setFetch(async () => {
   unknownNetworkCalls += 1;
   return response(204);
@@ -130,6 +135,54 @@ await api.syncPending();
 assert.equal(unknownNetworkCalls, 0);
 assert.equal(api.state.pending.length, 1);
 assert.match(api.state.pending[0].last_error, /older build.*cannot be synced safely/i);
+assert.match(api.state.pending[0].last_error, /temporary network failure/i);
+assert.match(api.state.lastWriteError, /older build.*cannot be synced safely/i);
+api.renderSettings();
+assert.match(document.getElementById("syncStatus").textContent, /older build.*cannot be synced safely/i);
+assert.match(document.getElementById("syncStatus").textContent, /temporary network failure/i);
+const stableUnknownWarning = api.state.pending[0].last_error;
+await api.syncPending();
+assert.equal(unknownNetworkCalls, 0);
+assert.equal(api.state.pending[0].last_error, stableUnknownWarning);
+
+resetState();
+const legacyDaily = queued({
+  id: "legacy-daily",
+  operation: "update",
+  table: "fitness_daily_entries",
+  row_id: dailyId,
+  payload: { id: dailyId, entry_date: "2026-07-29", training_status: "trained" }
+});
+const legacyWorkout = queued({
+  id: "legacy-workout",
+  operation: "update",
+  table: "fitness_workouts",
+  row_id: workoutId,
+  payload: { id: workoutId, daily_entry_id: dailyId, exercise_key: "a_pushup", completed: true }
+});
+api.state.pending = [legacyDaily, legacyWorkout];
+const legacyOverlay = api.emptyDashboard();
+api.applyPendingOperations(legacyOverlay);
+assert.equal(legacyOverlay.fitness._entries.length, 0);
+assert.equal(legacyOverlay.fitness._workouts.length, 0);
+api.renderSettings();
+assert.match(document.getElementById("syncStatus").textContent, /older build.*cannot be synced safely/i);
+
+let legacyNetworkCalls = 0;
+api.state.session.refresh_token = "legacy-refresh-token";
+api.state.session.expires_at = 0;
+setFetch(async () => {
+  legacyNetworkCalls += 1;
+  return response(204);
+});
+await assert.rejects(api.executeOperation(legacyDaily), /older build.*cannot be synced safely/i);
+assert.equal(legacyNetworkCalls, 0);
+await api.syncPending();
+assert.equal(legacyNetworkCalls, 0);
+assert.equal(api.state.pending.length, 2);
+assert.deepEqual(snapshot(api.state.pending.map((item) => item.id)), ["legacy-daily", "legacy-workout"]);
+assert.ok(api.state.pending.every((item) => !Object.hasOwn(item, "save_status")));
+assert.ok(api.state.pending.every((item) => /older build.*cannot be synced safely/i.test(item.last_error)));
 assert.match(api.state.lastWriteError, /older build.*cannot be synced safely/i);
 api.renderSettings();
 assert.match(document.getElementById("syncStatus").textContent, /older build.*cannot be synced safely/i);
