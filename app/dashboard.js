@@ -1,4 +1,4 @@
-const VERSION = "2026.07.29.3";
+const VERSION = "2026.08.01.1";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -6,6 +6,9 @@ const DATA_CACHE_KEY = "jessica-dashboard-last-data-v2";
 const SessionSecurity = globalThis.DashboardSessionSecurity;
 const REVIEW_DURATION_MS = 5 * 60 * 1000;
 const FITNESS_BUNDLE_TABLE = "fitness_entry_bundle";
+const FITNESS_CREATE_INTENT = "create";
+const FITNESS_EDIT_LOCK_MESSAGE = "Editing existing Fitness records is temporarily paused to protect historical fields. You can still view past records and create a new entry.";
+const FITNESS_QUEUE_REVIEW_MESSAGE = "This pending Fitness item was created by an older build and cannot be synced safely. Open the latest app and confirm it again.";
 const WRITABLE_TABLES = new Set([
   "english_review_events",
   "english_self_checks",
@@ -534,6 +537,7 @@ async function executeOperation(item) {
   const rowId = encodeURIComponent(item.row_id);
 
   if (item.table === FITNESS_BUNDLE_TABLE) {
+    if (!isFitnessCreateOperation(item)) throw new Error(FITNESS_QUEUE_REVIEW_MESSAGE);
     return supabaseFetch("/rest/v1/rpc/save_fitness_entry_atomic", {
       method: "POST",
       body: JSON.stringify({
@@ -567,6 +571,12 @@ async function executeOperation(item) {
   });
 }
 
+function isFitnessCreateOperation(item) {
+  return item?.table === FITNESS_BUNDLE_TABLE
+    && item.operation === "rpc"
+    && item.intent === FITNESS_CREATE_INTENT;
+}
+
 function prepareOperationPayload(item) {
   const payload = { ...item.payload, user_id: state.session.user.id };
   if (item.table !== "fitness_workouts" || item.operation === "delete") return payload;
@@ -574,10 +584,12 @@ function prepareOperationPayload(item) {
   return payload;
 }
 
-async function saveFitnessBundle(draft) {
+async function saveFitnessBundle(draft, intent) {
+  if (intent !== FITNESS_CREATE_INTENT) throw new Error(FITNESS_QUEUE_REVIEW_MESSAGE);
   const item = {
     id: crypto.randomUUID(),
     operation: "rpc",
+    intent,
     table: FITNESS_BUNDLE_TABLE,
     row_id: draft.daily.id,
     payload: { daily: draft.daily, workouts: draft.exercises },
@@ -1190,8 +1202,9 @@ function renderFitness() {
     : emptyState("No fitness record yet", "Save body and recovery status to prepare the next session.");
   const editButton = document.getElementById("editFitnessEntry");
   editButton.hidden = !latest;
-  editButton.disabled = Boolean(latest && trainingLocked && latest.training_status === "trained");
-  editButton.textContent = editButton.disabled ? "Training Record Locked During Recovery" : "Edit Latest Record";
+  editButton.disabled = false;
+  editButton.textContent = "Editing Temporarily Paused";
+  editButton.title = FITNESS_EDIT_LOCK_MESSAGE;
   document.getElementById("savedFitnessReport").hidden = !state.lastSavedReport;
   document.getElementById("fitnessReportOutput").textContent = state.lastSavedReport;
 
@@ -1487,6 +1500,10 @@ function resolveWorkoutTargetId(workout) {
 
 async function saveFitnessEntry(event) {
   event.preventDefault();
+  if (state.editingFitnessId || event.target.elements.id.value) {
+    showToast(FITNESS_EDIT_LOCK_MESSAGE);
+    return;
+  }
   let draft;
   try {
     draft = normalizeFitnessDraft(event.target);
@@ -1498,7 +1515,7 @@ async function saveFitnessEntry(event) {
   }
   if (!draft) return;
   const existing = currentDashboard().fitness._entries.find((item) => item.id === draft.daily.id);
-  const result = await saveFitnessBundle(draft);
+  const result = await saveFitnessBundle(draft, FITNESS_CREATE_INTENT);
   if (result.save_status === "rejected") {
     showToast(`Fitness save rejected; nothing was saved. ${result.last_error}`);
     render();
@@ -1533,35 +1550,7 @@ function editLatestFitnessEntry() {
   const data = currentDashboard().fitness;
   const latest = latestFitnessEntry(data._entries);
   if (!latest) return;
-  if (isTrainingLockedCycle(data) && latest.training_status === "trained") {
-    showToast("The completed training record is locked while a safety stop is active.");
-    return;
-  }
-  const form = document.getElementById("fitnessReportForm");
-  state.editingFitnessId = latest.id;
-  form.elements.id.value = latest.id;
-  form.elements.entry_date.value = latest.entry_date;
-  form.elements.bodyweight.value = latest.bodyweight_kg ?? "";
-  form.elements.sleep_hours.value = latest.sleep_hours ?? "";
-  form.elements.energy_score.value = latest.energy_score ?? "";
-  form.elements.recovery_score.value = latest.recovery_score ?? "";
-  form.elements.soreness_level.value = latest.soreness_level || "none";
-  form.elements.recovery_note.value = latest.notes || "";
-  setRadioValue(form, "day_type", latest.training_status);
-  setCheckedValues(form, "soreness_areas", latest.soreness_areas);
-  const supplements = splitSupplements(latest.protein);
-  const knownSupplements = Array.from(form.querySelectorAll('input[name="supplements"]')).map((input) => input.value);
-  setCheckedValues(form, "supplements", supplements);
-  form.elements.custom_supplement.value = supplements.filter((item) => !knownSupplements.includes(item)).join("、");
-  const rows = data._workouts.filter((item) => item.daily_entry_id === latest.id);
-  const plan = rows[0]?.plan_type || inferPlanFromText(latest.training_content) || inferNextPlanFromFitness(data);
-  form.elements.plan_template.value = plan;
-  renderExerciseInputs(plan, recommendedExercises(plan, data._workouts, "maintain", targetsForPlan(data, plan)), rows);
-  updateFitnessFormVisibility();
-  document.getElementById("saveFitnessEntry").textContent = "Update Record";
-  document.getElementById("cancelFitnessEdit").hidden = false;
-  form.dataset.touched = "true";
-  document.querySelector(".fitness-generator").scrollIntoView({ block: "start" });
+  showToast(FITNESS_EDIT_LOCK_MESSAGE);
 }
 
 function resetFitnessForm(options = {}) {
@@ -1679,7 +1668,8 @@ function recalculateFitness(fitness) {
 }
 
 function renderSettings() {
-  const pendingCount = pendingForCurrentUser().length;
+  const pending = pendingForCurrentUser();
+  const pendingCount = pending.length;
   document.getElementById("authStatus").textContent = state.session.demo
     ? "Demo preview. Cloud sync is disabled."
     : `Logged in as ${state.session.user.email}`;
@@ -1687,6 +1677,9 @@ function renderSettings() {
   if (state.lastSync) syncParts.push(`last refresh ${formatDateTime(state.lastSync)}`);
   if (state.lastReadError) syncParts.push(`read warning: ${state.lastReadError}`);
   if (state.lastWriteError) syncParts.push(`write warning: ${state.lastWriteError}`);
+  const unsafeFitnessItem = pending.find((item) => item.table === FITNESS_BUNDLE_TABLE && !isFitnessCreateOperation(item));
+  const queueWarning = unsafeFitnessItem?.last_error || (unsafeFitnessItem ? FITNESS_QUEUE_REVIEW_MESSAGE : null);
+  if (queueWarning && queueWarning !== state.lastWriteError) syncParts.push(`queue warning: ${queueWarning}`);
   document.getElementById("syncStatus").textContent = `${syncParts.join(" · ")}.`;
   document.getElementById("syncButton").hidden = !pendingCount;
   document.getElementById("clearLocalButton").hidden = !pendingCount;
@@ -1734,7 +1727,7 @@ function applyPendingOperations(data) {
     fitness_workouts: data.fitness._workouts
   };
   visible.forEach((item) => {
-    if (item.table === FITNESS_BUNDLE_TABLE && item.operation === "rpc") {
+    if (isFitnessCreateOperation(item)) {
       const daily = { ...item.payload.daily, _pending: true };
       const dailyIndex = data.fitness._entries.findIndex((row) => row.id === daily.id);
       if (dailyIndex >= 0) data.fitness._entries[dailyIndex] = daily;

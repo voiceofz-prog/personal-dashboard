@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { loadDashboardHarness } from "./helpers/dashboard-harness.mjs";
 
-const { api, navigator, setFetch, snapshot } = loadDashboardHarness();
+const { api, document, navigator, setFetch, snapshot } = loadDashboardHarness();
 const userA = "08dc15cb-aa8e-40fe-bfdf-0ef659292e0e";
 const userB = "11111111-1111-4111-8111-111111111111";
 
@@ -67,6 +67,7 @@ const workoutId = "33333333-3333-4333-8333-333333333333";
 const bundle = queued({
   id: "bundle-a",
   operation: "rpc",
+  intent: api.FITNESS_CREATE_INTENT,
   table: "fitness_entry_bundle",
   row_id: dailyId,
   payload: {
@@ -111,17 +112,39 @@ await assert.rejects(
 );
 assert.equal(networkCalls, 0);
 
+resetState();
+const unknownBundle = { ...bundle };
+delete unknownBundle.intent;
+api.state.pending = [unknownBundle];
+const unknownOverlay = api.emptyDashboard();
+api.applyPendingOperations(unknownOverlay);
+assert.equal(unknownOverlay.fitness._entries.length, 0);
+assert.equal(unknownOverlay.fitness._workouts.length, 0);
+
+let unknownNetworkCalls = 0;
+setFetch(async () => {
+  unknownNetworkCalls += 1;
+  return response(204);
+});
+await api.syncPending();
+assert.equal(unknownNetworkCalls, 0);
+assert.equal(api.state.pending.length, 1);
+assert.match(api.state.pending[0].last_error, /older build.*cannot be synced safely/i);
+assert.match(api.state.lastWriteError, /older build.*cannot be synced safely/i);
+api.renderSettings();
+assert.match(document.getElementById("syncStatus").textContent, /older build.*cannot be synced safely/i);
+
 const draft = {
   daily: bundle.payload.daily,
   exercises: bundle.payload.workouts
 };
 const requests = [];
+resetState();
 setFetch(async (url, options) => {
   requests.push({ url, options });
   return response(500, { code: "XX500", message: "temporary failure" });
 });
-api.state.pending = [];
-const pendingResult = await api.saveFitnessBundle(draft);
+const pendingResult = await api.saveFitnessBundle(draft, api.FITNESS_CREATE_INTENT);
 assert.equal(pendingResult.save_status, "pending");
 assert.equal(api.state.pending.length, 1);
 assert.equal(api.state.pending[0].table, "fitness_entry_bundle");
@@ -146,14 +169,14 @@ assert.deepEqual(JSON.parse(requests[1].options.body), {
 
 resetState();
 setFetch(async () => response(400, { code: "PGRST100", message: "invalid contract" }));
-const rejectedResult = await api.saveFitnessBundle(draft);
+const rejectedResult = await api.saveFitnessBundle(draft, api.FITNESS_CREATE_INTENT);
 assert.equal(rejectedResult.save_status, "rejected");
 assert.match(rejectedResult.last_error, /invalid contract/);
 assert.equal(api.state.pending.length, 0);
 
 resetState();
 setFetch(async () => response(204));
-const savedResult = await api.saveFitnessBundle(draft);
+const savedResult = await api.saveFitnessBundle(draft, api.FITNESS_CREATE_INTENT);
 assert.equal(savedResult.save_status, "saved");
 assert.equal(api.state.pending.length, 0);
 
