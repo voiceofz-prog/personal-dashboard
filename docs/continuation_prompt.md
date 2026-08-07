@@ -20,10 +20,9 @@ Current scaffold already includes:
 - app/service-worker.js
 - app/data/demo.json
 - app/config.sample.json
-- supabase/schema.sql
-- supabase/migrations/001_initial_schema.sql
-- supabase/migrations/002_english_review_cards.sql
-- supabase/migrations/003_security_hardening.sql
+- supabase/README.md
+- supabase/migrations/ (canonical timestamped production ledger)
+- supabase/bootstrap/pre_ledger_baseline.sql (blank disposable rebuild only)
 - supabase/seed_demo.sql
 - docs/setup.md
 - docs/security.md
@@ -50,5 +49,5 @@ Please continue end-to-end:
 8. Give me the local preview URL or file path, what was verified, and what external setup I need to provide.
 
 If credentials are needed, ask only for the Supabase URL, anon key, Vinson login email, and confirmation that Vinson's Auth user UUID has been inserted into `dashboard_allowed_users`. Never ask for or store the Supabase service role key in frontend files.
-For an existing database, make sure migrations are applied through `supabase/migrations/003_security_hardening.sql`.
+For an existing database, follow `supabase/README.md`: compare the formal migration ledger first and deploy only pending canonical timestamped migrations. Do not run `schema.sql`, the bootstrap, or legacy numbered migrations on production.
 ```

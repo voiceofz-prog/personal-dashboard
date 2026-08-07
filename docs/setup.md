@@ -25,7 +25,7 @@ When testing after app updates, reload once while online so the service worker c
 
 1. Create a Supabase project.
 2. Create Vinson's Auth user in Supabase Auth.
-3. In Supabase SQL Editor, run `supabase/schema.sql` for a fresh setup, then apply any later migration not yet incorporated. For an existing setup that already ran `001_initial_schema.sql`, run migrations `002` through `009` in filename order.
+3. Follow `supabase/README.md` for the correct migration flow. Production uses only the canonical timestamped ledger in `supabase/migrations/`; do not run `supabase/schema.sql`, the pre-ledger bootstrap, or legacy numbered migrations there.
 4. Copy Vinson's Auth user UUID.
 5. Add Vinson to the dashboard allowlist:
 
@@ -45,7 +45,7 @@ Do not put the service role key in `config.json`. The app rejects service-role-l
 
 Recommended Supabase Auth setting for this private app: disable public sign-ups after Vinson's account exists.
 
-If an older copy of the schema was already run, apply every migration after its current version. Migration `006` adds the traceable manual Jessica review loop and executable exercise targets; migration `007` removes unnecessary authenticated table privileges; migration `009` adds the atomic Fitness save RPC and deferred active-cycle invariant.
+For an existing database, compare its formal migration ledger with the canonical timestamped files before applying any pending migration. Do not infer state from legacy filenames or re-run historical SQL.
 
 ## 3. GitHub Pages Deployment
 

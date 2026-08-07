@@ -53,6 +53,8 @@ for (const path of ["app/data/demo.json", "app/manifest.webmanifest"]) {
   check(`JSON ${path}`, () => JSON.parse(read(path)));
 }
 
+check("Supabase migration layout", () => run(process.execPath, ["scripts/verify-migration-layout.mjs"]));
+
 const testFiles = readdirSync(join(root, "tests"), { withFileTypes: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith(".test.mjs"))
   .map((entry) => join(root, "tests", entry.name))

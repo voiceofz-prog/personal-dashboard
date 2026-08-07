@@ -58,8 +58,9 @@ The app works in demo preview mode until `config.json` is created from `config.s
 | `app/app.js` | App state, demo mode, local queue, cached reading, Supabase REST reads/writes |
 | `app/data/demo.json` | Demo data shown before Supabase connection |
 | `app/icons/` | SVG and PNG PWA icons, including iPhone Home Screen icon |
-| `supabase/schema.sql` | Runnable Supabase schema and RLS policies |
-| `supabase/migrations/001_initial_schema.sql` | Versioned migration copy of the same schema |
+| `supabase/README.md` | Canonical production deployment and blank-rebuild migration flows |
+| `supabase/migrations/` | Formal timestamped production migration ledger |
+| `supabase/bootstrap/pre_ledger_baseline.sql` | Disposable blank-rebuild bootstrap only; never a production migration |
 | `supabase/seed_demo.sql` | Optional low-risk cloud demo rows after Vinson Auth UUID is known |
 | `docs/setup.md` | Supabase and GitHub Pages setup |
 | `docs/security.md` | Security model and boundaries |
