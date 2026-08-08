@@ -15,9 +15,9 @@ const expectedMigrations = {
   "20260629223948_review_loop_grant_hardening.sql": "7B803C428EFA593FEB8B2A3F57F3A05BCE5C809745587114E68AF0F20188DF68",
   "20260629224132_review_loop_indexes.sql": "00D8886AA59FA8F8E765350C7A2A512FEFD2062CDC02FB96C87A10486125B31F",
   "20260701232908_atomic_fitness_workout_save.sql": "55F6CE4CB50D0661E5AEFDFE49735E9775AF95C01A265A63FACDE6C66EF0CA67",
-  "20260705031641_review_archive_hardening.sql": "8FB94033FD979EB2DB0385EF84F28244B39AB8CB0A1C40CAC60194BB7303F2D9",
-  "20260705032043_atomic_review_lock_privilege.sql": "7C4ED54DC99EA49FD5B20948FE8477126E31A88461FB537F0F901AF864F66143",
-  "20260706125725_protect_fitness_workout_provenance.sql": "231CE9E2DC5049EC01FE29F0C4BD076D9664EA4908164B474F743D2213FE6CB1",
+  "20260705031641_review_archive_hardening.sql": "AA4F8944B770F0236187141CB0E9BD303FD5E0D3A4E85D3C9FA8506F5050E223",
+  "20260705032043_atomic_review_lock_privilege.sql": "D860864693BC1F7FED6371B2098EAE9D224A5F105E5448723CBA1AF37FB0E3AF",
+  "20260706125725_protect_fitness_workout_provenance.sql": "DFF7304696A933E868C7DA45B13C00CACA84D83E29F3C671A8792932733E2106",
   "20260710085448_student_learning_map_v1.sql": "26029EC3837FDBF5D3BA61F092A497F396529B62491E5F32D4AB6C887208252E",
   "20260801014145_fitness_v1_existing_edit_guard.sql": "D7A98F56AB99F6545304D4CC7A7C8AA6FB03EDB2C020B7AA07F4A75EC1E52F46"
 };
@@ -42,6 +42,10 @@ function normalizedText(path) {
   return readFileSync(path, "utf8").replace(/\r\n?/g, "\n");
 }
 
+function normalizedTextSha256(path) {
+  return createHash("sha256").update(normalizedText(path), "utf8").digest("hex").toUpperCase();
+}
+
 const migrationFiles = readdirSync(migrationsDir, { withFileTypes: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith(".sql"))
   .map((entry) => entry.name)
@@ -61,7 +65,7 @@ for (const [name, expectedHash] of Object.entries(expectedMigrations)) {
   const path = join(migrationsDir, name);
   check(existsSync(path), `Missing canonical migration: ${name}`);
   if (existsSync(path)) {
-    check(sha256(path) === expectedHash, `Checksum mismatch for canonical migration: ${name}`);
+    check(normalizedTextSha256(path) === expectedHash, `Checksum mismatch for canonical migration: ${name}`);
   }
 }
 
