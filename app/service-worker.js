@@ -1,4 +1,4 @@
-const CACHE_NAME = "jessica-dashboard-v2026-08-01-2";
+const CACHE_NAME = "jessica-dashboard-v2026-08-08-1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -18,8 +18,17 @@ const APP_SHELL = [
   "./icons/icon-512.png"
 ];
 
+async function cacheFreshAppShell() {
+  const cache = await caches.open(CACHE_NAME);
+  const requests = APP_SHELL.map((path) => new Request(
+    new URL(path, self.location.href),
+    { cache: "reload" }
+  ));
+  await cache.addAll(requests);
+}
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(cacheFreshAppShell());
   self.skipWaiting();
 });
 
