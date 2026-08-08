@@ -1,5 +1,9 @@
 # Setup Guide
 
+## Position
+
+This guide describes the current formal GitHub Pages + Supabase Dashboard setup and recovery path. It does not make GitHub Pages or Supabase permanent project requirements. For the current project goal, platform direction, ChatGPT Sites positioning, and conflict priority, follow `project_brief.md`.
+
 ## 1. Local Preview
 
 From the app folder:

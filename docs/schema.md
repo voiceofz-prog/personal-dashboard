@@ -1,8 +1,14 @@
 # Supabase Data Model
 
+## Position
+
+This document describes the current formal GitHub Pages + Supabase Dashboard data model. These rules remain binding while that system is active. Long-term platform direction, Supabase's replaceable role, and ChatGPT Sites evaluation are governed by `project_brief.md`.
+
+Platform-independent curated display content is specified separately in [dashboard-display-contract.md](dashboard-display-contract.md). Do not treat current table names or this document as a future display-platform contract.
+
 ## Purpose
 
-This schema stores only V1 dashboard data for English learning summaries and fitness/nutrition tracking. It intentionally excludes raw full Mika transcripts, Feng Shui/destiny/bazi/birth data, immigration records, medical diagnosis, credentials, and service-role keys.
+This schema stores only current Dashboard data for English learning summaries and fitness/nutrition tracking. It intentionally excludes raw full Mika transcripts, Feng Shui/destiny/bazi/birth data, immigration records, medical diagnosis, credentials, and service-role keys.
 
 ## Security Shape
 

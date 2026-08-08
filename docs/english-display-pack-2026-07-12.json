@@ -1,0 +1,92 @@
+{
+  "schema_version": "personal-dashboard-display/v1",
+  "publication_id": "2026-07-12-english-validation-01",
+  "locale": "zh-TW",
+  "timezone": "Asia/Taipei",
+  "english_today": {
+    "topic": "Help a friend choose a balanced reset after an exhausting week",
+    "practice_sentences": [
+      "I would choose a quiet morning at home and one short plan outside later in the day.",
+      "This is better because it gives you time to rest without staying inside all weekend.",
+      "You can still meet one friend for coffee because a small social plan may lift your mood.",
+      "Let me think for a moment—if you feel tired, keep the plan simple and go home early.",
+      "You do not have to make the whole weekend perfect; just choose one thing that helps you reset."
+    ],
+    "sentence_hints": [
+      "先休息，再安排一個小外出。",
+      "第一個理由：休息但不完全悶在家。",
+      "第二個理由：小小社交可能改善心情。",
+      "想一下再補充一個有彈性的做法。",
+      "用溫暖的結尾鼓勵對方。"
+    ],
+    "reminder": "Keep one full recovery phrase available before help.",
+    "optional_prompt": "A friend feels exhausted after a difficult week. Would it be better to stay home all weekend or make one small plan outside? What would I suggest, and why?",
+    "display_priority": "primary"
+  },
+  "speaking_goal": {
+    "cefr_setting": "B1 developing",
+    "goal": "Give one 5-6 sentence answer before detailed questions: make one balanced choice, add two reasons, one concrete example, and one encouraging closing sentence.",
+    "success_checks": [
+      "Make one balanced choice, add two reasons, one concrete example, and one encouraging closing sentence.",
+      "Keep one full recovery phrase available before help."
+    ],
+    "display_priority": "primary"
+  },
+  "english_focus": {
+    "focus": "Build one connected choice-and-reason answer: choose a balanced reset, give two reasons, one concrete example, and an encouraging closing.",
+    "progress_note": "The advice chain appeared, but it remained shorter than the 5-6 sentence target.",
+    "tags": [
+      "because",
+      "one concrete example",
+      "Let me think for a moment..."
+    ],
+    "next_session_note": "Comparison / Decision Making tests that expansion without returning to another chronological story or repeating the same simple advice setup.",
+    "display_priority": "primary"
+  },
+  "learning_map_summary": {
+    "status": "ready",
+    "current_stage": "B1 developing: building independent connected answers",
+    "current_main_module": "Answer Development",
+    "building_capability": "Expand the same idea into a connected answer with a second reason, an example, and a closing.",
+    "exit_readiness": "near",
+    "next_main_module": null,
+    "recent_progress_summary": "Completed recommendation → reason → first action in a new Persuasion / Opinion task; stayed in English and gave warm, practical encouragement.",
+    "repetition_caution": "Elevated — recent story practice has felt repetitive.",
+    "display_priority": "secondary"
+  },
+  "reminders": [
+    {
+      "priority": "now",
+      "text": "Keep one full recovery phrase available before help.",
+      "source": "english"
+    },
+    {
+      "priority": "soon",
+      "text": "Use complete decision chunks: `I would choose...`, `because...`, and `You do not have to...`.",
+      "source": "english"
+    }
+  ],
+  "updated_at": {
+    "published_at": "2026-07-12T09:15:06+08:00",
+    "english_source_updated_at": null,
+    "fitness_source_updated_at": null,
+    "coverage_note": "English-only validation bundle. Source documents are dated 2026-07-11; exact source publication time is not documented. Preserve the existing Fitness source timestamp when this bundle is merged into a full dashboard snapshot."
+  },
+  "provenance": {
+    "english": {
+      "source_project": "01_language-learning",
+      "evidence_through": "2026-07-11",
+      "source_documents": [
+        "language_learning/speaking_plan.md",
+        "language_learning/feedback_review_dashboard.md",
+        "language_learning/student_learning_map.md",
+        "language_learning/skill_dashboard.md",
+        "language_learning/daily_speaking_rolling_14_days.md",
+        "language_learning/jessica_review_cycle.md"
+      ],
+      "generation_flow": "english-after-session review output"
+    },
+    "assembler": "display-pack-assembler-pending-implementation",
+    "regenerable": true
+  }
+}

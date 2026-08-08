@@ -1,5 +1,9 @@
 # Local Verification
 
+## Position
+
+These checks verify the current formal GitHub Pages + Supabase PWA. They remain useful for maintenance, recovery, and comparison. They are not the success criteria for a future pure-display ChatGPT Sites path; Sites success and stop conditions are defined in `project_brief.md`.
+
 ## Static Checks
 
 Run these from `projects/05_personal-dashboard`:

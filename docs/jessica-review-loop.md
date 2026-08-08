@@ -1,22 +1,30 @@
 # Jessica Review Loop
 
+## Position
+
+This document describes the current closed-loop workflow for the GitHub Pages + Supabase Dashboard. Its source-project ownership rules remain valid, but Supabase publication is no longer a permanent long-term assumption. For the current project goal and display-layer transition principles, follow `project_brief.md`.
+
 ## Boundary
 
-The Dashboard is the execution and sync surface. It does not own domain judgment.
+The Dashboard is the presentation and, in the current PWA, execution/sync surface. It does not own domain judgment.
 
-| Owner | Keeps | Publishes to Supabase |
+| Owner | Keeps | Current formal Dashboard path |
 |---|---|---|
-| `01_language-learning` | Mika evidence, CEFR decisions, learning analysis, card wording | One English review cycle, current focus, and curated review cards |
-| `02_Fitness_Nutrition` | Recovery interpretation, Plan A/B program logic, progression decisions | One Fitness review cycle and structured exercise targets |
-| `05_personal-dashboard` | UI, Auth, offline queue, execution records, target provenance | Review events, self-checks, daily status, and completed workouts |
+| `01_language-learning` | Mika evidence, CEFR decisions, learning analysis, card wording | Publishes one English review cycle, current focus, Learning Map summary, and curated review cards to Supabase |
+| `02_Fitness_Nutrition` | Recovery interpretation, Plan A/B program logic, progression decisions | Publishes one Fitness review cycle and structured exercise targets to Supabase |
+| `05_personal-dashboard` | Current UI, Auth, offline queue, execution records, target provenance | Reads published rows and writes review events, self-checks, daily status, and completed workouts |
 
 Raw transcripts and full domain logs stay in their source projects.
 
+Future pure-display paths, including ChatGPT Sites Phase 1, should preserve the same source-project ownership while replacing the final publication/display target with a fixed display-content contract. Sites must not become the only place where important history or judgment exists.
+
 ## Manual Trigger
+
+For any later pure-display path, use [dashboard-display-contract.md](dashboard-display-contract.md) after source judgment is complete. The current Supabase closed loop remains unchanged until a separate formal decision.
 
 Vinson can say: `Jessica，審查 Dashboard 並更新下一步。`
 
-Jessica then performs both domain workflows through the authorized Supabase connector:
+While the current Supabase-backed Dashboard is formal, Jessica performs both domain workflows through the authorized Supabase connector:
 
 1. Read only evidence newer than the active cycle's `evidence.through`.
 2. Ask for missing information only when it prevents a safe decision.
@@ -44,4 +52,4 @@ Jessica then performs both domain workflows through the authorized Supabase conn
 
 `evidence recorded -> Jessica reviewed -> target published -> target executed -> result recorded -> Jessica re-reviewed`
 
-The process is complete only when the published rows are read back successfully. Automation must preserve these same states and checks.
+For the current formal Dashboard, the process is complete only when the published rows are read back successfully. Future display-only publishing may replace Supabase readback with a different verification step, but it must still prove that source-project judgment was preserved and the display result can be regenerated from local records.
