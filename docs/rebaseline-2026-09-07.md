@@ -55,7 +55,7 @@ The first independent Validator returned `REVISE` after 2,023 held-out Legacy/Ca
 - documents Fitness V1 as create-only and changes the live acceptance checklist accordingly;
 - tells users that older pending Fitness bundles cannot be re-confirmed in the current app and remain local until reviewed/cleared;
 - checks aggregate committed-tree whitespace from the repository root commit to `HEAD`, in addition to working-tree whitespace;
-- removes the extra bootstrap SQL EOF line and distinguishes local checks from unexecuted SQL/live evidence;
+- normalizes only the generated bootstrap snapshot's trailing blank lines, updates its SHA-256 expectation, and continues proving that its embedded legacy 001–003 sections are exact after EOL normalization; the nine historical migration blobs remain unchanged;
 - records current Candidate/build status without claiming deployment.
 
 A new independent Validator must re-run acceptance against the revised immutable commit before the final Verdict changes from `REVISE`.

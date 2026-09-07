@@ -22,7 +22,7 @@ const expectedMigrations = {
   "20260801014145_fitness_v1_existing_edit_guard.sql": "D7A98F56AB99F6545304D4CC7A7C8AA6FB03EDB2C020B7AA07F4A75EC1E52F46"
 };
 
-const expectedBaselineHash = "4F6AD6A43FC99C9E2E5B55CFC995235CCFCCC7D50B5049ABAECFC8F192D27DE9";
+const expectedBaselineHash = "B812F1D71FDF63C008AFF657D3377CA4D6EE6C9FCAEC1E5ABB5790E68D9AFAF3";
 const legacyBaselineFiles = [
   "001_initial_schema.sql",
   "002_english_review_cards.sql",
