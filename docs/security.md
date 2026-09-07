@@ -79,7 +79,8 @@ The current Dashboard is a private-login PWA. The website shell may be visible a
 | Stored-session tampering or expiry | Startup validates the stored session with Supabase before showing the dashboard. Malformed, expired, revoked, unverifiable, or user-mismatched sessions are cleared together with cached dashboard data. |
 | Stale PWA assets | The service worker uses network-first handling for navigation and app-shell assets, updates the active cache version, and falls back to one complete installed shell while offline. |
 | Pending queue ownership | New pending records are tagged with the current Supabase user id and are synced only when that same user is logged in. |
-| Idempotent offline writes | Client-generated UUIDs and upsert-based inserts prevent a retry from creating duplicate review, daily-entry, or workout rows. |
+| Idempotent offline writes | English and other approved row writes retain their existing UUID/upsert behavior. Legacy Fitness RPC v1 is create-only: an existing daily/workout id, an ambiguous replay, or a concurrent conflict fails closed with `FITNESS_V1_UPGRADE_REQUIRED` instead of replacing rows. |
+| Unsafe Fitness edit | Existing Fitness entries remain readable, but the current client blocks edit/save before normalization, RPC, queue, or local replacement. Old Fitness bundles without an explicit create intent remain isolated in the owner-scoped queue with a visible re-confirmation warning. |
 | Legacy pending queue | Ownerless V1 records are adopted only after a real authenticated session exists and only for the approved English self-check and fitness daily-entry tables. |
 | Student Learning Map stale display | The browser reads the authenticated active-cycle snapshot only; it does not cache a Learning Map or use older snapshots, Review Pack rows, or Mika feedback to recreate one. |
 | Manual local queue clear | The Settings clear action removes only pending records visible to the current local session. |
@@ -102,6 +103,9 @@ The current Dashboard is a private-login PWA. The website shell may be visible a
 - Old pending records without local owner metadata are adopted only by the authenticated private account and only for approved writable tables.
 - Settings distinguishes configured, authenticated, successful cloud read, and failed cloud write states; fixed `Ready` labels are not treated as verification.
 - Fitness quick entry sends one daily entry and its complete workout set to `save_fitness_entry_atomic`; offline saves remain one local RPC bundle until sync.
+- Legacy Fitness RPC v1 accepts new create batches only. Existing daily/workout ids, exact or ambiguous replays, and insert conflicts fail closed before replacement or delete reconciliation, and every raised error rolls back the transaction.
+- Existing-entry Fitness edit is locked in the browser before draft normalization. A blocked edit makes no RPC, creates no pending item, performs no local replacement, and displays a history-protection message.
+- Only Fitness bundles created by the current create-only client carry the explicit create intent. Older or unclassified bundles are retained owner-scoped, are not sent to the RPC, and display a sync warning until a future approved contract can re-confirm them.
 - Only checked exercises are written to `fitness_workouts`; suggested exercises and supplements are not treated as completed activity.
 - `english_review_events` and `english_self_checks` keep owner-scoped row writes. Fitness daily entries and workouts are written together through the authenticated, security-invoker atomic RPC.
 - `jessica_review_cycles` and `fitness_exercise_targets` are owner-scoped, unavailable to anon, and read-only to the authenticated browser. Publication remains connector-only.

@@ -19,6 +19,18 @@ Expected result:
 - JSON commands complete with no output.
 - `git diff --check` has no whitespace errors. Windows line-ending warnings are acceptable in this workspace.
 
+## P0 Evidence Lanes
+
+Keep these three evidence types separate:
+
+| Evidence | Entry point | What it proves |
+|---|---|---|
+| Automated gate | `node scripts/verify.mjs` | Syntax, JSON, Node tests, version consistency, PWA files, workflow gate order, and presence/format of P0 evidence artifacts. |
+| Phone-width visual baseline | [visual-baselines/p0/README.md](visual-baselines/p0/README.md) | A reviewable reference for the authored Login, Home, English, and Fitness layouts at a phone-width browser viewport. |
+| Physical iPhone acceptance | [iphone-acceptance.md](iphone-acceptance.md) | Real Safari/Home Screen behavior, focus, scroll, input, Service Worker, offline, and reconnection acceptance. |
+
+The automated command does not mark the visual review or physical iPhone checklist as passed. A desktop phone-width screenshot is not a substitute for physical-device acceptance.
+
 ## GitHub Pages Deployment Checks
 
 Before pushing, confirm this deployment shape:

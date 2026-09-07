@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 const listeners = new Map();
 const cacheWrites = [];
+const appShellRequests = [];
 let cachedResponse = { source: "cached" };
 let fetchImplementation = async () => ({
   status: 200,
@@ -12,7 +13,10 @@ let fetchImplementation = async () => ({
 });
 
 globalThis.self = {
-  location: { origin: "https://example.com" },
+  location: {
+    href: "https://example.com/personal-dashboard/service-worker.js",
+    origin: "https://example.com"
+  },
   clients: { claim: async () => {} },
   skipWaiting() {},
   addEventListener(type, callback) {
@@ -21,7 +25,7 @@ globalThis.self = {
 };
 globalThis.caches = {
   open: async () => ({
-    addAll: async () => {},
+    addAll: async (requests) => appShellRequests.push(...requests),
     put: async (request, response) => cacheWrites.push({ request, response })
   }),
   keys: async () => [],
@@ -31,8 +35,21 @@ globalThis.caches = {
 globalThis.fetch = (...args) => fetchImplementation(...args);
 
 await import("../app/service-worker.js");
+const handleInstall = listeners.get("install");
 const handleFetch = listeners.get("fetch");
+assert.equal(typeof handleInstall, "function");
 assert.equal(typeof handleFetch, "function");
+
+let installPromise;
+handleInstall({
+  waitUntil(value) {
+    installPromise = value;
+  }
+});
+await installPromise;
+assert.equal(appShellRequests.length, 16);
+assert.ok(appShellRequests.every((request) => request.cache === "reload"));
+assert.ok(appShellRequests.some((request) => request.url === "https://example.com/personal-dashboard/dashboard.js"));
 
 async function requestAppShell(url, mode = "same-origin") {
   let responsePromise;
