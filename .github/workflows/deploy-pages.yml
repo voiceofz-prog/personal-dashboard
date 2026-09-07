@@ -29,20 +29,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Register preserved preview gitlink for checkout cleanup
         shell: bash
         run: |
           set -euo pipefail
-
-          if git ls-files --stage sites-phase-2-preview | grep -q '^160000 ' && [[ ! -f .gitmodules ]]; then
-            git config -f .gitmodules submodule.sites-phase-2-preview.path sites-phase-2-preview
-            git config -f .gitmodules submodule.sites-phase-2-preview.url .
-          fi
+          git clone --no-recurse-submodules "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" .
+          git checkout --detach "$GITHUB_SHA"
 
       - name: Validate repository hygiene
         shell: bash
