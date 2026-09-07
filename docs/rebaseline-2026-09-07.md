@@ -1,5 +1,13 @@
 # Universal Rebaseline 2026-09-07
 
+## Final Verdict
+
+`ACCEPT — isolated repository Candidate only`
+
+Candidate `36217bae549bda15aceb881caed131766b788861` preserves both Legacy `e6389a1` and the remotely preserved `7494787` line as ancestors. It remains on `codex/rebaseline-2026-09-07`; `main`, production, Supabase, Sites, and the source projects were not changed.
+
+The final independent Validator reran the complete gate, passed 1,981 new held-out Legacy/Candidate comparisons, verified all nine moved historical SQL blobs, verified bootstrap SHA-256 `B812F1D71FDF63C008AFF657D3377CA4D6EE6C9FCAEC1E5ABB5790E68D9AFAF3` and embedded legacy sections, and proved the committed-tree check fails under simulated shallow history. No blocking rejection reason remained within local repository acceptance.
+
 ## Scope And Isolation
 
 - Target: `05_personal-dashboard` only.
@@ -58,6 +66,6 @@ The first independent Validator returned `REVISE` after 2,023 held-out Legacy/Ca
 - normalizes only the generated bootstrap snapshot's trailing blank lines, updates its SHA-256 expectation, and continues proving that its embedded legacy 001–003 sections are exact after EOL normalization; the nine historical migration blobs remain unchanged;
 - records current Candidate/build status without claiming deployment.
 
-A new independent Validator must re-run acceptance against the revised immutable commit before the final Verdict changes from `REVISE`.
+The second independent Validator again returned `REVISE`: a depth-one CI checkout made the committed-tree comparison vacuous, and two active operational documents still described an unavailable reopen/resave path. The Candidate now requires full Git history in Pages checkout, fails committed-tree validation when the repository is shallow, self-checks the workflow setting, and removes the two stale recovery instructions.
 
-The second independent Validator again returned `REVISE`: a depth-one CI checkout made the committed-tree comparison vacuous, and two active operational documents still described an unavailable reopen/resave path. The Candidate now requires full Git history in Pages checkout, fails committed-tree validation when the repository is shallow, self-checks the workflow setting, and removes the two stale recovery instructions. A third new Validator must test this revision independently.
+The third independent Validator returned `ACCEPT` after the full gate, held-out behavior comparison, shallow-history simulation, migration integrity checks, scope review, and rollback review. Live Supabase state, SQL execution, deployed same-origin PWA upgrade, physical iPhone Safari/Home Screen behavior, and a live security review remain unverified and were not used to justify acceptance.

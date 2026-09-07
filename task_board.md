@@ -8,7 +8,6 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
-- [ ] Universal Rebaseline v1.1 in progress on isolated branch `codex/rebaseline-2026-09-07`; Legacy baseline is commit `e6389a1`. Current phase: revision after independent validation. Next safe action: rerun the complete gate, commit the revision, and obtain a new adversarial acceptance validation.
 - [ ] Keep the current GitHub Pages + Supabase Dashboard usable as the formal system and rollback baseline.
 - [ ] Refresh the iPhone PWA and verify that low recovery warns without disabling conservative Plan B, if that current-use check is still needed.
 
@@ -27,6 +26,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Done
 
+- [x] Completed Universal Rebaseline v1.1. Independent adversarial validation accepted isolated Candidate `36217ba` against Legacy `e6389a1`; the Candidate remains unmerged and undeployed, and live Supabase/SQL, same-origin PWA, and physical iPhone evidence remain separate gates.
 - [x] Deployed and remotely verified formal Dashboard build `2026.07.06.2` with explicit `training_lock` behavior and the current service-worker cache.
 - [x] Hardened Auth/RLS grants, owner isolation, review-cycle archive behavior, immutable provenance, atomic Fitness saves, and active-target rendering.
 - [x] Implemented and verified traceable English/Fitness review cycles, curated cards/targets, and source-project ownership boundaries.
@@ -45,3 +45,4 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 | 2026-07-11 | Keep GitHub Pages + Supabase formal until a separate validated switch decision. | Preserves security, rollback, and current usability. |
 | 2026-07-11 | Phase 1 uses one platform-independent display contract. | Allows future renderers without binding source projects to one frontend. |
 | 2026-07-16 | Defer Sites validation and Git-topology changes while the platform role is unstable. | Avoids making an experimental surface part of the formal architecture prematurely. |
+| 2026-09-08 | Accept Universal Rebaseline Candidate `36217ba` for the isolated repository only. | Three independent validation rounds resolved documentation, recovery-path, checksum, and CI-history defects; production and device evidence were not inferred. |
