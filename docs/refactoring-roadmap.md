@@ -18,7 +18,7 @@ The technical debt recorded here remains real. The change is priority and activa
 | Reactivation baseline | Local HEAD, remote `main`, and deployed Pages build were verified on 2026-07-29 as commit `e23f6a2ec16fc5a36736e04cfdb552583127a8a5`, frontend build `2026.07.29.3`. |
 | Execution status | P0, P1-English, and the recorded Fitness safety fixes are integrated in the Universal Rebaseline candidate; acceptance still requires independent validation. |
 | Approval gate | Universal Rebaseline v1.1 authorizes this isolated candidate. Product-semantic ambiguity, production deployment, external-account access, and changes to source projects remain separate boundaries. |
-| Production deployment | Not authorized during P1-English. |
+| Production deployment | Not authorized by the Universal Rebaseline. |
 | Platform position | GitHub Pages + Supabase remains the formal system during this work; long-term platform selection remains open. |
 | P0 gate evidence | [p0-gate-report.md](p0-gate-report.md) |
 | P1-English gate evidence | [p1-english-gate-report.md](p1-english-gate-report.md) |
@@ -187,4 +187,4 @@ The roadmap is complete when:
 
 ## Deferred Work Record
 
-P0, P1-English, and the recorded Fitness safety fixes are preserved as validated history. Further Fitness recommendation or Plan-advancement refactoring remains deferred because source-project and Dashboard semantics are not yet reconciled. Supabase API restructuring, additional database work, P2 rendering changes, production deployment, and Sites evaluation require a new evidence-backed scope or separate authority. Do not jump directly to file splitting or technology migration.
+P0 and P1-English retain their recorded validation evidence. The Fitness safety fixes are preserved as repository history and pass local Node/static checks, but their SQL fixture was not executed in this Rebaseline and no live database claim is made. Further Fitness recommendation or Plan-advancement refactoring remains deferred because source-project and Dashboard semantics are not yet reconciled. Supabase API restructuring, additional database work, P2 rendering changes, production deployment, and Sites evaluation require a new evidence-backed scope or separate authority. Do not jump directly to file splitting or technology migration.

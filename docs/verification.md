@@ -133,7 +133,8 @@ These cannot be completed in demo mode:
 - A five-minute English flow supports reveal, all three ratings, early finish, seven-day statistics, and latest-summary editing.
 - Recovery-day, maintain, and progress recommendations follow the documented thresholds and Plan A/B alternation.
 - Suggested exercises and supplements begin unchecked; only explicitly checked values are stored and copied into the saved report.
-- Editing the latest fitness entry reconciles the daily status and its structured exercise rows.
+- Existing Fitness entries remain visible but cannot enter edit mode or issue a network/local write; the UI explains that editing is temporarily paused to protect history.
+- An older or unclassified pending Fitness bundle remains owner-scoped, is not overlaid or sent, and truthfully states that the current app cannot re-confirm it safely.
 - An active Jessica Fitness cycle supplies a complete target set, the form uses its exact values, and saved workouts retain `target_id`.
 - After multiple review cycles accumulate, refreshing Fitness still renders exactly five targets for the selected Plan; superseded-cycle targets never appear in the current form.
 - A Jessica-generated workout with a blank DOM target still resolves exactly one `target_id` from user + Plan + `exercise_key` + active cycle + effective date before save.

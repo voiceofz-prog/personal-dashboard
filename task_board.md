@@ -8,7 +8,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
-- [ ] Universal Rebaseline v1.1 in progress on isolated branch `codex/rebaseline-2026-09-07`; Legacy baseline is commit `e6389a1`. Current phase: discovery/classification. Next safe action: inventory runtime, contracts, tests, history, and current-capability workarounds before the minimum candidate implementation.
+- [ ] Universal Rebaseline v1.1 in progress on isolated branch `codex/rebaseline-2026-09-07`; Legacy baseline is commit `e6389a1`. Current phase: revision after independent validation. Next safe action: rerun the complete gate, commit the revision, and obtain a new adversarial acceptance validation.
 - [ ] Keep the current GitHub Pages + Supabase Dashboard usable as the formal system and rollback baseline.
 - [ ] Refresh the iPhone PWA and verify that low recovery warns without disabling conservative Plan B, if that current-use check is still needed.
 

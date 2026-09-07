@@ -492,5 +492,3 @@ grant select, insert, update, delete on
   public.dashboard_tasks
 to authenticated;
 -- END LEGACY 003_security_hardening.sql
-
-

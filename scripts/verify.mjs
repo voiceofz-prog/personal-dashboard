@@ -34,6 +34,7 @@ function run(command, args) {
   if (result.status !== 0) {
     throw new Error([result.stdout, result.stderr].filter(Boolean).join("\n").trim());
   }
+  return result.stdout;
 }
 
 function read(path) {
@@ -187,7 +188,12 @@ check("phone-width visual baseline JPEGs", () => {
   }
 });
 
-check("Git whitespace", () => run("git", ["diff", "--check"]));
+check("Working-tree Git whitespace", () => run("git", ["diff", "--check"]));
+check("Committed-tree Git whitespace", () => {
+  const roots = run("git", ["rev-list", "--max-parents=0", "HEAD"]).trim().split(/\s+/).filter(Boolean);
+  assert(roots.length === 1, `expected one repository root commit, found ${roots.length}`);
+  run("git", ["diff", "--check", roots[0], "HEAD"]);
+});
 
 if (failures.length > 0) {
   console.error(`\nVerification failed with ${failures.length} check(s).`);

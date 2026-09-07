@@ -60,10 +60,10 @@ Sites is an experimental display candidate, not part of the formal architecture.
 
 | Item | Summary |
 |---|---|
-| Status | Formal Dashboard build `2026.07.06.2` remains active; Sites is deferred and experimental. |
-| Last updated | 2026-07-16 |
-| Latest decision | Preserve the current formal system and platform-independent contract. Do not change Sites Git topology or begin replacement validation while its role remains unstable. |
-| Next action | Maintain current usability and security. Start Phase 2 only after Vinson gives a separate explicit decision. |
+| Status | GitHub Pages + Supabase remains formal. The latest documented external Pages verification is build `2026.07.29.3`; repository Candidate build `2026.08.08.1` is not claimed deployed by this file. Sites remains deferred and experimental. |
+| Last updated | 2026-09-07 |
+| Latest decision | Run Universal Rebaseline in isolation while preserving the formal system, platform-independent contract, production boundary, and source-project ownership. |
+| Next action | Complete Candidate acceptance and keep it isolated; deployment or Phase 2 still requires a separate decision. |
 
 ## Key References
 

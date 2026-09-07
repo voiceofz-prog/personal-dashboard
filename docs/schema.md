@@ -35,7 +35,7 @@ This schema stores only current Dashboard data for English learning summaries an
 | `english_self_checks` | Editable completion summaries for English review sessions. | Yes; offline-capable insert/update. |
 | `english_learning_map_snapshots` | Active Student Learning Map published by the English source project. | No; authenticated browser read-only. |
 | `jessica_review_cycles` | Traceable English/Fitness evidence review, conclusion, and next focus. | Jessica publishes through the authorized connector; browser role is read-only. |
-| `fitness_daily_entries` | Daily bodyweight, sleep, energy, recovery, soreness, and nutrition status. | Yes; offline-capable insert/update. |
+| `fitness_daily_entries` | Daily bodyweight, sleep, energy, recovery, soreness, and nutrition status. | New entries only through the current create-only atomic Fitness RPC; existing entries are read-only in V1. |
 | `fitness_workouts` | Structured Plan A/B exercise weight, reps by set, completion, date relation, and reviewed target provenance. | Only through the atomic Fitness RPC in the V1 UI. |
 | `fitness_exercise_targets` | Jessica-reviewed executable weight/reps targets for each Plan A/B exercise. | Jessica publishes through the authorized connector; browser role is read-only. |
 | `fitness_plan_targets` | Curated Plan A/B/Nutrition target cards. | No in V1 UI. |
@@ -108,9 +108,10 @@ The Dashboard reads only these published fields: `current_stage`, `current_main_
 
 - Browser-created UUIDs identify new review events, summaries, daily entries, and workouts before a network connection exists.
 - Pending operations store the complete Fitness daily entry and workout array as one owner-scoped RPC bundle.
-- Inserts use idempotent upsert semantics. An offline insert followed by edits remains one insert containing the latest values.
+- English and other approved row writes retain their idempotent upsert behavior. Current Fitness bundles are explicitly create-only: existing ids, ambiguous replays, and unclassified older bundles fail closed instead of updating history.
 - Pending operations sync only for the logged-in owner.
-- `save_fitness_entry_atomic(jsonb, jsonb)` writes or updates one daily status row, reconciles its checked workouts, and commits them in one transaction.
+- `save_fitness_entry_atomic(jsonb, jsonb)` inserts one new daily status row and its checked workouts in one transaction. It rejects existing daily/workout ids and does not reconcile, update, or delete historical rows.
+- Older pending Fitness bundles without the current create intent remain owner-scoped on the device and are not sent or overlaid. The current app has no safe re-confirm/import path; review the source record before clearing one.
 - Before any trained-day write, the RPC locks and rechecks exactly one active Fitness review cycle. Every supplied `target_id` must be the sole active target for the same owner, Plan, `exercise_key`, and effective date.
 - A stale, inactive, superseded, missing, mixed-cycle, or ambiguous target rejects the complete batch. The database never rebinds by comparing weight or reps.
 - A deferred database trigger protects direct table writes from introducing stale or mixed-cycle target links.

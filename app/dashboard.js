@@ -8,7 +8,7 @@ const REVIEW_DURATION_MS = 5 * 60 * 1000;
 const FITNESS_BUNDLE_TABLE = "fitness_entry_bundle";
 const FITNESS_CREATE_INTENT = "create";
 const FITNESS_EDIT_LOCK_MESSAGE = "Editing existing Fitness records is temporarily paused to protect historical fields. You can still view past records and create a new entry.";
-const FITNESS_QUEUE_REVIEW_MESSAGE = "This pending Fitness item was created by an older build and cannot be synced safely. Open the latest app and confirm it again.";
+const FITNESS_QUEUE_REVIEW_MESSAGE = "This pending Fitness item was created by an older build and cannot be synced safely or re-confirmed in the current app. It remains on this device; review the source record before clearing it.";
 const WRITABLE_TABLES = new Set([
   "english_review_events",
   "english_self_checks",

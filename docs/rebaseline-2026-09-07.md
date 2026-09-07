@@ -47,3 +47,15 @@
 - Legacy: five JavaScript syntax checks, three available Node regression tests, and whitespace check passed.
 - Candidate: five JavaScript syntax checks, two JSON checks, canonical migration-layout check, ten Node tests, version/asset/cache/deployment checks, visual-baseline file checks, and whitespace check passed.
 - Live Supabase, deployed same-origin Service Worker upgrade, and physical iPhone acceptance were not run and remain separate evidence lanes.
+
+## Revision Loop
+
+The first independent Validator returned `REVISE` after 2,023 held-out Legacy/Candidate comparisons found no English/Home regression but exposed four acceptance defects: stale Fitness update/reconciliation documentation, an impossible legacy-queue re-confirmation instruction, a whitespace gate that covered only working-tree changes, and stale task/SQL evidence state. The Candidate now:
+
+- documents Fitness V1 as create-only and changes the live acceptance checklist accordingly;
+- tells users that older pending Fitness bundles cannot be re-confirmed in the current app and remain local until reviewed/cleared;
+- checks aggregate committed-tree whitespace from the repository root commit to `HEAD`, in addition to working-tree whitespace;
+- removes the extra bootstrap SQL EOF line and distinguishes local checks from unexecuted SQL/live evidence;
+- records current Candidate/build status without claiming deployment.
+
+A new independent Validator must re-run acceptance against the revised immutable commit before the final Verdict changes from `REVISE`.
