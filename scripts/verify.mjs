@@ -138,6 +138,7 @@ check("Pages deployment gate order", () => {
   const uploadIndex = workflow.indexOf("- name: Upload app folder");
   const deployIndex = workflow.indexOf("- name: Deploy to GitHub Pages");
   assert(verifyIndex >= 0, "Verification command is missing from the Pages workflow");
+  assert(/fetch-depth:\s*0/.test(workflow), "Pages checkout must include full history for committed-tree checks");
   assert(verifyIndex < configIndex, "Verification must run before runtime config generation");
   assert(verifyIndex < uploadIndex, "Verification must run before artifact upload");
   assert(verifyIndex < deployIndex, "Verification must run before Pages deployment");
@@ -190,6 +191,8 @@ check("phone-width visual baseline JPEGs", () => {
 
 check("Working-tree Git whitespace", () => run("git", ["diff", "--check"]));
 check("Committed-tree Git whitespace", () => {
+  const shallow = run("git", ["rev-parse", "--is-shallow-repository"]).trim();
+  assert(shallow === "false", "committed-tree whitespace verification requires full Git history");
   const roots = run("git", ["rev-list", "--max-parents=0", "HEAD"]).trim().split(/\s+/).filter(Boolean);
   assert(roots.length === 1, `expected one repository root commit, found ${roots.length}`);
   run("git", ["diff", "--check", roots[0], "HEAD"]);

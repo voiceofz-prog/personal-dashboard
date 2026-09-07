@@ -59,3 +59,5 @@ The first independent Validator returned `REVISE` after 2,023 held-out Legacy/Ca
 - records current Candidate/build status without claiming deployment.
 
 A new independent Validator must re-run acceptance against the revised immutable commit before the final Verdict changes from `REVISE`.
+
+The second independent Validator again returned `REVISE`: a depth-one CI checkout made the committed-tree comparison vacuous, and two active operational documents still described an unavailable reopen/resave path. The Candidate now requires full Git history in Pages checkout, fails committed-tree validation when the repository is shallow, self-checks the workflow setting, and removes the two stale recovery instructions. A third new Validator must test this revision independently.

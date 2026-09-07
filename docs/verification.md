@@ -141,7 +141,7 @@ These cannot be completed in demo mode:
 - Stale UI state after a cycle update rejects the complete save instead of preserving a formerly valid target.
 - Mixed target ids, inactive/superseded targets, and zero or multiple active-cycle candidates block the complete batch and expose an error; the app never guesses from reps or weight.
 - The daily entry and all checked workouts are committed by one RPC transaction. A late workout error leaves no daily row or partial workout rows.
-- Offline Fitness saves remain one RPC bundle and retry atomically. Legacy per-row Fitness queue records are blocked with instructions to reopen and resave.
+- Current-build offline Fitness creates remain one RPC bundle and retry atomically. Older or unclassified Fitness queue records remain owner-scoped, are neither overlaid nor sent, and do not claim an unavailable reopen/resave path.
 - A recovery-day decision overrides reviewed exercise targets without deleting or marking them complete.
 - An active cycle disables training only when its review evidence explicitly sets `training_lock=true` and publishes 0 targets.
 - Recovery 2/5 with no red flags may publish reduced targets; Dashboard shows a conservative warning while keeping rest and reviewed training selectable.

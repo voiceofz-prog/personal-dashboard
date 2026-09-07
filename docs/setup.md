@@ -129,7 +129,7 @@ Logout behavior:
 - The Settings clear action removes only pending records visible to the current local session.
 - Legacy pending records created before owner tagging are assigned once to the currently authenticated account, but only for the previously supported write tables.
 - Fitness workout sync sends the complete daily entry and workouts through one RPC transaction. The server revalidates the sole active Fitness cycle and every target; stale, inactive, superseded, mixed, zero-candidate, or multi-candidate input is rejected in full with a visible error.
-- Pending Fitness rows created by older builds are not replayed separately because that would violate atomicity. Reopen the entry in the current build and save it again as one batch.
+- Pending Fitness rows created by older builds are not replayed because their intent cannot be proven safely. The current app cannot re-confirm or import them; keep the source record, review it before clearing the local item, and create only a genuinely new current entry.
 
 ## 5. Current Limitations
 
