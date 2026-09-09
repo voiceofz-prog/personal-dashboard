@@ -26,7 +26,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Done
 
-- [x] Completed Universal Rebaseline v1.1. Independent adversarial validation accepted isolated Candidate `36217ba` against Legacy `e6389a1`; the Candidate remains unmerged and undeployed, and live Supabase/SQL, same-origin PWA, and physical iPhone evidence remain separate gates.
+- [x] Completed Universal Rebaseline v1.1. Independent adversarial validation accepted isolated Candidate `36217ba` against Legacy `e6389a1`; the Candidate is preserved in current `main` history, while deployment and live Supabase/SQL, same-origin PWA, and physical iPhone evidence remain separate gates.
 - [x] Deployed and remotely verified formal Dashboard build `2026.07.06.2` with explicit `training_lock` behavior and the current service-worker cache.
 - [x] Hardened Auth/RLS grants, owner isolation, review-cycle archive behavior, immutable provenance, atomic Fitness saves, and active-target rendering.
 - [x] Implemented and verified traceable English/Fitness review cycles, curated cards/targets, and source-project ownership boundaries.

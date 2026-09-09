@@ -16,7 +16,7 @@ The technical debt recorded here remains real. The change is priority and activa
 | Approved | 2026-07-10 |
 | Historical baseline | `main` commit `548102181d67c07dfe8c9a05985bc21f3f182bcb` and frontend build `2026.07.06.2`. |
 | Reactivation baseline | Local HEAD, remote `main`, and deployed Pages build were verified on 2026-07-29 as commit `e23f6a2ec16fc5a36736e04cfdb552583127a8a5`, frontend build `2026.07.29.3`. |
-| Execution status | P0, P1-English, and the recorded Fitness safety fixes are integrated in the Universal Rebaseline candidate; acceptance still requires independent validation. |
+| Execution status | P0, P1-English, and the recorded Fitness safety fixes were integrated in accepted Universal Rebaseline Candidate `36217ba`; independent validation is complete and current `main` contains that commit. |
 | Approval gate | Universal Rebaseline v1.1 authorizes this isolated candidate. Product-semantic ambiguity, production deployment, external-account access, and changes to source projects remain separate boundaries. |
 | Production deployment | Not authorized by the Universal Rebaseline. |
 | Platform position | GitHub Pages + Supabase remains the formal system during this work; long-term platform selection remains open. |

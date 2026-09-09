@@ -4,7 +4,7 @@
 
 `ACCEPT — isolated repository Candidate only`
 
-Candidate `36217bae549bda15aceb881caed131766b788861` preserves both Legacy `e6389a1` and the remotely preserved `7494787` line as ancestors. It remains on `codex/rebaseline-2026-09-07`; `main`, production, Supabase, Sites, and the source projects were not changed.
+Candidate `36217bae549bda15aceb881caed131766b788861` preserves both Legacy `e6389a1` and the remotely preserved `7494787` line as ancestors. The Candidate and its decision commit are now contained in current `main` history, while branch `codex/rebaseline-2026-09-07` remains as a Git reference. The acceptance run did not change production, Supabase, Sites, or the source projects; repository integration alone is not deployment evidence.
 
 The final independent Validator reran the complete gate, passed 1,981 new held-out Legacy/Candidate comparisons, verified all nine moved historical SQL blobs, verified bootstrap SHA-256 `B812F1D71FDF63C008AFF657D3377CA4D6EE6C9FCAEC1E5ABB5790E68D9AFAF3` and embedded legacy sections, and proved the committed-tree check fails under simulated shallow history. No blocking rejection reason remained within local repository acceptance.
 
@@ -12,8 +12,8 @@ The final independent Validator reran the complete gate, passed 1,981 new held-o
 
 - Target: `05_personal-dashboard` only.
 - Related evidence: `01_language-learning` and `02_Fitness_Nutrition` remain read-only contract owners.
-- Legacy baseline: commit `e6389a10a665f3a619768a30a746b7288cdd8a77`, also mounted as detached worktree `.cache/rebaseline-legacy`.
-- Candidate: branch `codex/rebaseline-2026-09-07` integrating the already isolated and remotely preserved `7494787` safety/refactor line with the current project-governance line.
+- Legacy baseline: commit `e6389a10a665f3a619768a30a746b7288cdd8a77`; its temporary detached worktree `.cache/rebaseline-legacy` was retired on 2026-09-09 after a clean-state and ancestry check.
+- Candidate: commit `36217bae549bda15aceb881caed131766b788861`, with the decision retained on branch `codex/rebaseline-2026-09-07`; both are ancestors of current `main`.
 - No deployment, live Supabase access, external write, Sites migration, or source-project modification is included.
 
 ## Preserved Truth, Contracts, And Invariants
@@ -69,3 +69,7 @@ The first independent Validator returned `REVISE` after 2,023 held-out Legacy/Ca
 The second independent Validator again returned `REVISE`: a depth-one CI checkout made the committed-tree comparison vacuous, and two active operational documents still described an unavailable reopen/resave path. The Candidate now requires full Git history in Pages checkout, fails committed-tree validation when the repository is shallow, self-checks the workflow setting, and removes the two stale recovery instructions.
 
 The third independent Validator returned `ACCEPT` after the full gate, held-out behavior comparison, shallow-history simulation, migration integrity checks, scope review, and rollback review. Live Supabase state, SQL execution, deployed same-origin PWA upgrade, physical iPhone Safari/Home Screen behavior, and a live security review remain unverified and were not used to justify acceptance.
+
+## Artifact Lifecycle Closure — 2026-09-09
+
+The detached Legacy worktree was clean and contained no unique files before removal. Legacy `e6389a1`, Candidate `36217ba`, and the accepted decision branch remain available through Git, and both commits are ancestors of current `main`. This document remains the durable acceptance and rollback record. The cleanup changed no runtime/product behavior, schema, Supabase state, deployment state, or source-project truth.

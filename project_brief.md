@@ -60,7 +60,7 @@ Sites is an experimental display candidate, not part of the formal architecture.
 
 | Item | Summary |
 |---|---|
-| Status | GitHub Pages + Supabase remains formal and active. Universal Rebaseline Candidate `36217ba` passed isolated repository acceptance; it is not merged or deployed. The latest documented external Pages verification remains build `2026.07.29.3`. Sites remains deferred and experimental. |
+| Status | GitHub Pages + Supabase remains formal and active. Universal Rebaseline Candidate `36217ba` passed isolated repository acceptance and is contained in current `main` history. Repository integration does not establish deployment; the latest documented external Pages verification remains build `2026.07.29.3`. Sites remains deferred and experimental. |
 | Last updated | 2026-09-08 |
 | Latest decision | Accept the isolated Rebaseline Candidate while preserving the current formal system, platform-independent contract, production boundary, source-project ownership, and Legacy rollback. |
 | Next action | Keep Legacy active; separately authorize live Supabase/SQL, same-origin PWA, physical iPhone, and deployment acceptance before any formal switch. |
