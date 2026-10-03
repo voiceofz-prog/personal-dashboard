@@ -84,7 +84,7 @@
           <div class="two-col"><label>今日精神 <select name="energy_score" required><option value="">Choose</option><option value="5">5 很好</option><option value="4">4 穩定</option><option value="3">3 普通</option><option value="2">2 偏累</option><option value="1">1 很累</option></select></label><label>整體恢復 <select name="recovery_score" required><option value="">Choose</option><option value="5">5 充分</option><option value="4">4 良好</option><option value="3">3 普通</option><option value="2">2 不足</option><option value="1">1 很差</option></select></label></div>
           <label>痠痛程度 <select name="soreness_level" required><option value="none">無</option><option value="mild">輕微</option><option value="moderate">中度</option><option value="severe">嚴重</option></select></label>
           <section class="supplement-group"><h3>痠痛部位</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="soreness_areas" value="肩"><span>肩</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="胸"><span>胸</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="背"><span>背</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="手臂"><span>手臂</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="腿"><span>腿</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="臀"><span>臀</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="下背"><span>下背</span></label><label class="check-chip"><input type="checkbox" name="soreness_areas" value="核心"><span>核心</span></label></div></section>
-          <label id="planTemplateLabel">訓練模板 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option><option value="自訂">自訂</option></select></label>
+          <label id="planTemplateLabel">Plan 訓練 <select name="plan_template"><option value="Plan A">Plan A</option><option value="Plan B">Plan B</option></select></label>
           <section class="exercise-picker" id="exercisePicker" aria-label="Plan exercises"></section>
           <section class="supplement-group"><h3>實際補給</h3><div class="chip-grid"><label class="check-chip"><input type="checkbox" name="supplements" value="高蛋白"><span>高蛋白</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="豆漿"><span>豆漿</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="香蕉"><span>香蕉</span></label><label class="check-chip"><input type="checkbox" name="supplements" value="蛋"><span>蛋</span></label></div><label>自訂補給 <input name="custom_supplement" type="text" placeholder="例如 優格、飯糰"></label></section>
           <label>恢復備註 <textarea name="recovery_note" rows="3" placeholder="例如：肩膀偏緊、最後一組最吃力"></textarea></label>
@@ -93,7 +93,25 @@
       </section>
       <section class="panel" id="savedFitnessReport" hidden><div class="section-heading"><h2>Saved Report</h2><span class="mini-status">secondary</span></div><pre id="fitnessReportOutput" class="report-box"></pre><button class="secondary-action" id="copyFitnessReport" type="button">Copy for Jessica</button></section>
       <section class="panel"><div class="section-heading"><h2>Plan A/B Progress</h2><span class="mini-status">structured logs</span></div><div id="planList" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Latest Fitness Record</h2><span class="mini-status">editable</span></div><div id="fitnessHistory" class="stack-list"></div><button class="secondary-action" id="editFitnessEntry" type="button" hidden>Edit Latest Record</button></section>
+      <section class="panel"><div class="section-heading"><h2>Latest Fitness Record</h2><span class="mini-status">status</span></div><div id="fitnessHistory" class="stack-list"></div><button class="secondary-action" id="editFitnessEntry" type="button" hidden>Edit Latest Record</button></section>
+      <section class="panel"><div class="section-heading"><h2>其他運動／活動</h2><span id="fitnessV2Status" class="mini-status"></span></div><p id="fitnessActivityStats" class="muted"></p><p class="muted">記錄已發生的活動，可與同日 Plan 訓練並存。未提供的量測不推算。</p>
+        <form id="fitnessActivityForm" class="form-stack">
+          <label>日期<input name="activity_date" type="date" required></label>
+          <label>活動類型<select name="activity_type"><option value="walk_run">步行／跑步</option><option value="hiking">登山</option><option value="cycling">騎車</option><option value="swimming">游泳</option><option value="ball">球類</option><option value="strength">自訂重訓</option><option value="mobility">伸展／瑜伽</option><option value="other">其他活動</option></select></label>
+          <label>活動名稱<input name="name" type="text" maxlength="120" required placeholder="例如：慢跑、羽球、自由重訓"></label>
+          <div id="activityFields" class="form-stack"></div>
+          <label>主觀強度（1–10，選填）<input name="intensity" type="number" min="1" max="10" step="1"></label>
+          <label>活動後感受<input name="feeling" type="text" placeholder="例如：腿部疲累、輕鬆"></label>
+          <label>備註<textarea name="notes" rows="3"></textarea></label>
+          <button type="submit" id="saveFitnessActivity" class="primary-action">保存活動</button>
+        </form>
+      </section>
+      <section class="panel"><div class="section-heading"><h2>Fitness 歷史紀錄</h2><span class="mini-status">版本保留</span></div><p id="fitnessReReview" class="warning" hidden></p><div id="fitnessRecordList" class="stack-list"></div></section>
+      <section id="fitnessRevisionEditor" class="panel" hidden><h2 id="fitnessRevisionTitle">更正紀錄</h2>
+        <form id="fitnessRevisionForm" class="form-stack"><div id="fitnessRevisionFields" class="form-stack"></div><label>修改原因<textarea name="reason" rows="2" required></textarea></label><div class="button-row"><button id="saveFitnessRevision" type="submit" class="primary-action">保存新版本</button><button id="cancelFitnessRevision" type="button" class="secondary-action">取消</button></div></form>
+        <div id="fitnessConflict" hidden><p>未保存這次更正。若版本已變更，可讀取最新資料比較；原草稿仍在表單內。</p><button id="compareFitnessConflict" type="button" class="secondary-action">讀取最新版本比較</button><p id="fitnessConflictComparison"></p><button id="acceptFitnessConflict" type="button" class="secondary-action" hidden>確認最新基準，保留此草稿</button></div>
+      </section>
+      <section id="fitnessVersionPanel" class="panel" hidden><h2>版本紀錄</h2><div id="fitnessVersionList" class="stack-list"></div></section>
     </section>
 
     <section class="view" id="settingsView">
@@ -109,6 +127,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="session-security.js" defer></script>
   <script src="fitness-target-link.js" defer></script>
+  <script src="fitness-records.js" defer></script>
+  <script src="fitness-records-ui.js" defer></script>
   <script src="dashboard.js" defer></script>
 </body>
 </html>

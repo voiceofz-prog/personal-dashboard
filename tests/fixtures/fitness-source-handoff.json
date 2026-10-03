@@ -1,0 +1,761 @@
+{
+  "schema": "fitness-source-handoff/v1",
+  "synthetic": true,
+  "producer": "Fitness representative; consumer snapshot only",
+  "source_fixture": "02_Fitness_Nutrition/tests/fitness-records-v2-handoff.json",
+  "source_fixture_sha256": "2c802eb56127f62623a92ea81bcc782a684f7fcbf5945c3ea3e6dbe77ae7aac7",
+  "consumer_cases": [
+    {
+      "id": "walk_run-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "walk_run",
+            "name": "synthetic walk_run",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "hiking-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "cycling-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "cycling",
+            "name": "synthetic cycling",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "swimming-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "swimming",
+            "name": "synthetic swimming",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "ball-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "ball",
+            "name": "synthetic ball",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "strength-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "strength",
+            "name": "synthetic strength",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "mobility-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "mobility",
+            "name": "synthetic mobility",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "other-older-date-unexamined",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "other",
+            "name": "synthetic other",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "exact-ack-no-new-cycle",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 1,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": false
+    },
+    {
+      "id": "new-revision",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 2,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 1,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "withdraw-new-revision",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 3,
+            "withdrawn": true,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 2,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "withdraw-ack",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 3,
+            "withdrawn": true,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 3,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": false
+    },
+    {
+      "id": "restore-new-revision",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 4,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 3,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "exact-current-head-ack",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 4,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 4,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": false
+    },
+    {
+      "id": "foreign-owner-ack",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [
+          {
+            "user_id": "22222222-2222-4222-8222-222222222222",
+            "record_kind": "activity",
+            "record_id": "33333333-3333-4333-8333-333333333333",
+            "revision": 1,
+            "review_reference": "shadow:2026-10-03/activity",
+            "result": "no_review_needed"
+          }
+        ],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "no-active-cycle-unexamined-activity",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 1,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": null
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "exact-current-review-version",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 2,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": [
+              {
+                "kind": "activity",
+                "id": "33333333-3333-4333-8333-333333333333",
+                "revision": 2
+              }
+            ]
+          }
+        }
+      },
+      "expected_needs_review": false
+    },
+    {
+      "id": "older-review-version",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [],
+        "_workouts": [],
+        "_activities": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "activity_date": "2026-09-15",
+            "activity_type": "hiking",
+            "name": "synthetic hiking",
+            "metrics": {
+              "duration_minutes": null
+            },
+            "exercises": [],
+            "revision": 2,
+            "withdrawn": false,
+            "created_at": "2026-09-16T01:00:00Z",
+            "updated_at": "2026-09-16T01:00:00Z",
+            "revision_changed_at": "2026-09-16T01:00:00Z"
+          }
+        ],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": [
+              {
+                "kind": "activity",
+                "id": "33333333-3333-4333-8333-333333333333",
+                "revision": 1
+              }
+            ]
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "historical-daily-correction",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [
+          {
+            "id": "44444444-4444-4444-8444-444444444444",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "entry_date": "2026-09-15",
+            "revision": 2,
+            "updated_at": "2026-09-15T01:00:00Z",
+            "revision_changed_at": "2026-10-03T01:00:00Z"
+          }
+        ],
+        "_workouts": [],
+        "_activities": [],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": true
+    },
+    {
+      "id": "legacy-v1-backfill",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "fitness": {
+        "_entries": [
+          {
+            "id": "44444444-4444-4444-8444-444444444444",
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "entry_date": "2026-09-15",
+            "revision": 1,
+            "updated_at": "2026-09-15T01:00:00Z"
+          }
+        ],
+        "_workouts": [],
+        "_activities": [],
+        "_reviewAcknowledgements": [],
+        "jessicaReview": {
+          "user_id": "11111111-1111-4111-8111-111111111111",
+          "reviewed_at": "2026-10-02T01:00:00Z",
+          "evidence": {
+            "record_versions": []
+          }
+        }
+      },
+      "expected_needs_review": false
+    }
+  ]
+}

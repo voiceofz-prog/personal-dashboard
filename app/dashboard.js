@@ -1,4 +1,4 @@
-const VERSION = "2026.08.08.1";
+const VERSION = "2026.10.03.5";
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -56,6 +56,7 @@ async function init() {
   bindAuthAndSettings();
   bindEnglishReview();
   bindFitnessForm();
+  globalThis.FitnessRecordsUI?.bind();
   bindNetworkEvents();
   render();
   await loadConfig();
@@ -376,7 +377,34 @@ async function fetchFitnessRows() {
     selectRows("fitness_exercise_targets", "select=*&active=eq.true&order=plan_type.asc,sort_order.asc"),
     selectRows("jessica_review_cycles", "select=*&domain=eq.fitness&status=eq.active&order=reviewed_at.desc")
   ]);
-  return { dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles };
+  let recordHeads = [], activities = [], reviewAcknowledgements = [];
+  let recordsV2Ready = false;
+  const v2Reads = await Promise.allSettled([
+    selectAllFitnessRows("fitness_record_heads", "select=*&order=record_kind.asc,record_id.asc"),
+    selectAllFitnessRows("fitness_activities", "select=*&order=id.asc"),
+    selectAllFitnessRows("fitness_review_acknowledgements", "select=*&order=record_kind.asc,record_id.asc,revision.asc"),
+    selectRows("fitness_record_revisions", "select=record_id&limit=1"),
+    ...["fitness_daily_effective", "fitness_workouts_effective", "fitness_activities_effective"].map((table) => selectRows(table, "select=id&limit=1"))
+  ]);
+  const missing = ({ status, reason }) => status === "rejected" && [404, 400].includes(reason?.status) && /PGRST205|42P01|does not exist|schema cache/i.test(reason.message || "");
+  if (v2Reads.every((r) => r.status === "fulfilled")) {
+    [recordHeads, activities, reviewAcknowledgements] = v2Reads.slice(0, 3).map((r) => r.value);
+    recordsV2Ready = true;
+  } else if (!v2Reads.every(missing)) {
+    const failure = v2Reads.find((r) => r.status === "rejected" && !missing(r));
+    if (failure) throw failure.reason;
+    throw new Error("FITNESS_V2_INCOMPLETE: 部分新版資料介面缺失，請完成資料庫升級後重新整理");
+  }
+  return { dailyEntries, workouts, planTargets, weeklyReviews, exerciseTargets, reviewCycles, recordHeads, activities, reviewAcknowledgements, recordsV2Ready };
+}
+
+async function selectAllFitnessRows(table, query) {
+  const rows = [];
+  for (let offset = 0; ; offset += 500) {
+    const page = await selectRows(table, `${query}&limit=500&offset=${offset}`);
+    rows.push(...page);
+    if (page.length < 500) return rows;
+  }
 }
 
 async function selectRows(table, query) {
@@ -423,6 +451,17 @@ function buildFitnessData(rows) {
   fitness.exerciseTargets = rows.exerciseTargets.map(normalizeExerciseTarget);
   fitness.jessicaReviews = rows.reviewCycles.map(normalizeJessicaReview);
   fitness.jessicaReview = fitness.jessicaReviews.length === 1 ? fitness.jessicaReviews[0] : null;
+  fitness._activities = rows.activities || [];
+  fitness._reviewAcknowledgements = rows.reviewAcknowledgements || [];
+  fitness.recordsV2Ready = Boolean(rows.recordsV2Ready);
+  for (const head of rows.recordHeads || []) {
+    const rowsForKind = { daily: fitness._entries, workout: fitness._workouts, activity: fitness._activities }[head.record_kind];
+    if (!rowsForKind) continue;
+    const normalized = head.record_kind === "daily" ? normalizeFitnessEntry(head.snapshot) : head.record_kind === "workout" ? normalizeWorkout(head.snapshot) : head.snapshot;
+    const row = { ...normalized, revision: head.revision, withdrawn: head.withdrawn, updated_at: head.changed_at };
+    const i = rowsForKind.findIndex((r) => r.id === head.record_id);
+    if (i < 0) rowsForKind.push(row); else rowsForKind[i] = row;
+  }
   return recalculateFitness(fitness);
 }
 
@@ -456,13 +495,14 @@ function buildRecentUpdates(data) {
       detail: [item.answer_chain, item.future_action, item.note].filter(Boolean).join(" / ") || "Summary saved."
     });
   });
-  (data.fitness._entries || []).slice(0, 5).forEach((item) => {
+  (data.fitness._entries || []).filter((row) => !row.withdrawn).slice(0, 5).forEach((item) => {
     updates.push({
       date: item.entry_date,
       title: item.training_status === "trained" ? "Training logged" : "Recovery logged",
       detail: fitnessEntrySummary(item)
     });
   });
+  (data.fitness._activities || []).filter((row) => !row.withdrawn).slice(0, 5).forEach((item) => updates.push({ date: item.activity_date, title: item.name, detail: globalThis.FitnessRecordsUI?.summary(item,"activity") || item.name }));
   return updates.sort((a, b) => compareDateDesc(a.date, b.date)).slice(0, 8);
 }
 
@@ -534,6 +574,11 @@ async function executeOperation(item) {
     throw new Error("Pending operation is not owned by this session");
   }
   if (isUnsafeFitnessPendingItem(item)) throw new Error(FITNESS_QUEUE_REVIEW_MESSAGE);
+  if (state.config?.fitnessRecordsV2ReadOnly && ["fitness_records_v2", FITNESS_BUNDLE_TABLE].includes(item.table)) throw new Error("Fitness is temporarily read-only; pending records remain on this device");
+  if (item.table === "fitness_records_v2") {
+    if (item.intent !== "fitness-records/v2" || item.operation !== "rpc" || item.payload?.request_id !== item.row_id || !globalThis.FitnessRecords?.isRequest(item.payload)) throw new Error("Invalid Fitness v2 queue envelope");
+    return supabaseFetch("/rest/v1/rpc/save_fitness_record_v2", { method: "POST", body: JSON.stringify({ p_request: item.payload }) });
+  }
   const userId = encodeURIComponent(state.session.user.id);
   const rowId = encodeURIComponent(item.row_id);
 
@@ -687,7 +732,7 @@ async function syncPending() {
     } catch (error) {
       const message = isUnsafeFitnessPendingItem(item) ? fitnessQueueWarning(item) : friendlyError(error);
       firstError ||= message;
-      remaining.push({ ...item, last_error: message, last_attempt_at: new Date().toISOString() });
+      remaining.push({ ...item, last_error: message, conflict: item.table === "fitness_records_v2" && /FITNESS_VERSION_CONFLICT/.test(message), last_attempt_at: new Date().toISOString() });
     }
   }
 
@@ -1210,7 +1255,7 @@ function renderFitness() {
   document.getElementById("fitnessMetrics").innerHTML = [
     metric("Bodyweight", fitness.latestBodyweight, "latest"),
     metric("7-day avg", fitness.weeklyAverageBodyweight, "bodyweight"),
-    metric("Training", fitness.trainingDaysThisWeek, "days this week"),
+    metric("運動日", fitness.exerciseDaysThisWeek ?? fitness.trainingDaysThisWeek, "days this week"),
     metric("Recovery", fitness.latestRecoveryScore || "--", "latest / 5")
   ].join("");
   document.getElementById("recommendationMode").textContent = recommendation.modeLabel;
@@ -1226,7 +1271,7 @@ function renderFitness() {
     ? listCard(latest.training_status === "trained" ? "Training day" : "Recovery day", fitnessEntrySummary(latest), latest.entry_date)
     : emptyState("No fitness record yet", "Save body and recovery status to prepare the next session.");
   const editButton = document.getElementById("editFitnessEntry");
-  editButton.hidden = !latest;
+  editButton.hidden = !latest || Boolean(globalThis.FitnessRecordsUI && (state.session?.demo || fitness.recordsV2Ready));
   editButton.disabled = false;
   editButton.textContent = "Editing Temporarily Paused";
   editButton.title = FITNESS_EDIT_LOCK_MESSAGE;
@@ -1243,11 +1288,12 @@ function renderFitness() {
     form.dataset.touched = "true";
   }
   updateFitnessFormVisibility();
+  globalThis.FitnessRecordsUI?.render(fitness);
 }
 
 function computeFitnessRecommendation(fitness) {
   const entries = fitness._entries || [];
-  const workouts = fitness._workouts || [];
+  const workouts = globalThis.FitnessRecords ? FitnessRecords.activeWorkouts(fitness) : fitness._workouts || [];
   const latest = latestFitnessEntry(entries);
   const plan = inferNextPlanFromFitness(fitness);
   const relevantAreas = plan === "Plan A" ? ["肩", "胸", "背", "手臂"] : ["腿", "臀", "下背", "核心"];
@@ -1539,6 +1585,14 @@ async function saveFitnessEntry(event) {
     return;
   }
   if (!draft) return;
+  if (globalThis.FitnessRecordsUI && (state.session?.demo || currentDashboard().fitness.recordsV2Ready)) {
+    const status = await FitnessRecordsUI.save({ bundle: { daily: draft.daily, workouts: draft.exercises } });
+    if (["saved","pending"].includes(status)) {
+      state.lastSavedReport = draft.report;
+      resetFitnessForm({ keepReport: true });
+    }
+    return;
+  }
   const existing = currentDashboard().fitness._entries.find((item) => item.id === draft.daily.id);
   const result = await saveFitnessBundle(draft, FITNESS_CREATE_INTENT);
   if (result.save_status === "rejected") {
@@ -1621,7 +1675,7 @@ function buildFitnessReportFromDraft(draft) {
 
 function buildStructuredPlanCards(fitness) {
   return ["Plan A", "Plan B"].map((plan) => {
-    const rows = latestWorkoutsForPlan(fitness._workouts, plan);
+    const rows = latestWorkoutsForPlan(globalThis.FitnessRecords ? FitnessRecords.activeWorkouts(fitness) : fitness._workouts, plan);
     if (!rows.length) {
       const baseline = fitness.planTargets.find((item) => item.title === plan);
       return {
@@ -1640,18 +1694,18 @@ function buildStructuredPlanCards(fitness) {
 }
 
 function latestWorkoutsForPlan(workouts, plan) {
-  const relevant = workouts.filter((item) => item.plan_type === plan && item.completed);
+  const relevant = workouts.filter((item) => !item.withdrawn && item.plan_type === plan && item.completed);
   const latestDate = relevant.sort((a, b) => compareDateDesc(a.workout_date, b.workout_date))[0]?.workout_date;
   return latestDate ? relevant.filter((item) => item.workout_date === latestDate) : [];
 }
 
 function inferNextPlanFromFitness(fitness) {
-  const latestWorkout = [...(fitness._workouts || [])]
+  const latestWorkout = [...(globalThis.FitnessRecords ? FitnessRecords.activeWorkouts(fitness) : fitness._workouts || [])]
     .filter((item) => item.completed && ["Plan A", "Plan B"].includes(item.plan_type))
     .sort((a, b) => compareDateDesc(a.workout_date, b.workout_date))[0];
   if (latestWorkout) return oppositePlan(latestWorkout.plan_type);
   const latestTraining = [...(fitness._entries || [])]
-    .filter((item) => item.training_status === "trained")
+    .filter((item) => !item.withdrawn && item.training_status === "trained")
     .sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0];
   return oppositePlan(inferPlanFromText(latestTraining?.training_content)) || "Plan A";
 }
@@ -1663,7 +1717,7 @@ function oppositePlan(plan) {
 }
 
 function recalculateFitness(fitness) {
-  const entries = [...fitness._entries].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date));
+  const entries = [...fitness._entries].filter((r) => !r.withdrawn).sort((a, b) => compareDateDesc(a.entry_date, b.entry_date));
   const latest = entries[0];
   const latestWeight = entries.find((item) => item.bodyweight_kg !== null);
   fitness.latestBodyweight = latestWeight ? `${formatNumber(latestWeight.bodyweight_kg)} kg` : "--";
@@ -1675,6 +1729,10 @@ function recalculateFitness(fitness) {
     item.training_status === "trained" && new Date(`${item.entry_date}T00:00:00`) >= weekStart
   ).map((item) => item.entry_date)).size);
   fitness.latestRecoveryScore = latest?.recovery_score ?? null;
+  if (globalThis.FitnessRecords) {
+    const start = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,"0")}-${String(weekStart.getDate()).padStart(2,"0")}`;
+    fitness.exerciseDaysThisWeek = String(FitnessRecords.stats(fitness, start, todayISO()).exerciseDays);
+  }
   if (!latest) {
     fitness.recoveryStatus = "No status yet";
     fitness.recoveryLevel = "ok";
@@ -1740,6 +1798,7 @@ function clearLocalQueue() {
 function currentDashboard() {
   const data = clone(state.data || emptyDashboard());
   if (!state.session?.demo) applyPendingOperations(data);
+  else data.fitness = recalculateFitness(data.fitness);
   return composeDashboard(data);
 }
 
@@ -1753,6 +1812,10 @@ function applyPendingOperations(data) {
   };
   visible.forEach((item) => {
     if (isUnsafeFitnessPendingItem(item)) return;
+    if (item.table === "fitness_records_v2") {
+      if (item.intent === "fitness-records/v2" && !item.conflict && globalThis.FitnessRecords?.isRequest(item.payload)) globalThis.FitnessRecords.apply(data.fitness, item.payload, true);
+      return;
+    }
     if (isFitnessCreateOperation(item)) {
       const daily = { ...item.payload.daily, _pending: true };
       const dailyIndex = data.fitness._entries.findIndex((row) => row.id === daily.id);
@@ -1858,12 +1921,14 @@ function emptyFitness() {
     jessicaReviews: [],
     _entries: [],
     _workouts: [],
-    _weeklyReviews: []
+    _weeklyReviews: [],
+    _activities: [], _versions: [], _reviewAcknowledgements: [], recordsV2Ready: false
   };
 }
 
 function normalizeFitnessEntry(item) {
   return {
+    ...item,
     id: item.id || crypto.randomUUID(),
     entry_date: item.entry_date || todayISO(),
     bodyweight_kg: numberOrNull(item.bodyweight_kg),
@@ -1885,6 +1950,7 @@ function normalizeFitnessEntry(item) {
 
 function normalizeWorkout(item) {
   return {
+    ...item,
     id: item.id || crypto.randomUUID(),
     daily_entry_id: item.daily_entry_id || null,
     workout_date: item.workout_date || dateOnly(item.created_at),
@@ -2148,7 +2214,7 @@ const EnglishDomain = (() => {
 })();
 
 function latestFitnessEntry(entries) {
-  return [...(entries || [])].sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0] || null;
+  return [...(entries || [])].filter((row) => !row.withdrawn).sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0] || null;
 }
 
 function latestBodyState(fitness) {
@@ -2163,9 +2229,12 @@ function latestBodyState(fitness) {
 }
 
 function latestTrainingEvidence(fitness) {
-  const latest = [...fitness._workouts].filter((item) => item.completed).sort((a, b) => compareDateDesc(a.workout_date, b.workout_date))[0];
+  const workouts = globalThis.FitnessRecords ? FitnessRecords.activeWorkouts(fitness) : fitness._workouts;
+  const latest = [...workouts].filter((item) => !item.withdrawn && item.completed).sort((a, b) => compareDateDesc(a.workout_date, b.workout_date))[0];
+  const activity = [...(fitness._activities || [])].filter((row) => !row.withdrawn).sort((a,b) => compareDateDesc(a.activity_date,b.activity_date))[0];
+  if (activity && (!latest || activity.activity_date >= latest.workout_date)) return `${activity.activity_date}: ${activity.name}${latest?.workout_date === activity.activity_date ? ` · ${latest.plan_type}` : ""}.`;
   if (latest) return `${latest.workout_date}: ${latest.plan_type}, ${latest.exercise}.`;
-  const legacy = [...fitness._entries].filter((item) => item.training_status === "trained").sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0];
+  const legacy = [...fitness._entries].filter((item) => !item.withdrawn && item.training_status === "trained" && !fitness._workouts.some((w) => w.daily_entry_id === item.id)).sort((a, b) => compareDateDesc(a.entry_date, b.entry_date))[0];
   return legacy ? `${legacy.entry_date}: ${inferPlanFromText(legacy.training_content) || "training"} recorded.` : "No completed training evidence yet.";
 }
 
@@ -2464,4 +2533,22 @@ function registerServiceWorker() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
 
+globalThis.DashboardFitnessAdapter = {
+  getFitness: () => currentDashboard().fitness,
+  getState: () => state,
+  cloud: canUseCloud,
+  select: selectRows,
+  selectAll: selectAllFitnessRows,
+  send: executeOperation,
+  refreshToken: refreshAccessTokenIfNeeded,
+  enqueue: (item) => { upsertPendingOperation(item); saveQueue(); },
+  saveQueue,
+  refresh: () => refreshDashboardData({ silent: true }),
+  render,
+  toast: showToast,
+  today: todayISO,
+  clone,
+  makeBundle: (draft) => ({ daily: draft.daily, workouts: draft.exercises }),
+  renderPlanInputs: renderExerciseInputs
+};
 init();

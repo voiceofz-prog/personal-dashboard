@@ -1,5 +1,14 @@
 # Supabase Data Model
 
+## Fitness Records V2 Candidate
+
+The approved activity/correction schema and `save_fitness_record_v2` interface are
+documented in [Fitness records v2](fitness-records-v2.md). Its canonical migration
+is `20261003074631_fitness_records_v2.sql`. It adds original activities, version
+heads, append-only snapshots/receipts, source acknowledgements and invoker
+effective views. The legacy descriptions below remain the production baseline
+until separately approved migration/deployment; `schema.sql` is not a V2 install path.
+
 ## Position
 
 This document describes the current formal GitHub Pages + Supabase Dashboard data model. These rules remain binding while that system is active. Long-term platform direction, Supabase's replaceable role, and ChatGPT Sites evaluation are governed by `project_brief.md`.

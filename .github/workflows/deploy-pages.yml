@@ -64,6 +64,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          FITNESS_RECORDS_V2_READ_ONLY: ${{ vars.FITNESS_RECORDS_V2_READ_ONLY }}
         run: |
           node <<'NODE'
           const fs = require("fs");
@@ -99,6 +100,7 @@ jobs:
             }
           }
 
+          config.fitnessRecordsV2ReadOnly = process.env.FITNESS_RECORDS_V2_READ_ONLY === "true";
           fs.writeFileSync("app/config.json", `${JSON.stringify(config, null, 2)}\n`);
           NODE
 

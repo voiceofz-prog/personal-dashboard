@@ -131,7 +131,17 @@ Logout behavior:
 - Fitness workout sync sends the complete daily entry and workouts through one RPC transaction. The server revalidates the sole active Fitness cycle and every target; stale, inactive, superseded, mixed, zero-candidate, or multi-candidate input is rejected in full with a visible error.
 - Pending Fitness rows created by older builds are not replayed because their intent cannot be proven safely. The current app cannot re-confirm or import them; keep the source record, review it before clearing the local item, and create only a genuinely new current entry.
 
-## 5. Current Limitations
+## Fitness records v2 candidate setup
+
+See [Fitness records v2](fitness-records-v2.md) for the canonical migration,
+verification evidence and gated rollout. For local demo run
+`node scripts/preview-fitness.mjs`; this excludes runtime cloud configuration.
+The optional Actions variable `FITNESS_RECORDS_V2_READ_ONLY=true` generates
+`fitnessRecordsV2ReadOnly: true` for a rollback that preserves effective reads and
+stored pending drafts. Never roll back to unsafe history replacement or discard
+version tables. No production migration/deployment occurred during implementation.
+
+### Legacy limitations
 
 - Settings reports English and Fitness module status separately. A successful module can refresh while the other retains its last successful cache.
 - The app reads live Supabase rows after login and shows a true empty state when the account has no data.

@@ -122,6 +122,17 @@ The current Dashboard is a private-login PWA. The website shell may be visible a
 - GitHub Pages artifact contains only the static `app/` folder.
 - GitHub repository settings are reviewed before real use: visibility, Pages source, branch protection, Actions secret names, and workflow permissions.
 
-## Supabase Advisor Status
+## Fitness Records V2 (candidate, 2026-10-03)
+
+The candidate adds owner-isolated activities, heads, immutable revisions/receipts
+and source-only acknowledgement tables. Browser roles have SELECT only. The
+public invoker RPC uses a checked internal definer for auth/allowlist, owner,
+expected version, transitions and immutable workout provenance. New views are
+invoker; anonymous/public execution is revoked. Every evidence write uses the
+same ordered exclusion locks as review. See [Fitness records v2](fitness-records-v2.md)
+for tested behavior and rollout/rollback. Disposable verification does not establish
+production acceptance.
+
+### Earlier advisor status
 
 The schema, function-security, and review-archive authorization findings are resolved through migrations `004`, `005`, and `20260705031641_review_archive_hardening`. Supabase may still report leaked-password protection as disabled; that Auth feature depends on the project plan and must be enabled in the dashboard when available.

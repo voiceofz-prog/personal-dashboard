@@ -8,6 +8,8 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
+- [x] 2026-10-03 local source handoff acceptance: Fitness representative loaded live rules and passed nine isolated shadow judgments/reducer checks; Dashboard main agent fixed exact-version pending review and partial-capability fallback, then passed twenty Fitness-produced cases through the actual consumer and REST projection plus capability/pagination checks. Execution ownership and limits are in `docs/fitness-records-v2.md`; formal source/REST/PWA activation remains Waiting. No push/deployment/production change.
+- [x] 2026-10-03 Fitness records v2 candidate implemented: eight sport forms, append-only corrections/withdrawal/restoration, owned offline request receipts, effective exercise-day statistics and source review/version acknowledgements. Full V2 migration+SQL fixture passed on disposable PostgreSQL under rollback; production migration/deployment remains a separate gate. Details: `docs/fitness-records-v2.md`.
 - [ ] Keep the current GitHub Pages + Supabase Dashboard usable as the formal system and rollback baseline.
 - [ ] Refresh the iPhone PWA and verify that low recovery warns without disabling conservative Plan B, if that current-use check is still needed.
 
@@ -21,6 +23,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Waiting
 
+- [ ] Fitness records v2 production ledger/backup/restore rehearsal, signed-in REST acceptance, same-origin PWA and physical iPhone checks, then separately approved migration/deployment. Next safe action: inspect production parity read-only and prepare the exact release once authorized.
 - [ ] Physical-device acceptance after the current deployed build is refreshed in Safari.
 - [ ] Sites replacement validation and Git ownership remain deferred until Vinson decides the platform is stable enough to evaluate formally.
 
