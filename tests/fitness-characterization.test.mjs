@@ -142,4 +142,16 @@ api.state.data.fitness._workouts = [{
 }];
 assert.equal(api.normalizeFitnessDraft(createRestForm()), null);
 
+// Missing published targets must not hide a measured recovery warning.
+const warningHarness = loadDashboardHarness();
+const warningFitness = warningHarness.api.buildFitnessData({dailyEntries:[entry({sleep_hours:5.5,recovery_score:2})],workouts:[],planTargets:[],weeklyReviews:[],exerciseTargets:[],reviewCycles:[]});
+warningHarness.api.state.session = {demo:true,user:{id:userId}};
+warningHarness.api.state.data = warningHarness.api.emptyDashboard();
+warningHarness.api.state.data.fitness = warningFitness;
+const warningForm = warningHarness.document.getElementById('fitnessReportForm');
+warningForm.dataset.touched = 'true';
+warningForm.elements.plan_template = {value:'Plan A'};
+warningHarness.api.renderFitness(warningFitness);
+const warningHtml = warningHarness.document.getElementById('fitnessRecommendation').innerHTML;
+assert.match(warningHtml.slice(0,warningHtml.indexOf('<details>')), /恢復提醒.*sleep 5.5h.*recovery 2\/5/);
 console.log("Fitness characterization tests passed");

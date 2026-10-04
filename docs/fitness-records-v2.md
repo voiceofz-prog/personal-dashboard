@@ -160,3 +160,8 @@ the migration or establish formal V2 activation; the cutover gates below remain.
 
 Local demo: `node scripts/preview-fitness.mjs` serves `http://127.0.0.1:5204/`
 without serving runtime Supabase configuration.
+
+Page cleanup candidate `2026.10.03.6` consolidates date/history management without
+changing this data contract. Local acceptance and Free-plan preflight are recorded
+in [fitness-page-acceptance.md](fitness-page-acceptance.md). Production V2 migration
+is still absent; the previous `.5` frontend push did not activate those functions.

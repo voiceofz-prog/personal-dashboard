@@ -179,6 +179,7 @@ globalThis.DashboardCharacterization = {
   normalizeFitnessDraft,
   pendingForCurrentUser,
   recommendedExercises,
+  renderFitness,
   renderSettings,
   saveFitnessEntry,
   saveFitnessBundle,

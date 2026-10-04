@@ -285,3 +285,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Fitness reading and management share the existing save/version pipeline. */
+.record-calendar { margin-block: 16px; }
+.record-calendar summary, #fitnessRecordList summary { cursor: pointer; padding-block: 12px; font-weight: 700; }
+.calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.calendar-toolbar label { min-width: 0; }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; text-align: center; }
+.calendar-day { min-height: 44px; min-width: 0; padding: 4px; background: var(--panel-soft); border: 1px solid transparent; border-radius: 8px; }
+.calendar-day span { display: block; font-size: 9px; color: var(--accent); }
+.calendar-day[aria-pressed="true"] { border-color: var(--accent); font-weight: 800; }
+.date-record-grid { display: grid; gap: 12px; }
+.date-record-grid p { overflow-wrap: anywhere; }
+.record-browser-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+.record-withdrawn-toggle { display:flex; align-items:center; gap:8px; min-height:44px; }
+.record-withdrawn-toggle input { width:18px; height:18px; min-height:18px; margin:0; padding:0; }
+.fitness-record-browser .calendar-toolbar { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; }
+.fitness-record-browser .calendar-toolbar button { padding:0; width:44px; }
+.fitness-record-browser .calendar-toolbar input { min-width:0; }
+.recorded-date-shortcuts { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.recorded-date-shortcuts button[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); }
+.record-group { min-width:0; border:1px solid var(--line); border-radius:8px; padding:12px; }
+.record-group-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+.record-group-heading h3 { margin:0; }
+.record-group-heading button { font-size:13px; padding:8px 10px; }
+.record-summary { padding-block:10px; border-top:1px solid var(--line); }
+.record-summary p { margin:0 0 4px; font-size:14px; }
+.fitness-record-browser .section-heading { flex-wrap:wrap; }
+.fitness-management-dialog { width: min(700px,calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 20px; border: 0; border-radius: 18px; background: var(--panel); color: var(--text); overflow-y: auto; overscroll-behavior: contain; }
+.fitness-management-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.management-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; position: sticky; top: -20px; background: var(--panel); z-index: 2; padding-block: 12px; }
+.management-heading h2 { font-size: 20px; }
+.fitness-management-dialog input, .fitness-management-dialog textarea { max-width: 100%; }
+@media (min-width: 650px) { .date-record-grid {grid-template-columns: repeat(2,minmax(0,1fr));} }
+@media (max-width: 519px) {
+  .fitness-management-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding: 16px; padding-bottom: max(24px,env(safe-area-inset-bottom)); }
+  .management-heading {top:-16px;}
+}

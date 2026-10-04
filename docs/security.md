@@ -133,6 +133,18 @@ same ordered exclusion locks as review. See [Fitness records v2](fitness-records
 for tested behavior and rollout/rollback. Disposable verification does not establish
 production acceptance.
 
+### Fitness date browser and management (2026.10.03.6)
+
+Legacy historical months use owner-filtered, paginated SELECT and existing
+normalizers. Month cache is display-only and reset on refresh/account changes;
+owner/epoch/month guards reject obsolete responses before cache insertion.
+Dashboard refresh separately verifies the captured owner and request epoch before
+applying any result. User content is escaped before HTML rendering. Management
+shares the existing V2 save pipeline and rejects stale owner/editor responses.
+The local `--qa` preview uses empty runtime config and synthetic `demo-preview`
+fault controls outside `app/`; these controls are not deployed or SW-cached.
+See [page acceptance](fitness-page-acceptance.md) for evidence and production limits.
+
 ### Earlier advisor status
 
 The schema, function-security, and review-archive authorization findings are resolved through migrations `004`, `005`, and `20260705031641_review_archive_hardening`. Supabase may still report leaked-password protection as disabled; that Auth feature depends on the project plan and must be enabled in the dashboard when available.

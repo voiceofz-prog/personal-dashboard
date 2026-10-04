@@ -26,6 +26,23 @@
       feeling: form.elements.feeling.value, notes: form.elements.notes.value });
   }
   function bind() {
+    root.FitnessRecordBrowserUI?.bind();
+    root.FitnessRecordDialog?.bind();
+    $("fitnessManagementGroup").addEventListener("change",(event)=>{
+      const choice=event.target.selectedOptions?.[0];
+      if (choice) managementActions(choice.dataset.kind,choice.value);
+    });
+    $("fitnessManagementMenu").addEventListener("click", async (event) => {
+      const button=event.target.closest("[data-record-action]");
+      if (!button) return;
+      const owner=A().getState().session?.user?.id;
+      const operation=openEditor(button.dataset.kind,button.dataset.id,button.dataset.recordAction);
+      const token=root.FitnessRecordDialog.token();
+      try { await operation; } catch(error) {
+        if (owner!==A().getState().session?.user?.id || token!==root.FitnessRecordDialog.token()) return;
+        A().toast(error.message);$("fitnessManagementMenu").hidden=false;$("fitnessManagementGroup").hidden=!$("fitnessManagementGroup").innerHTML;
+      }
+    });
     const form = $("fitnessActivityForm");
     form.elements.activity_date.value = A().today();
     $("activityFields").innerHTML = activityFields("walk_run");
@@ -46,13 +63,13 @@
     $("fitnessRecordList").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-record-action]");
       if (!button) return;
-      try { await openEditor(button.dataset.kind, button.dataset.id, button.dataset.recordAction); } catch (error) { A().toast(error.message); }
+      try { openManage(button); } catch (error) { A().toast(error.message); }
     });
     $("fitnessRevisionForm").addEventListener("click", strengthControls);
     $("fitnessRevisionForm").addEventListener("change", (event) => {
       if (event.target.name === "activity_type") $("revisionActivityFields").innerHTML = activityFields(event.target.value);
     });
-    $("cancelFitnessRevision").addEventListener("click", () => { editor = null; $("fitnessRevisionEditor").hidden = true; });
+    $("cancelFitnessRevision").addEventListener("click", () => root.FitnessRecordDialog.close());
     $("fitnessRevisionForm").addEventListener("submit", submitRevision);
     $("compareFitnessConflict").addEventListener("click", compareConflict);
     $("acceptFitnessConflict").addEventListener("click", () => {
@@ -72,13 +89,14 @@
     if (remove) remove.closest("fieldset").remove();
   }
   function summary(row, kind) {
-    if (kind === "daily") return Object.keys(dailyLabels).filter((k) => !["entry_date"].includes(k)).map((k) => row[k] === null || row[k] === "" || row[k] === undefined ? null : `${dailyLabels[k]}：${Array.isArray(row[k]) ? row[k].join("、") : row[k]}`).filter(Boolean).join(" · ");
+    if (kind === "daily") return (row.training_status === "trained" ? "訓練日 · " : row.training_status === "rest" ? "恢復日 · " : "") + Object.keys(dailyLabels).filter((k) => !["entry_date"].includes(k)).map((k) => row[k] === null || row[k] === "" || row[k] === undefined ? null : `${dailyLabels[k]}：${Array.isArray(row[k]) ? row[k].join("、") : row[k]}`).filter(Boolean).join(" · ");
     if (kind === "workout") return `${row.exercise}：${row.weight_kg ?? "未提供"} kg，${(row.reps_by_set || []).join("/")}，${row.completed ? "完成" : "未完成"}`;
     return [row.name, ...Object.entries(row.metrics || {}).filter(([, v]) => v !== null && v !== "").map(([k, v]) => `${R.labels[k] || k}：${v === "indoor" ? "室內" : v === "outdoor" ? "戶外" : v}`), ...(row.exercises || []).map((r) => `${r.name} ${r.weight_kg ?? "未提供"} kg ${(r.reps_by_set || []).join("/")}`), row.feeling, row.notes].filter(Boolean).join(" · ");
   }
   function render(fitness) {
     const owner = A().getState().session?.user?.id || null;
     if (lastOwner !== owner) {
+      root.FitnessRecordDialog?.close(true);
       editor = null; lastOwner = owner;
       $("fitnessRevisionEditor").hidden = true; $("fitnessVersionPanel").hidden = true;
       $("fitnessRevisionFields").innerHTML = ""; $("fitnessVersionList").innerHTML = "";
@@ -95,16 +113,37 @@
     const needsReview = R.needsReview(fitness);
     $("fitnessReReview").hidden = !needsReview;
     $("fitnessReReview").textContent = "紀錄資料已更新，Jessica 回顧待重新審查。既有評估保留當時使用的版本。";
-    const list = R.records(fitness).sort((a, b) => recordDate(b.row).localeCompare(recordDate(a.row)) || (b.row.updated_at || "").localeCompare(a.row.updated_at || ""));
-    $("fitnessRecordList").innerHTML = list.length ? list.map(({ kind, row }) => {
-      const label = kind === "daily" ? "每日狀態" : kind === "workout" ? row.plan_type : R.forms[row.activity_type]?.label || "活動";
-      const pendingItem = A().getState().pending.find((p) => p.table === "fitness_records_v2" && p.owner_user_id === owner && p.payload.changes?.some((c) => c.id === row.id && c.kind === kind));
-      const pending = row._pending || pendingItem;
-      const conflict = pendingItem?.conflict;
-      const inherited = kind === "workout" && fitness._entries.some((d) => d.id === row.daily_entry_id && d.withdrawn);
-      return `<article class="list-card ${row.withdrawn || inherited ? "record-withdrawn" : ""}"><h3>${escape(recordDate(row))} · ${escape(label)}</h3><p>${escape(summary(row, kind))}</p><p class="muted">第 ${row.revision || 1} 版 · ${row.withdrawn ? "已撤回" : inherited ? "每日紀錄已撤回，暫不納入統計" : "有效"} · ${pending ? "待同步／待處理" : "已保存"}${row.updated_at ? ` · ${escape(new Date(row.updated_at).toLocaleString())}` : ""}</p><div class="button-row">${[["history", "版本紀錄"], [conflict ? "resolve" : row.withdrawn ? "restore" : "revise", conflict ? "處理版本衝突" : row.withdrawn ? "恢復" : "編輯"], ...(conflict && row.withdrawn ? [["restore","先恢復紀錄"]] : []), ...(!row.withdrawn ? [["withdraw", "撤回"]] : [])].map(([action, title]) => `<button type="button" class="secondary-action" data-record-action="${action}" data-kind="${kind}" data-id="${escape(row.id)}" ${((!ready || readOnly) && action !== "history" || (pending && !conflict && action !== "history") || (conflict && action === "withdraw")) ? "disabled" : ""}>${title}</button>`).join("")}</div></article>`;
-    }).join("") : '<p class="muted">尚無活動紀錄</p>';
+    root.FitnessRecordBrowserUI?.render();
   }
+  function openManage(button) {
+    const {kind,id}=button.dataset;
+    if (kind==='group') {
+      const choices=root.FitnessRecordBrowserUI.groupRecords(id);
+      if (!choices.length) throw new Error("這天沒有這類紀錄");
+      root.FitnessRecordDialog.open(button);
+      $("fitnessManagementTitle").textContent=id==='activity'?'管理其他運動／活動':'管理 Quick Log';
+      $("fitnessManagementGroup").innerHTML=choices.length>1 ? `<label>選擇要微調的紀錄<select>${choices.map((r)=>`<option value="${escape(r.row.id)}" data-kind="${r.kind}">${escape(r.kind==='daily'?'每日狀態與 Plan 動作':r.kind==='workout'?r.row.exercise:r.row.name)}${r.row.withdrawn?'（已撤回）':''}</option>`).join('')}</select></label>` : '';
+      $("fitnessManagementGroup").hidden=choices.length<=1;
+      managementActions(choices[0].kind,choices[0].row.id);return;
+    }
+    const row=root.FitnessRecordBrowserUI.records().find((r)=>r.kind===kind && r.row.id===id)?.row;
+    if (!row) throw new Error("找不到紀錄");
+    root.FitnessRecordDialog.open(button);
+    $("fitnessManagementTitle").textContent='管理紀錄';
+    $("fitnessManagementGroup").innerHTML='';$("fitnessManagementGroup").hidden=true;
+    managementActions(kind,id);
+  }
+  function managementActions(kind,id) {
+    const row=root.FitnessRecordBrowserUI.records().find((r)=>r.kind===kind && r.row.id===id)?.row;
+    if (!row) throw new Error("找不到紀錄");
+    $("fitnessManagementMenu").hidden=false;
+    const state=A().getState(), ready=state.session?.demo || A().getFitness().recordsV2Ready;
+    const pending=state.pending.find((p)=>p.owner_user_id===state.session?.user?.id && p.payload.changes?.some((c)=>c.kind===kind && c.id===id));
+    const disabled=!ready || state.config?.fitnessRecordsV2ReadOnly || pending && !pending.conflict;
+    const actions=[["history","查看版本"],[pending?.conflict?"resolve":row.withdrawn?"restore":"revise",pending?.conflict?"處理版本衝突":row.withdrawn?"恢復":"編輯"],...(pending?.conflict && row.withdrawn?[["restore","先恢復紀錄"]]:[]),...(!row.withdrawn?[["withdraw","撤回"]]:[])];
+    $("fitnessManagementMenu").innerHTML=actions.map(([action,label])=>`<button type="button" class="secondary-action" data-record-action="${action}" data-kind="${kind}" data-id="${escape(id)}" ${action!=="history" && (disabled || pending?.conflict && action==="withdraw") ? "disabled":""}>${label}</button>`).join("");
+  }
+
   function weekStart() {
     const d = new Date(`${A().today()}T12:00:00`); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -116,9 +155,9 @@
   }
   async function head(kind, id) {
     const fitness = A().getFitness();
-    const local = R.records(fitness).find((r) => r.kind === kind && r.row.id === id)?.row;
+    const local = (root.FitnessRecordBrowserUI?.records() || R.records(fitness)).find((r) => r.kind === kind && r.row.id === id)?.row;
     if (!local) throw new Error("找不到這筆紀錄");
-    if (A().cloud()) {
+    if (A().cloud() && fitness.recordsV2Ready) {
       const rows = await A().select("fitness_record_heads", `select=*&record_kind=eq.${kind}&record_id=eq.${encodeURIComponent(id)}`);
       if (rows.length !== 1) throw new Error("找不到可編輯的版本");
       return rows[0];
@@ -129,8 +168,13 @@
   }
   async function openEditor(kind, id, operation) {
     const owner = A().getState().session?.user?.id;
+    const token = root.FitnessRecordDialog?.begin();
+    const valid = () => owner === A().getState().session?.user?.id && token === root.FitnessRecordDialog?.token();
+    $("fitnessManagementMenu").hidden=true;
+    $("fitnessManagementGroup").hidden=true;
     const base = await head(kind, id);
-    if (owner !== A().getState().session?.user?.id) throw new Error("帳號已變更，請重新開啟紀錄");
+    if (!valid()) throw new Error("帳號已變更，請重新開啟紀錄");
+    if (operation !== "history" && (!A().getState().session?.demo && !A().getFitness().recordsV2Ready || A().getState().config?.fitnessRecordsV2ReadOnly)) throw new Error("目前只提供唯讀查閱");
     let obsoleteRequest = null, draftChange = null;
     if (operation === "resolve") {
       const state = A().getState();
@@ -145,13 +189,14 @@
       }
       if (base.withdrawn && operation === "revise") throw new Error("最新紀錄已撤回；請先決定是否恢復，再處理這次草稿");
     }
+    $("fitnessManagementMenu").hidden=true;
     if (operation === "history") {
-      let versions = A().getFitness()._versions.filter((v) => v.record_kind === kind && v.record_id === id);
-      if (A().cloud()) versions = await A().selectAll("fitness_record_revisions", `select=*&record_kind=eq.${kind}&record_id=eq.${encodeURIComponent(id)}&order=revision.desc`);
-      if (owner !== A().getState().session?.user?.id) throw new Error("帳號已變更，請重新開啟紀錄");
+      let versions = (A().getFitness()._versions || []).filter((v) => v.record_kind === kind && v.record_id === id);
+      if (A().cloud() && A().getFitness().recordsV2Ready) versions = await A().selectAll("fitness_record_revisions", `select=*&record_kind=eq.${kind}&record_id=eq.${encodeURIComponent(id)}&order=revision.desc`);
+      if (!valid()) throw new Error("帳號已變更，請重新開啟紀錄");
       if (!versions.length) versions = [{ revision: base.revision, snapshot: base.snapshot, changed_at: base.snapshot.updated_at, reason: "原始紀錄", withdrawn: base.withdrawn }];
       $("fitnessVersionList").innerHTML = versions.sort((a,b) => b.revision-a.revision).map((v) => `<article class="list-card"><h3>第 ${v.revision} 版${v.withdrawn ? " · 已撤回" : ""}</h3><p>${escape(summary(v.snapshot, kind))}</p><p class="muted">${escape(v.reason)} · ${escape(v.changed_at || "")}</p></article>`).join("");
-      $("fitnessVersionPanel").hidden = false; $("fitnessVersionPanel").scrollIntoView({block:"start"}); return;
+      $("fitnessRevisionEditor").hidden = true; $("fitnessVersionPanel").hidden = false; return;
     }
     editor = { kind, id, operation, base, workouts: [], obsoleteRequest };
     const row = draftChange?.snapshot || base.snapshot;
@@ -159,9 +204,9 @@
     if (operation === "revise" && kind === "activity") {
       markup = input("activity_date", "日期", row.activity_date, "date") + select("activity_type", "活動類型", Object.entries(R.forms).map(([k,v]) => [k,v.label]), row.activity_type) + input("name", "活動名稱", row.name) + `<div id="revisionActivityFields">${activityFields(row.activity_type,row)}</div>` + input("intensity", R.labels.intensity, row.metrics?.intensity ?? "", "number") + input("feeling", "活動後感受", row.feeling) + input("notes", "備註", row.notes);
     } else if (operation === "revise" && kind === "daily") {
-      const linked = R.records(A().getFitness()).filter((r) => r.kind === "workout" && r.row.daily_entry_id === id && !r.row.withdrawn);
+      const linked = (root.FitnessRecordBrowserUI?.records() || R.records(A().getFitness())).filter((r) => r.kind === "workout" && r.row.daily_entry_id === id && !r.row.withdrawn);
       editor.workouts = await Promise.all(linked.map((r) => head("workout",r.row.id)));
-      if (owner !== A().getState().session?.user?.id) throw new Error("帳號已變更，請重新開啟紀錄");
+      if (!valid()) throw new Error("帳號已變更，請重新開啟紀錄");
       editor.latestWorkoutComparison = editor.workouts.map((h) => summary(h.snapshot,"workout")).join("；");
       if (obsoleteRequest) {
         const pending = A().getState().pending.find((p) => p.row_id === obsoleteRequest);
@@ -180,8 +225,9 @@
     $("fitnessRevisionForm").elements.reason.value = draftChange?.reason || "";
     $("fitnessConflict").hidden = true;
     $("acceptFitnessConflict").hidden = true;
+    $("fitnessVersionPanel").hidden = true;
     $("fitnessRevisionEditor").hidden = false;
-    $("fitnessRevisionEditor").scrollIntoView({block:"start"});
+    root.FitnessRecordDialog?.markClean();
   }
   function workoutFields(row,i) {
     return `<fieldset><legend>${escape(row.plan_type)} · ${escape(row.exercise)}</legend>${input(`w${i}_weight`,"重量公斤（選填）",row.weight_kg ?? "","number")}${input(`w${i}_reps`,"各組次數",(row.reps_by_set || []).join("/"))}${input(`w${i}_rpe`,"原紀錄 RPE（選填）",row.rpe || "")}<label><input name="w${i}_completed" type="checkbox" ${row.completed ? "checked" : ""}>已完成</label></fieldset>`;
@@ -205,7 +251,7 @@
   }
   async function submitRevision(event) {
     event.preventDefault(); if (!editor || busy || !event.target.reportValidity()) return;
-    const form = event.target, e = editor;
+    const form = event.target, e = editor, token=root.FitnessRecordDialog?.token();
     try {
       const reason = form.elements.reason.value.trim(); if (!reason) throw new Error("請填寫修改原因");
       let snapshot = A().clone(e.base.snapshot);
@@ -230,16 +276,22 @@
       const changes = [{kind:e.kind,id:e.id,operation:e.operation,expected_version:e.base.revision,snapshot,reason}];
       if (e.operation === "revise") e.workouts.forEach((h,i) => changes.push({kind:"workout",id:h.record_id,operation:"revise",expected_version:h.revision,snapshot:readWorkout(form,h,i),reason}));
       const result = await save({changes}, e.obsoleteRequest);
+      if (editor!==e || token!==root.FitnessRecordDialog?.token()) return;
       if (result === "rejected") { $("fitnessConflict").hidden = false; return; }
       if (result === "session_changed") return;
-      $("fitnessRevisionEditor").hidden = true; editor = null;
+      root.FitnessRecordDialog?.markClean();
+      root.FitnessRecordDialog?.close(); editor = null;
     } catch (error) { A().toast(error.message); }
   }
   async function compareConflict() {
     if (!editor || !A().cloud()) { A().toast("連線後才能讀取最新版本"); return; }
+    const current=editor, owner=A().getState().session?.user?.id, token=root.FitnessRecordDialog?.token();
     try {
-      editor.latest = await head(editor.kind,editor.id);
+      const latest=await head(current.kind,current.id);
+      if (editor!==current || owner!==A().getState().session?.user?.id || token!==root.FitnessRecordDialog?.token()) return;
+      editor.latest=latest;
       const latestWorkouts = await Promise.all(editor.workouts.map((h) => head("workout",h.record_id)));
+      if (editor!==current || owner!==A().getState().session?.user?.id || token!==root.FitnessRecordDialog?.token()) return;
       editor.workouts = latestWorkouts;
       $("fitnessConflictComparison").textContent = `最新第 ${editor.latest.revision} 版：${summary(editor.latest.snapshot,editor.kind)} ${latestWorkouts.map((h) => summary(h.snapshot,"workout")).join("；")}。請與保留的草稿比較，確認後才保存。`;
       $("acceptFitnessConflict").hidden = false;
@@ -247,6 +299,7 @@
   }
   async function save(draft, obsoleteRequest = null) {
     if (busy) return "rejected";
+    const affectedDate = draft.bundle?.daily?.entry_date || recordDate(draft.changes?.[0]?.snapshot || {});
     const state = A().getState();
     if (state.config?.fitnessRecordsV2ReadOnly) { A().toast("目前為唯讀模式，草稿未保存"); return "rejected"; }
     if (!state.session || (!state.session.demo && !A().getFitness().recordsV2Ready)) throw new Error("活動與更正功能尚待資料庫升級");
@@ -258,7 +311,7 @@
       let receipt = null;
       if (!state.session.demo && !A().cloud()) {
         if (obsoleteRequest) throw new Error("版本衝突需要連線確認後保存");
-        A().enqueue(item); A().toast("已保留於此裝置，待連線同步"); A().render(); return "pending";
+        A().enqueue(item); A().toast("已保留於此裝置，待連線同步"); root.FitnessRecordBrowserUI?.changed(affectedDate); A().render(); return "pending";
       }
       if (!state.session.demo) {
         await A().refreshToken();
@@ -268,7 +321,7 @@
           if (state.session?.user?.id !== item.owner_user_id) return "session_changed";
           if (error.status && error.status < 500) { A().toast(`未保存：${error.message}`); return "rejected"; }
           A().enqueue({...item,last_error:error.message,last_attempt_at:new Date().toISOString()});
-          A().toast("保存結果尚待確認，請連線後同步；草稿已保留"); A().render(); return "pending";
+          A().toast("保存結果尚待確認，請連線後同步；草稿已保留"); root.FitnessRecordBrowserUI?.changed(affectedDate); A().render(); return "pending";
         }
       }
       if (state.session?.user?.id !== item.owner_user_id) return "session_changed";
@@ -278,10 +331,11 @@
         state.data.fitness._workouts.push(...request.bundle.workouts.map((w) => ({...w,revision:1})));
       } else R.apply(state.data.fitness,request,false,receipt);
       if (obsoleteRequest) { state.pending = state.pending.filter((p) => !(p.owner_user_id === state.session.user.id && p.row_id === obsoleteRequest)); A().saveQueue(); }
+      root.FitnessRecordBrowserUI?.changed(affectedDate);
       A().toast("已保存；歷史版本保留");
       if (A().cloud()) await A().refresh(); else A().render();
       return "saved";
     } finally { busy = false; $("saveFitnessRevision").disabled = false; A().render(); }
   }
-  root.FitnessRecordsUI = {bind,render,save,summary,openEditor};
+  root.FitnessRecordsUI = {bind,render,save,summary,openEditor,clearEditor:()=>{editor=null;}};
 })(globalThis);

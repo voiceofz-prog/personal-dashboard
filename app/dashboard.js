@@ -1,4 +1,5 @@
-const VERSION = "2026.10.03.5";
+const VERSION = "2026.10.04.1";
+let dashboardReadEpoch = 0;
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
 const TOKEN_KEY = "jessica-dashboard-session-v1";
@@ -284,6 +285,9 @@ function clearInvalidStoredSession() {
 }
 
 async function refreshDashboardData(options = {}) {
+  const readEpoch = ++dashboardReadEpoch;
+  const readOwner = state.session?.user?.id;
+  const currentRead = () => readEpoch === dashboardReadEpoch && readOwner === state.session?.user?.id;
   if (!canUseCloud()) {
     if (state.data?.english) state.data.english.learningMap = emptyLearningMap(learningMapUnavailableStatus());
     render();
@@ -293,6 +297,7 @@ async function refreshDashboardData(options = {}) {
   try {
     await refreshAccessTokenIfNeeded();
   } catch (error) {
+    if (!currentRead()) return;
     if ([400, 401, 403].includes(error?.status)) {
       clearInvalidStoredSession();
     }
@@ -301,6 +306,7 @@ async function refreshDashboardData(options = {}) {
     return;
   }
 
+  if (!currentRead()) return;
   const next = clone(state.data || emptyDashboard());
   next.english.learningMap = emptyLearningMap("loading");
   state.data = composeDashboard(next);
@@ -312,6 +318,7 @@ async function refreshDashboardData(options = {}) {
     fetchEnglishLearningMap()
   ]);
   const now = new Date().toISOString();
+  if (!currentRead()) return;
 
   if (englishResult.status === "fulfilled") {
     next.english = buildEnglishData(englishResult.value);
@@ -344,6 +351,7 @@ async function refreshDashboardData(options = {}) {
   saveCachedData(state.data);
   if (!options.silent) showToast(state.lastReadError ? "Refresh completed with a module warning" : "Dashboard refreshed");
   render();
+  if (fitnessResult.status === "fulfilled") globalThis.FitnessRecordBrowserUI?.refresh();
 }
 
 async function fetchEnglishRows() {
@@ -1239,7 +1247,7 @@ function bindFitnessForm() {
     }
   });
   document.getElementById("copyFitnessReport").addEventListener("click", () => copyText(state.lastSavedReport, "Copied report"));
-  document.getElementById("editFitnessEntry").addEventListener("click", editLatestFitnessEntry);
+
   document.getElementById("cancelFitnessEdit").addEventListener("click", resetFitnessForm);
   renderExerciseInputs(form.elements.plan_template.value);
   updateFitnessFormVisibility();
@@ -1261,20 +1269,13 @@ function renderFitness() {
   document.getElementById("recommendationMode").textContent = recommendation.modeLabel;
   document.getElementById("fitnessRecommendation").innerHTML = [
     listCard(recommendation.title, recommendation.detail, recommendation.plan),
-    listCard("Reason", recommendation.reason, recommendation.modeLabel),
+    fitness.recoveryLevel === "warning" || ["recovery", "caution"].includes(recommendation.mode) ? listCard("恢復提醒", recommendation.reason, recommendation.modeLabel) : "",
+    `<details><summary>訓練理由與審查</summary>${listCard("Reason", recommendation.reason, recommendation.modeLabel)}`,
     fitness.jessicaReview
       ? listCard("Jessica review", fitness.jessicaReview.summary, formatDateTime(fitness.jessicaReview.reviewed_at))
       : listCard("Jessica review", "No reviewed target yet. Publish it from the Fitness project before training.", "Awaiting review")
-  ].join("");
+  ].join("") + "</details>";
   document.getElementById("planList").innerHTML = buildStructuredPlanCards(fitness).map((item) => listCard(item.title, item.detail, item.status)).join("");
-  document.getElementById("fitnessHistory").innerHTML = latest
-    ? listCard(latest.training_status === "trained" ? "Training day" : "Recovery day", fitnessEntrySummary(latest), latest.entry_date)
-    : emptyState("No fitness record yet", "Save body and recovery status to prepare the next session.");
-  const editButton = document.getElementById("editFitnessEntry");
-  editButton.hidden = !latest || Boolean(globalThis.FitnessRecordsUI && (state.session?.demo || fitness.recordsV2Ready));
-  editButton.disabled = false;
-  editButton.textContent = "Editing Temporarily Paused";
-  editButton.title = FITNESS_EDIT_LOCK_MESSAGE;
   document.getElementById("savedFitnessReport").hidden = !state.lastSavedReport;
   document.getElementById("fitnessReportOutput").textContent = state.lastSavedReport;
 
@@ -1588,7 +1589,8 @@ async function saveFitnessEntry(event) {
   if (globalThis.FitnessRecordsUI && (state.session?.demo || currentDashboard().fitness.recordsV2Ready)) {
     const status = await FitnessRecordsUI.save({ bundle: { daily: draft.daily, workouts: draft.exercises } });
     if (["saved","pending"].includes(status)) {
-      state.lastSavedReport = draft.report;
+      globalThis.FitnessRecordBrowserUI?.changed(draft.daily.entry_date);
+  state.lastSavedReport = draft.report;
       resetFitnessForm({ keepReport: true });
     }
     return;
@@ -1602,6 +1604,7 @@ async function saveFitnessEntry(event) {
   }
   replaceLocalFitnessBundle(draft, existing);
 
+  globalThis.FitnessRecordBrowserUI?.changed(draft.daily.entry_date);
   state.lastSavedReport = draft.report;
   state.editingFitnessId = null;
   const action = existing ? "updated" : "saved";
@@ -1685,7 +1688,7 @@ function buildStructuredPlanCards(fitness) {
       };
     }
     const date = rows[0].workout_date;
-    const details = rows.slice(0, 3).map((item) => {
+    const details = rows.map((item) => {
       const load = item.weight_kg !== null ? `${formatNumber(item.weight_kg)}kg ` : "";
       return `${item.exercise}: ${load}${item.reps_by_set.join("/") || item.reps}`;
     });
@@ -2539,6 +2542,8 @@ globalThis.DashboardFitnessAdapter = {
   cloud: canUseCloud,
   select: selectRows,
   selectAll: selectAllFitnessRows,
+  normalizeEntry: normalizeFitnessEntry,
+  normalizeWorkout,
   send: executeOperation,
   refreshToken: refreshAccessTokenIfNeeded,
   enqueue: (item) => { upsertPendingOperation(item); saveQueue(); },

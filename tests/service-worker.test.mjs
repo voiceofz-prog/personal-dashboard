@@ -47,7 +47,7 @@ handleInstall({
   }
 });
 await installPromise;
-assert.equal(appShellRequests.length, 18);
+assert.equal(appShellRequests.length, 21);
 assert.ok(appShellRequests.every((request) => request.cache === "reload"));
 assert.ok(appShellRequests.some((request) => request.url === "https://example.com/personal-dashboard/dashboard.js"));
 

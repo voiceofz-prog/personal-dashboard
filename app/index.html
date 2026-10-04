@@ -90,11 +90,9 @@
           <label>恢復備註 <textarea name="recovery_note" rows="3" placeholder="例如：肩膀偏緊、最後一組最吃力"></textarea></label>
           <div class="button-row"><button class="primary-action" id="saveFitnessEntry" type="submit">Save Today</button><button class="secondary-action" id="cancelFitnessEdit" type="button" hidden>Cancel Edit</button></div>
         </form>
-      </section>
       <section class="panel" id="savedFitnessReport" hidden><div class="section-heading"><h2>Saved Report</h2><span class="mini-status">secondary</span></div><pre id="fitnessReportOutput" class="report-box"></pre><button class="secondary-action" id="copyFitnessReport" type="button">Copy for Jessica</button></section>
-      <section class="panel"><div class="section-heading"><h2>Plan A/B Progress</h2><span class="mini-status">structured logs</span></div><div id="planList" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Latest Fitness Record</h2><span class="mini-status">status</span></div><div id="fitnessHistory" class="stack-list"></div><button class="secondary-action" id="editFitnessEntry" type="button" hidden>Edit Latest Record</button></section>
-      <section class="panel"><div class="section-heading"><h2>其他運動／活動</h2><span id="fitnessV2Status" class="mini-status"></span></div><p id="fitnessActivityStats" class="muted"></p><p class="muted">記錄已發生的活動，可與同日 Plan 訓練並存。未提供的量測不推算。</p>
+      </section>
+      <details class="panel disclosure-panel" id="fitnessActivityDisclosure"><summary><span>其他運動／活動</span><span id="fitnessV2Status" class="mini-status"></span></summary><section class="disclosure-section"><div class="section-heading"><h2>記錄活動</h2></div><p id="fitnessActivityStats" class="muted"></p><p class="muted">記錄已發生的活動，可與同日 Plan 訓練並存。未提供的量測不推算。</p>
         <form id="fitnessActivityForm" class="form-stack">
           <label>日期<input name="activity_date" type="date" required></label>
           <label>活動類型<select name="activity_type"><option value="walk_run">步行／跑步</option><option value="hiking">登山</option><option value="cycling">騎車</option><option value="swimming">游泳</option><option value="ball">球類</option><option value="strength">自訂重訓</option><option value="mobility">伸展／瑜伽</option><option value="other">其他活動</option></select></label>
@@ -105,13 +103,21 @@
           <label>備註<textarea name="notes" rows="3"></textarea></label>
           <button type="submit" id="saveFitnessActivity" class="primary-action">保存活動</button>
         </form>
+      </section></details>
+      <section class="panel fitness-record-browser"><div class="section-heading"><h2>訓練與活動紀錄</h2><span id="fitnessSelectedDate" class="mini-status"></span></div>
+        <p id="fitnessReReview" class="warning" hidden></p><p id="fitnessDateWarnings" class="warning" role="status"></p>
+        <div class="record-browser-actions"><button id="fitnessBackLatest" type="button" class="secondary-action">回到最新</button><label class="record-withdrawn-toggle"><input id="fitnessShowWithdrawn" type="checkbox"> 查看撤回內容</label></div>
+        <details id="fitnessCalendar" class="record-calendar"><summary>選擇紀錄日期</summary><div class="calendar-toolbar"><button id="fitnessPreviousMonth" type="button" class="secondary-action" aria-label="上一個月">‹</button><label>年月 <input id="fitnessMonth" type="month" required></label><button id="fitnessNextMonth" type="button" class="secondary-action" aria-label="下一個月">›</button></div><p id="fitnessMonthStatus" class="muted" role="status"></p><div id="fitnessRecordedDates" class="recorded-date-shortcuts" aria-label="本月紀錄日期"></div><div class="calendar-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="fitnessCalendarDays" class="calendar-days"></div></details>
+        <p id="fitnessDateSummary" class="lead-text"></p><p id="fitnessManagementStatus" class="muted"></p><div id="fitnessRecordList" class="stack-list"></div>
       </section>
-      <section class="panel"><div class="section-heading"><h2>Fitness 歷史紀錄</h2><span class="mini-status">版本保留</span></div><p id="fitnessReReview" class="warning" hidden></p><div id="fitnessRecordList" class="stack-list"></div></section>
+      <details class="panel disclosure-panel"><summary><span>Plan A/B 最近表現</span><span class="mini-status">實際紀錄</span></summary><div id="planList" class="stack-list disclosure-section"></div></details>
+      <dialog id="fitnessManagementDialog" class="fitness-management-dialog" aria-labelledby="fitnessManagementTitle"><div class="management-heading"><h2 id="fitnessManagementTitle">管理紀錄</h2><button id="closeFitnessManagement" type="button" class="secondary-action">關閉</button></div><div id="fitnessManagementGroup" hidden></div><div id="fitnessManagementMenu" class="button-row"></div><section id="fitnessDiscardPrompt" class="list-card" hidden role="alert"><p>尚有未保存修改。要放棄草稿並關閉嗎？</p><div class="button-row"><button id="keepFitnessDraft" type="button" class="secondary-action">繼續編輯</button><button id="discardFitnessDraft" type="button" class="danger-action">放棄並關閉</button></div></section>
       <section id="fitnessRevisionEditor" class="panel" hidden><h2 id="fitnessRevisionTitle">更正紀錄</h2>
         <form id="fitnessRevisionForm" class="form-stack"><div id="fitnessRevisionFields" class="form-stack"></div><label>修改原因<textarea name="reason" rows="2" required></textarea></label><div class="button-row"><button id="saveFitnessRevision" type="submit" class="primary-action">保存新版本</button><button id="cancelFitnessRevision" type="button" class="secondary-action">取消</button></div></form>
         <div id="fitnessConflict" hidden><p>未保存這次更正。若版本已變更，可讀取最新資料比較；原草稿仍在表單內。</p><button id="compareFitnessConflict" type="button" class="secondary-action">讀取最新版本比較</button><p id="fitnessConflictComparison"></p><button id="acceptFitnessConflict" type="button" class="secondary-action" hidden>確認最新基準，保留此草稿</button></div>
       </section>
       <section id="fitnessVersionPanel" class="panel" hidden><h2>版本紀錄</h2><div id="fitnessVersionList" class="stack-list"></div></section>
+      </dialog>
     </section>
 
     <section class="view" id="settingsView">
@@ -128,6 +134,9 @@
   <script src="session-security.js" defer></script>
   <script src="fitness-target-link.js" defer></script>
   <script src="fitness-records.js" defer></script>
+  <script src="fitness-record-browser.js" defer></script>
+  <script src="fitness-record-browser-ui.js" defer></script>
+  <script src="fitness-record-dialog.js" defer></script>
   <script src="fitness-records-ui.js" defer></script>
   <script src="dashboard.js" defer></script>
 </body>
