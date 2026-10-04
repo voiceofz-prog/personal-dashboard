@@ -77,6 +77,28 @@ begin
   failed:=false;
   begin perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000043','changes',jsonb_build_array(jsonb_build_object('kind','workout','id','95000000-0000-4000-8000-000000000001','operation','revise','expected_version',2,'snapshot',jsonb_build_object('target_id','93000000-0000-4000-8000-000000000099'),'reason','fixture')))); exception when others then failed:=true; end;
   if not failed then raise exception 'Target rebinding accepted'; end if;
+  -- Adversarial validation must leave no partial head, revision or receipt.
+  failed:=false;
+  begin perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000060','changes',jsonb_build_array(jsonb_build_object('kind','daily','id','94000000-0000-4000-8000-000000000001','operation','revise','expected_version',2,'snapshot',jsonb_build_object('training_status','rest'),'reason','invalid linked status')))); exception when others then failed:=true; end;
+  if not failed then raise exception 'Completed Plan silently changed to rest'; end if;
+  failed:=false;
+  begin perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000061','changes',jsonb_build_array(jsonb_build_object('kind','daily','id','94000000-0000-4000-8000-000000000001','operation','revise','expected_version',2,'snapshot',jsonb_build_object('entry_date','2026-10-04'),'reason','invalid linked date')))); exception when others then failed:=true; end;
+  if not failed then raise exception 'Completed Plan silently changed date'; end if;
+  failed:=false;
+  begin update public.fitness_daily_entries set notes='tamper' where id='94000000-0000-4000-8000-000000000001'; exception when others then failed:=true; end;
+  if not failed then raise exception 'Original daily can be overwritten'; end if;
+  failed:=false;
+  begin perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000062','changes',jsonb_build_array(jsonb_build_object('kind','workout','id','95000000-0000-4000-8000-000000000001','operation','revise','expected_version',2,'snapshot',jsonb_build_object('completed',null),'reason','invalid null actual')))); exception when others then failed:=true; end;
+  if not failed then raise exception 'Null workout completion accepted'; end if;
+  failed:=false;
+  begin perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000063','changes',jsonb_build_array(jsonb_build_object('kind','daily','id','94000000-0000-4000-8000-000000000001','operation','withdraw','expected_version',2,'reason',' ')))); exception when others then failed:=true; end;
+  if not failed then raise exception 'Blank correction reason accepted'; end if;
+  if (select revision<>2 or snapshot->>'training_status'<>'trained' or snapshot->>'entry_date'<>'2026-10-03' from public.fitness_record_heads where record_kind='daily' and record_id='94000000-0000-4000-8000-000000000001') then raise exception 'Failed validation changed head'; end if;
+  if exists(select 1 from public.fitness_save_receipts where request_id in ('96000000-0000-4000-8000-000000000060','96000000-0000-4000-8000-000000000061','96000000-0000-4000-8000-000000000062','96000000-0000-4000-8000-000000000063')) then raise exception 'Failed validation left receipt'; end if;
+  foreach k in array array['fitness_activities','fitness_record_heads','fitness_record_revisions','fitness_save_receipts','fitness_daily_effective','fitness_workouts_effective','fitness_activities_effective','fitness_review_acknowledgements'] loop
+    execute format('select count(*) from public.%I where user_id <> auth.uid()',k) into n;
+    if n<>0 then raise exception 'Cross-owner rows exposed by %',k; end if;
+  end loop;
   -- Withdrawal of a daily hides its workouts without deleting original links.
   perform public.save_fitness_record_v2(jsonb_build_object('request_id','96000000-0000-4000-8000-000000000044','changes',jsonb_build_array(jsonb_build_object('kind','daily','id','94000000-0000-4000-8000-000000000001','operation','withdraw','expected_version',2,'reason','duplicate'))));
   if exists(select 1 from public.fitness_workouts_effective where not withdrawn) then raise exception 'Daily withdrawal left workouts effective'; end if;
@@ -106,6 +128,15 @@ do $$ declare denied boolean:=false; begin
   denied:=false;
   begin perform * from public.fitness_record_heads; exception when insufficient_privilege then denied:=true; end;
   if not denied then raise exception 'Anonymous private read allowed'; end if;
+end $$;
+reset role;
+select set_config('request.jwt.claim.sub','91000000-0000-4000-8000-000000000099',true);
+select set_config('request.jwt.claims','{"sub":"91000000-0000-4000-8000-000000000099","role":"authenticated"}',true);
+set local role authenticated;
+do $$ declare denied boolean:=false; begin
+  begin perform public.save_fitness_record_v2('{}'); exception when insufficient_privilege then denied:=true; end;
+  if not denied then raise exception 'Non-allowlisted session execution allowed'; end if;
+  if exists(select 1 from public.fitness_record_heads) then raise exception 'Non-allowlisted private read allowed'; end if;
 end $$;
 reset role;
 select 'PASS activities, bundle/exact replay, request collision, revisions, withdrawal/restore, stale conflicts, atomic rollback, RLS, immutable provenance, dependent withdrawal and source-only acknowledgements' as result;

@@ -2,6 +2,11 @@
 
 Approved scope: 2026-10-03. Candidate build: `2026.10.03.5`.
 
+2026-10-04 status update: Vinson explicitly approved the protected production
+cutover. V2 is now enabled and actual signed-in CRUD acceptance passed. Earlier
+pending-production statements below describe the candidate stage. Current evidence
+and remaining device/source limits: [activation acceptance](fitness-v2-activation-acceptance.md).
+
 ## Implemented behavior
 
 Eight sport forms cover walking/running, hiking, cycling, swimming, ball sports,

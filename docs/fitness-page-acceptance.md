@@ -1,5 +1,10 @@
 # Fitness page acceptance — 2026.10.03.6
 
+2026-10-04 production update: the separately approved protected V2 cutover and
+signed-in desktop acceptance are complete. This supersedes the historical
+pending-V2 statements below. Current evidence and remaining device/source limits:
+[activation acceptance](fitness-v2-activation-acceptance.md).
+
 ## Current follow-up — 2026.10.04.1
 
 2026-10-04 release authorization: Vinson approved pushing this reviewed frontend

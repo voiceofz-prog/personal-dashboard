@@ -147,4 +147,15 @@ See [page acceptance](fitness-page-acceptance.md) for evidence and production li
 
 ### Earlier advisor status
 
+2026-10-04 activation preparation additionally exercised actual dual-connection
+version conflicts and exact replay, owner isolation on eight V2 data surfaces,
+non-allowlisted authentication rejection, and failed-input rollback on the
+disposable database. Production V2 was explicitly approved and activated with
+read-only deployment, unchanged-original-data readback and signed-in acceptance;
+live RLS/grants were independently verified. See
+[activation acceptance](fitness-v2-activation-acceptance.md). The local encrypted
+Fitness snapshot is ignored and contains no Auth secrets. Disabled leaked-password
+protection remains a plan-dependent Auth warning, not an accepted substitute for
+owner isolation or a reason to bypass RLS.
+
 The schema, function-security, and review-archive authorization findings are resolved through migrations `004`, `005`, and `20260705031641_review_archive_hardening`. Supabase may still report leaked-password protection as disabled; that Auth feature depends on the project plan and must be enabled in the dashboard when available.

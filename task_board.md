@@ -8,6 +8,8 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
+- [x] 2026-10-04 explicitly approved production V2 activation completed: scoped encrypted backup/restore rehearsal passed; original 114 daily / 241 workouts / 580 targets / 60 Fitness cycles unchanged. Live signed-in activity and Quick Log create/correct/version/withdraw/restore passed; both synthetic records finally withdrawn. Both Fitness automations restored ACTIVE; disposable paused. Full 10-script/13-suite gate passed. Independent final review and source handoff recorded in docs/fitness-v2-activation-acceptance.md. Physical iPhone and next real source publication remain unverified.
+
 - [x] 2026-10-04 approved release `2026.10.04.1`: implementation commit `a5904d7` pushed to main; Pages run `37166810644` succeeded. Remote Dashboard version and SW cache read back as `2026.10.04.1` / `jessica-dashboard-v2026-10-04-1`. Pre-push 10-script/13-suite gate passed. No Supabase migration; prior phone evidence and production V2 activation remain pending.
 
 - [x] 2026-10-04 record-browser follow-up `2026.10.04.1`: fixed checkbox/button proportions, added recorded-date shortcuts, reduced outer management to Quick Log/activity groups while retaining individual history/restore. Actual Demo bulk action/activity edits passed; 10-script/13-suite gate and independent increment review passed. Prior phone viewport evidence pause and formal V2 activation remain separate pending parts. No push/deployment/DB change; evidence in `docs/fitness-page-acceptance.md`.
@@ -28,7 +30,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Waiting
 
-- [ ] Fitness records v2 production ledger/backup/restore rehearsal, signed-in REST acceptance, same-origin PWA and physical iPhone checks, then separately approved migration/deployment. Next safe action: inspect production parity read-only and prepare the exact release once authorized.
+- [ ] Remaining Fitness V2 acceptance: physical iPhone/Safari and observation of next real source review/publication. Production activation, scoped backup/rehearsal and signed-in desktop REST acceptance completed on 2026-10-04; see docs/fitness-v2-activation-acceptance.md.
 - [ ] Physical-device acceptance after the current deployed build is refreshed in Safari.
 - [ ] Sites replacement validation and Git ownership remain deferred until Vinson decides the platform is stable enough to evaluate formally.
 
