@@ -8,7 +8,7 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
-- [ ] 2026-10-04 approved release `2026.10.04.1`: push reviewed Dashboard candidate to main and check the automatic Pages run/version readback. Pre-push 10-script/13-suite verification passed. No Supabase migration is included; prior phone evidence and production V2 activation remain pending.
+- [x] 2026-10-04 approved release `2026.10.04.1`: implementation commit `a5904d7` pushed to main; Pages run `37166810644` succeeded. Remote Dashboard version and SW cache read back as `2026.10.04.1` / `jessica-dashboard-v2026-10-04-1`. Pre-push 10-script/13-suite gate passed. No Supabase migration; prior phone evidence and production V2 activation remain pending.
 
 - [x] 2026-10-04 record-browser follow-up `2026.10.04.1`: fixed checkbox/button proportions, added recorded-date shortcuts, reduced outer management to Quick Log/activity groups while retaining individual history/restore. Actual Demo bulk action/activity edits passed; 10-script/13-suite gate and independent increment review passed. Prior phone viewport evidence pause and formal V2 activation remain separate pending parts. No push/deployment/DB change; evidence in `docs/fitness-page-acceptance.md`.
 

@@ -8,6 +8,12 @@ Pre-push verification passed again (10 scripts/13 suites). This authorization
 does not activate V2 or apply a production database migration; phone evidence and
 authenticated production acceptance remain the documented pending gates.
 
+Release result: implementation commit `a5904d7` was pushed to main; [Pages run
+37166810644](https://github.com/voiceofz-prog/personal-dashboard/actions/runs/37166810644)
+completed successfully. Direct deployed asset readback confirmed Dashboard
+`2026.10.04.1` and Service Worker `jessica-dashboard-v2026-10-04-1`. This confirms
+frontend publication, not production V2 activation or authenticated functionality.
+
 Vinson requested changes only to the training/activity record browser. This
 section supersedes the earlier per-row outer management layout below.
 Details now show two groups and exactly two outer management controls: Quick Log
