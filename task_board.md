@@ -8,6 +8,8 @@ Current operational phase: Phase 0, maintain the existing formal GitHub Pages + 
 
 ## Now
 
+- [ ] 2026-10-25 approved UI/accessibility release in progress: A–E scoped trial and local evidence cleanup are complete. Preserve the approved F1/F2/local-language repairs, publish build `2026.10.25.1` with matching Service Worker cache, run the existing verification gate and verify the deployed assets/login surface. Next safe step: complete release regression, commit only the four runtime files plus setup/task-board changes, push, then inspect the matching Pages run. Full Skill/trial evidence remains local, not in this public repository. No backend/data/Core change.
+
 - [x] 2026-10-04 explicitly approved production V2 activation completed: scoped encrypted backup/restore rehearsal passed; original 114 daily / 241 workouts / 580 targets / 60 Fitness cycles unchanged. Live signed-in activity and Quick Log create/correct/version/withdraw/restore passed; both synthetic records finally withdrawn. Both Fitness automations restored ACTIVE; disposable paused. Full 10-script/13-suite gate passed. Independent final review and source handoff recorded in docs/fitness-v2-activation-acceptance.md. Physical iPhone and next real source publication remain unverified.
 
 - [x] 2026-10-04 approved release `2026.10.04.1`: implementation commit `a5904d7` pushed to main; Pages run `37166810644` succeeded. Remote Dashboard version and SW cache read back as `2026.10.04.1` / `jessica-dashboard-v2026-10-04-1`. Pre-push 10-script/13-suite gate passed. No Supabase migration; prior phone evidence and production V2 activation remain pending.

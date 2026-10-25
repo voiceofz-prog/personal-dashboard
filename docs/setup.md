@@ -107,6 +107,33 @@ Legacy alternative if deploying from the larger Jessica repository:
 
 This alternative is not the recommended setup.
 
+### 2026-10-25 approved UI/accessibility release
+
+Build `2026.10.25.1` pairs with Service Worker cache
+`jessica-dashboard-v2026-10-25-1`. This release contains only the approved
+non-sticky management heading, darker revision-reason boundary and two local
+Traditional Chinese language roots, plus release-version metadata. The heading
+and Close button scroll with the dialog content; this is the accepted tradeoff.
+There is no schema, backend, authentication, domain-data or Skill Core change.
+
+The canonical URL is `https://voiceofz-prog.github.io/personal-dashboard/`.
+The words "更新與營運" are not an application route and should not be appended
+to that URL. Publish only `app/` through the existing Pages workflow; private
+local Skill/trial evidence is not a website artifact or part of this release.
+
+After publishing, verify the matching Actions commit, HTTP asset responses,
+runtime/cache versions and login surface. Existing installations should reopen
+online and reload so the new worker can activate; confirm build `2026.10.25.1`
+in Settings after sign-in. Do not clear pending drafts or local data merely to
+force an update. Physical iPhone/Safari, real sign-in/data transactions and
+offline/AT acceptance remain separate from a static release check.
+
+Rollback, if this release fails, is a new revert commit of the release changes
+followed by the same verification/deploy/readback sequence. The prior remote
+baseline is `d2508e80ae86e33c1025b2db2b6f4fb9a33d6b84`, build
+`2026.10.04.1`; do not reset shared history or touch backend data. No rollback
+is claimed unless actually executed.
+
 ## 4. iPhone PWA Test
 
 1. Open the GitHub Pages URL in Safari.

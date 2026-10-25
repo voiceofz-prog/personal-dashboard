@@ -1,4 +1,4 @@
-const CACHE_NAME = "jessica-dashboard-v2026-10-04-1";
+const CACHE_NAME = "jessica-dashboard-v2026-10-25-1";
 const APP_SHELL = [
   "./",
   "./index.html",

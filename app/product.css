@@ -314,11 +314,11 @@
 .fitness-record-browser .section-heading { flex-wrap:wrap; }
 .fitness-management-dialog { width: min(700px,calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 20px; border: 0; border-radius: 18px; background: var(--panel); color: var(--text); overflow-y: auto; overscroll-behavior: contain; }
 .fitness-management-dialog::backdrop { background: rgb(0 0 0 / .45); }
-.management-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; position: sticky; top: -20px; background: var(--panel); z-index: 2; padding-block: 12px; }
+.management-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--panel); padding-block: 12px; }
 .management-heading h2 { font-size: 20px; }
 .fitness-management-dialog input, .fitness-management-dialog textarea { max-width: 100%; }
+#fitnessRevisionForm textarea[name="reason"] { border-color: var(--muted); }
 @media (min-width: 650px) { .date-record-grid {grid-template-columns: repeat(2,minmax(0,1fr));} }
 @media (max-width: 519px) {
   .fitness-management-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding: 16px; padding-bottom: max(24px,env(safe-area-inset-bottom)); }
-  .management-heading {top:-16px;}
 }
