@@ -1,4 +1,4 @@
-const VERSION = "2026.11.05.1";
+const VERSION = "2026.11.05.2";
 let dashboardReadEpoch = 0;
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";

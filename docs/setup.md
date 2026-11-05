@@ -163,6 +163,29 @@ paired app/cache versions, run the same gate, deploy, then inspect the actual
 Fitness screen and account data. Never reset shared history or alter database
 records for a presentation rollback. Rollback execution is NOT TESTED here.
 
+### Home presentation release preparation — 2026-11-05
+
+Build 2026.11.05.2 pairs with worker jessica-dashboard-v2026-11-05-2.
+Vinson accepted the Home candidate and explicitly authorized Home integration
+and publication on 2026-11-05. Deployment still requires pre-push gates and actual
+post-deploy verification. The scoped change adds
+the accepted Home presentation and the locally cached home-journal.css only.
+Synthetic fixtures, preview controls, bootstrap and candidate labels are excluded.
+Existing Fitness, English, Settings, login, Auth and domain/data logic are retained.
+The dashboard JS changes only VERSION; the worker changes only paired version and
+app-shell CSS membership.
+
+Enter Home through the root URL or bottom navigation. Confirm Jessica,
+每日練習・今日手札, the English/Fitness entries and the build in Settings. Preserve
+real drafts/pending operations during normal online reload; do not clear browser
+data. Retained behavior: Home refreshes after an English summary is saved; rating
+alone does not immediately refresh the previous Home render. Long focus text and
+physical Safari/PWA/assistive technology remain explicit acceptance limits.
+
+Rollback baseline: 825e800a1aa1cf1516bdac711fa9820b5948a432, build 2026.11.05.1.
+Use a new scoped revert with fresh paired versions and the same gate/deploy/actual
+render checks. No database changes or shared-history reset. Rollback is untested.
+
 ## 4. iPhone PWA Test
 
 1. Open the GitHub Pages URL in Safari.

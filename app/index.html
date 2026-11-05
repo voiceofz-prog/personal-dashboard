@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="ios-fixes.css">
   <link rel="stylesheet" href="product.css">
   <link rel="stylesheet" href="fitness-taste.css">
+  <link rel="stylesheet" href="home-journal.css">
   <title>Jessica Dashboard</title>
 </head>
 <body class="login-only">
@@ -40,16 +41,14 @@
   </header>
 
   <main class="app-main" id="appMain" hidden>
-    <section class="view active" id="homeView">
-      <div class="panel hero-panel">
-        <div><p class="eyebrow">Today</p><h2 id="todayFocus">Loading focus...</h2><p id="todaySummary" class="muted">Loading dashboard data.</p></div>
-        <div class="hero-actions"><span id="dataSource" class="mini-status">Local</span><button class="primary-action" type="button" data-jump="fitness">Quick Entry</button></div>
-      </div>
+    <section class="view active" id="homeView" lang="zh-Hant">
+      <div class="home-identity"><p>每日練習・今日手札</p></div>
+      <section class="panel home-practice"><div class="section-heading"><h2>今日練習</h2><span id="dataSource" class="mini-status">Demo data</span></div><h3 id="todayFocus">Loading focus...</h3><p id="todaySummary" class="muted">Loading dashboard data.</p><div class="home-actions"><button class="primary-action" type="button" data-jump="english">前往今日複習 ↗</button></div></section>
+      <div class="metric-grid" id="homeMetrics"></div>
+      <section class="panel home-fitness"><div class="section-heading"><h2>身體與下一次訓練</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div><div class="home-actions"><button class="secondary-action" type="button" data-jump="fitness">記錄今天 ↗</button></div></section>
       <section class="panel alert-panel" id="homeAlerts" hidden><div id="homeAlertList" class="stack-list"></div></section>
       <section class="panel learning-map-panel learning-map-home" id="homeLearningMap" aria-live="polite"></section>
-      <div class="metric-grid" id="homeMetrics"></div>
-      <section class="panel"><div class="section-heading"><h2>Fitness Status</h2><span id="homeFitnessBadge" class="mini-status">Loading</span></div><div id="homeFitnessStatus" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Recent Personal Records</h2><span id="recentStatus" class="mini-status">Latest</span></div><div id="recentUpdates" class="stack-list"></div></section>
+      <section class="panel home-history"><div class="section-heading"><h2>最近的練習與紀錄</h2><span id="recentStatus" class="mini-status">Latest</span></div><div id="recentUpdates" class="stack-list"></div></section>
     </section>
 
     <section class="view" id="englishView">

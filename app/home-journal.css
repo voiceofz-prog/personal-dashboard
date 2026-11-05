@@ -1,0 +1,95 @@
+/* Home only. Jessica daily practice journal; existing Fitness and all handlers stay intact.
+   Grid: (1060px - 11*16px)/12 = 73.6667px. Opening 7+5, then 12, then 5+7. */
+body.authenticated:has(#homeView.active) {
+  --bg:#f4f6f5;--panel:#fff;--panel-soft:#edf2ef;--text:#202d27;--muted:#536159;
+  --line:#dbe2dd;--accent:#1b6e66;--accent-strong:#225349;--accent-soft:#e7f0ed;
+  --blue:#284d42;--blue-soft:#edf3ef;--shadow:none;
+  background:var(--bg);color:var(--text);font:400 15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+html:has(body.authenticated #homeView.active){scroll-padding-block:100px;}
+body.authenticated:has(#homeView.active) .app-header{max-width:1100px;margin:auto;padding:24px 20px 18px;border:0;background:var(--bg);align-items:center;}
+body.authenticated:has(#homeView.active) .app-header>div:first-child{display:flex;align-items:center;gap:24px;}
+body.authenticated:has(#homeView.active) .app-header .eyebrow{display:none;}
+body.authenticated:has(#homeView.active) .fitness-wordmark{display:flex;align-items:baseline;gap:9px;margin:0;color:var(--text);font:500 25px/1.2 Georgia,"Times New Roman",serif;letter-spacing:-.7px;}
+body.authenticated:has(#homeView.active) .fitness-wordmark span{font:400 12px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0;color:var(--muted);}
+body.authenticated:has(#homeView.active) #pageTitle{font-size:19px;font-weight:500;line-height:1.3;letter-spacing:0;margin:0;padding-left:24px;border-left:1px solid var(--line);}
+body.authenticated:has(#homeView.active) .app-main{max-width:1100px;padding:0 20px 112px;margin:auto;}
+body.authenticated:has(#homeView.active) #homeView.active{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start;}
+body.authenticated:has(#homeView.active) .panel{border:0;border-radius:16px;box-shadow:none;margin:0;padding:24px;min-width:0;}
+body.authenticated:has(#homeView.active) .home-identity{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:4px 0 14px;}
+body.authenticated:has(#homeView.active) .home-identity p{margin:0;font-size:15px;font-weight:500;letter-spacing:.02em;}
+body.authenticated:has(#homeView.active) .home-identity span{font-size:12px;color:var(--muted);}
+body.authenticated:has(#homeView.active) h2{font-size:16px;font-weight:600;line-height:1.4;letter-spacing:0;}
+body.authenticated:has(#homeView.active) h3{font-size:15px;font-weight:500;line-height:1.45;}
+body.authenticated:has(#homeView.active) .section-heading{align-items:center;gap:12px;margin-bottom:20px;}
+body.authenticated:has(#homeView.active) .home-practice{grid-column:1/8;grid-row:2;background:#edf2ef;align-self:start;display:flex;flex-direction:column;gap:16px;}
+body.authenticated:has(#homeView.active) .home-practice .section-heading{margin-bottom:0;}
+body.authenticated:has(#homeView.active) #todayFocus{font-size:30px;line-height:1.2;font-weight:400;letter-spacing:-.65px;margin:0;max-width:18em;}
+body.authenticated:has(#homeView.active) #todaySummary{margin:0;font-size:13px;line-height:1.65;color:var(--muted);}
+body.authenticated:has(#homeView.active) .home-practice .home-actions{margin-top:0;padding-top:8px;}
+body.authenticated:has(#homeView.active) .home-actions{display:flex;gap:12px;align-items:center;}
+body.authenticated:has(#homeView.active) .primary-action{background:#263d33;color:#fff;border-radius:8px;font-size:14px;font-weight:500;min-height:44px;padding:10px 18px;}
+body.authenticated:has(#homeView.active) .secondary-action{background:#fff;color:#344d40;border:1px solid #78877f;border-radius:8px;font-size:14px;font-weight:500;min-height:44px;}
+body.authenticated:has(#homeView.active) .home-fitness{grid-column:8/-1;grid-row:2/4;align-self:stretch;background:#fff;display:flex;flex-direction:column;}
+body.authenticated:has(#homeView.active) #homeFitnessStatus{gap:16px;}
+body.authenticated:has(#homeView.active) #homeFitnessStatus .list-card{padding:0;background:transparent;border:0;border-radius:0;}
+body.authenticated:has(#homeView.active) #homeFitnessStatus .card-topline{margin-bottom:4px;}
+body.authenticated:has(#homeView.active) #homeFitnessStatus .card-text{font-size:13px;line-height:1.65;margin:0;}
+body.authenticated:has(#homeView.active) .home-fitness .home-actions{margin-top:auto;padding-top:20px;}
+body.authenticated:has(#homeView.active) .home-fitness .secondary-action{width:100%;}
+body.authenticated:has(#homeView.active) #homeMetrics{grid-column:1/8;grid-row:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:12px 24px;background:#e9efeb;border-radius:16px;}
+body.authenticated:has(#homeView.active) #homeMetrics:has(>:nth-child(4)){grid-template-columns:repeat(4,minmax(0,1fr));}
+body.authenticated:has(#homeView.active) #homeMetrics .metric-card{border:0;border-radius:0;background:transparent;box-shadow:none;min-height:0;padding:0 24px;}
+body.authenticated:has(#homeView.active) #homeMetrics .metric-card:first-child{padding-left:0;}
+body.authenticated:has(#homeView.active) #homeMetrics .metric-card+.metric-card{border-left:1px solid #ccd7cf;}
+body.authenticated:has(#homeView.active) #homeMetrics .label,body.authenticated:has(#homeView.active) #homeMetrics .hint{font-size:12px;font-weight:400;}
+body.authenticated:has(#homeView.active) #homeMetrics .value{font-size:25px;font-weight:400;line-height:1.2;letter-spacing:-.6px;font-variant-numeric:tabular-nums;margin-top:3px;}
+body.authenticated:has(#homeView.active) #homeLearningMap{grid-column:1/6;grid-row:4;background:#fff;}
+body.authenticated:has(#homeView.active) .learning-map-panel .eyebrow{display:none;}
+body.authenticated:has(#homeView.active) .learning-map-module{font-size:20px;line-height:1.35;font-weight:500;margin-bottom:8px;}
+body.authenticated:has(#homeView.active) .learning-map-copy{font-size:14px;line-height:1.65;}
+body.authenticated:has(#homeView.active) .learning-map-home-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;}
+body.authenticated:has(#homeView.active) .learning-map-home-meta>div{background:transparent;border:0;border-radius:0;padding:0;}
+body.authenticated:has(#homeView.active) .learning-map-home-meta .label{font-size:12px;font-weight:400;}
+body.authenticated:has(#homeView.active) .learning-map-home-meta .value{font-size:15px;font-weight:500;}
+body.authenticated:has(#homeView.active) .learning-map-home .secondary-action{font-size:13px;}
+body.authenticated:has(#homeView.active) .home-history{grid-column:6/-1;grid-row:4;background:#fff;}
+body.authenticated:has(#homeView.active) #recentUpdates{gap:16px;}
+body.authenticated:has(#homeView.active) #recentUpdates .list-card{border:0;border-radius:0;background:transparent;padding:0;}
+body.authenticated:has(#homeView.active) #recentUpdates .card-text{font-size:13px;line-height:1.65;}
+body.authenticated:has(#homeView.active) #recentUpdates h3{font-size:14px;font-weight:500;}
+body.authenticated:has(#homeView.active) .mini-status,body.authenticated:has(#homeView.active) .status-pill,body.authenticated:has(#homeView.active) .tag{background:#edf1ee;color:#41584d;border-radius:6px;min-height:26px;padding:4px 9px;font-size:12px;font-weight:400;}
+body.authenticated:has(#homeView.active) .card-topline .tag{white-space:nowrap;flex:none;}
+body.authenticated:has(#homeView.active) .bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(1100px,100%);padding-left:20px;padding-right:20px;background:#f4f6f5;border:0;box-shadow:none;gap:8px;}
+body.authenticated:has(#homeView.active) .nav-item{font-size:13px;font-weight:500;border-radius:8px;}
+body.authenticated:has(#homeView.active) .nav-item.active{background:#e2e9e4;color:#233d30;}
+body.authenticated:has(#homeView.active) #homeAlerts{grid-column:1/-1;background:#fff5f1;}
+body.authenticated:has(#homeView.active) :is(button,a,summary){scroll-margin-block:100px;}
+body.authenticated:has(#homeView.active) :is(button,a,summary):focus-visible{outline:3px solid #1b6e66;outline-offset:3px;}
+body.authenticated:has(#homeView.active) .toast{border-radius:8px;background:#263d33;font-weight:400;}
+@media(max-width:1000px){
+ body.authenticated:has(#homeView.active) #homeView.active{grid-template-columns:minmax(0,1fr);}
+ body.authenticated:has(#homeView.active) #homeView.active>*{grid-column:1;grid-row:auto;}
+ body.authenticated:has(#homeView.active) .home-practice{min-height:0;}
+ body.authenticated:has(#homeView.active) .home-practice .home-actions{margin-top:0;}
+}
+@media(max-width:600px){
+ body.authenticated:has(#homeView.active) .app-header{padding:20px 18px 16px;}
+ body.authenticated:has(#homeView.active) .app-header>div:first-child{gap:14px;}
+ body.authenticated:has(#homeView.active) .fitness-wordmark span{display:none;}
+ body.authenticated:has(#homeView.active) #pageTitle{font-size:17px;padding-left:14px;}
+ body.authenticated:has(#homeView.active) .app-main{padding:0 16px 108px;}
+ body.authenticated:has(#homeView.active) #homeView.active{gap:14px;}
+ body.authenticated:has(#homeView.active) .home-identity{gap:8px;padding-bottom:8px;}
+ body.authenticated:has(#homeView.active) .home-identity p{font-size:14px;}
+ body.authenticated:has(#homeView.active) .home-identity span{font-size:11px;}
+ body.authenticated:has(#homeView.active) .panel{padding:20px;border-radius:14px;}
+ body.authenticated:has(#homeView.active) #todayFocus{font-size:25px;letter-spacing:-.4px;}
+ body.authenticated:has(#homeView.active) #homeMetrics{padding:14px 20px;border-radius:14px;}
+ body.authenticated:has(#homeView.active) #homeMetrics .metric-card{padding:0 12px;}
+ body.authenticated:has(#homeView.active) #homeMetrics .metric-card:first-child{padding-left:0;}
+ body.authenticated:has(#homeView.active) #homeMetrics .metric-card:last-child{padding-right:0;}
+ body.authenticated:has(#homeView.active) #homeMetrics .value{font-size:23px;}
+ body.authenticated:has(#homeView.active) .bottom-nav{padding-left:12px;padding-right:12px;}
+}
+@media(prefers-reduced-motion:reduce){body.authenticated:has(#homeView.active) *{scroll-behavior:auto;transition:none;}}
