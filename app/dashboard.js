@@ -1,4 +1,4 @@
-const VERSION = "2026.10.25.1";
+const VERSION = "2026.11.05.1";
 let dashboardReadEpoch = 0;
 const QUEUE_KEY = "jessica-dashboard-pending-v2";
 const LEGACY_QUEUE_KEY = "jessica-dashboard-pending-v1";
@@ -75,6 +75,12 @@ async function init() {
 }
 
 function bindNavigation() {
+  // A Fitness bookmark must select the screen, including after sign-in/Demo.
+  const openFitnessRoute = () => {
+    if (window.location.hash === "#fitness") switchView("fitness");
+  };
+  window.addEventListener("hashchange", openFitnessRoute);
+  openFitnessRoute();
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.view));
   });

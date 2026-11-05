@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="ios-fixes.css">
   <link rel="stylesheet" href="product.css">
+  <link rel="stylesheet" href="fitness-taste.css">
   <title>Jessica Dashboard</title>
 </head>
 <body class="login-only">
@@ -34,7 +35,7 @@
   </section>
 
   <header class="app-header" id="appHeader" hidden>
-    <div><p class="eyebrow">Jessica Dashboard</p><h1 id="pageTitle">Home</h1></div>
+    <div><p class="eyebrow">Jessica Dashboard</p><p class="brand-wordmark fitness-wordmark">Jessica <span>Personal journal</span></p><h1 id="pageTitle">Home</h1></div>
     <div class="status-pill" id="networkStatus">Checking</div>
   </header>
 
@@ -72,10 +73,11 @@
       <details class="panel disclosure-panel"><summary><span>Learning Notes</span><span class="mini-status">analysis</span></summary><section class="disclosure-section"><div class="section-heading"><h2>Problem Tracker</h2><select id="problemFilter" class="compact-input" aria-label="Filter problems"><option value="all">All</option><option value="Active">Active</option><option value="Improving">Improving</option><option value="Stable">Stable</option></select></div><div id="problemList" class="stack-list"></div></section><section class="disclosure-section"><div class="section-heading"><h2>Improvement Log</h2><span class="mini-status">curated</span></div><div id="improvementLog" class="stack-list"></div></section></details>
     </section>
 
-    <section class="view" id="fitnessView">
-      <section class="panel"><div class="section-heading"><h2>Body & Recovery</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
-      <section class="panel recommendation-panel"><div class="section-heading"><h2>Next Training</h2><span id="recommendationMode" class="mini-status">Preparing</span></div><div id="fitnessRecommendation" class="stack-list"></div></section>
-      <section class="panel fitness-generator"><div class="section-heading"><div><p class="eyebrow">Today</p><h2>Quick Log</h2></div><span class="mini-status">save first</span></div><p class="muted">Jessica 建議值會自動帶入；只有勾選完成的動作與實際補給會寫入紀錄。</p>
+    <section class="view" id="fitnessView" lang="zh-Hant">
+      <div class="fitness-identity"><p class="workspace-note">每日練習・訓練手札<span>先看狀態，再記錄今天。</span></p><a class="primary-action entry-link" href="#fitnessReportForm">記錄今天 <span aria-hidden="true">↗</span></a></div>
+      <section class="panel recommendation-panel"><div class="section-heading"><h2>下一次訓練</h2><span id="recommendationMode" class="mini-status">Preparing</span></div><div id="fitnessRecommendation" class="stack-list"></div></section>
+      <section class="panel fitness-snapshot"><div class="section-heading"><h2>身體與恢復</h2><span id="recoveryBadge" class="mini-status">Loading</span></div><div class="metric-grid" id="fitnessMetrics"></div></section>
+      <section class="panel fitness-generator"><div class="section-heading"><div><p class="eyebrow">Today</p><h2>今日紀錄</h2></div><span class="mini-status">save first</span></div><p class="muted">Jessica 建議值會自動帶入；只有勾選完成的動作與實際補給會寫入紀錄。</p>
         <form id="fitnessReportForm" class="form-stack">
           <input type="hidden" name="id">
           <label>日期 <input name="entry_date" type="date" required></label>

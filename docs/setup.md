@@ -134,6 +134,35 @@ baseline is `d2508e80ae86e33c1025b2db2b6f4fb9a33d6b84`, build
 `2026.10.04.1`; do not reset shared history or touch backend data. No rollback
 is claimed unless actually executed.
 
+### 2026-11-05 Fitness presentation release
+
+Build `2026.11.05.1` pairs with worker `jessica-dashboard-v2026-11-05-1`.
+Only the active authenticated Fitness view uses the Jessica journal presentation:
+Jessica wordmark, 每日練習・訓練手札, 記錄今天, then training, recovery and the
+existing record form. Home, English, Settings and login retain their presentation.
+On 2026-11-05 the integrated app passed rendered 320/390/768/1440 checks,
+navigation, keyboard focus and Demo-only draft/revision/withdraw/restore checks;
+the existing production account baseline was read-only. The native gate passed
+10 scripts and 13 test suites. Physical iPhone/Safari, assistive technology and
+full WCAG conformance remain NOT VERIFIED.
+
+Open https://voiceofz-prog.github.io/personal-dashboard/#fitness online and sign
+in normally. The Fitness bookmark selects the screen before the existing login
+gate is resolved, without bypassing it. The root URL still starts at Home; choose
+**Fitness** in the bottom navigation when using that URL. Other fragments and the
+record-form anchor retain their behavior.
+Confirm the visible journal elements as well as the build in Settings. If an
+already-open PWA still shows the old interface, preserve any open draft, reconnect
+and reload or close/reopen the app. The existing worker refreshes the shell from
+the network; do not clear Local Storage, pending operations or all browser data.
+No worker algorithm, Auth, backend, data contract or domain logic changed.
+
+The pre-release rollback tree is `d68ac0b25ed8e103107a4e96c249f1221705cbe5`
+(build `2026.10.25.1`). Roll back through a new scoped revert commit with fresh
+paired app/cache versions, run the same gate, deploy, then inspect the actual
+Fitness screen and account data. Never reset shared history or alter database
+records for a presentation rollback. Rollback execution is NOT TESTED here.
+
 ## 4. iPhone PWA Test
 
 1. Open the GitHub Pages URL in Safari.

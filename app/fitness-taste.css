@@ -1,0 +1,128 @@
+/* Preserve the original shared header outside the active authenticated Fitness view. */
+.fitness-wordmark {display:none;}
+/* Jessica / Training journal. Fitness view only; accepted design, release preparation. 12 columns, 11*16px gutters;
+   at1100px: (1100-176)/12=77px. Primary7cols + secondary5cols share gridlines. */
+body.authenticated:has(#fitnessView.active) {
+  --bg:#f4f6f5; --panel:#fff; --panel-soft:#f0f3f1;
+  --text:#202d27; --muted:#536159; --line:#dbe2dd;
+  --accent:#1b6e66; --accent-soft:#e7f0ed; --accent-strong:#225349;
+  --blue:#284d42; --blue-soft:#edf3ef; --shadow:none;
+  --taste-control:#78877f; --taste-radius:16px;
+  background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.55; font-weight:400;
+}
+html:has(body.authenticated #fitnessView.active) {scroll-padding-block:100px;}
+body.authenticated:has(#fitnessView.active) .app-header {max-width:1100px;margin:0 auto;padding:24px 20px 18px;border:0;align-items:center;background:var(--bg);}
+body.authenticated:has(#fitnessView.active) .app-header .eyebrow:not(.brand-wordmark) {display:none;}
+body.authenticated:has(#fitnessView.active) .app-header>div:first-child {display:flex;align-items:center;gap:24px;}
+body.authenticated:has(#fitnessView.active) .app-header .brand-wordmark {display:flex;align-items:baseline;gap:9px;margin:0;color:var(--text);font:500 25px/1.2 Georgia,"Times New Roman",serif;letter-spacing:-.7px;text-transform:none;}
+body.authenticated:has(#fitnessView.active) .brand-wordmark span {font:400 12px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0;color:var(--muted);}
+body.authenticated:has(#fitnessView.active) #pageTitle {font-size:19px;font-weight:500;line-height:1.3;letter-spacing:0;margin:0;padding-left:24px;border-left:1px solid var(--line);}
+body.authenticated:has(#fitnessView.active) .app-main {max-width:1100px;padding:0 20px 112px;margin:auto;}
+body.authenticated:has(#fitnessView.active) .panel {box-shadow:none;border:0;border-radius:var(--taste-radius);padding:24px;margin:0;background:var(--panel);}
+body.authenticated:has(#fitnessView.active) .status-pill,body.authenticated:has(#fitnessView.active) .mini-status,body.authenticated:has(#fitnessView.active) .tag {background:#edf1ee;color:#41584d;font-weight:500;font-size:12px;min-height:26px;padding:4px 9px;border-radius:6px;}
+body.authenticated:has(#fitnessView.active) #fitnessView.active {display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start;}
+body.authenticated:has(#fitnessView.active) .fitness-identity {grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:4px 0 14px;}
+body.authenticated:has(#fitnessView.active) .workspace-note {margin:0;font-size:15px;font-weight:500;letter-spacing:.02em;}
+body.authenticated:has(#fitnessView.active) .workspace-note span {display:block;color:var(--muted);font-size:13px;font-weight:400;letter-spacing:0;margin-top:2px;}
+body.authenticated:has(#fitnessView.active) .entry-link {display:inline-flex;align-items:center;gap:20px;text-decoration:none;min-height:44px;padding:10px 18px;white-space:nowrap;}
+body.authenticated:has(#fitnessView.active) #fitnessView>.recommendation-panel {grid-column:1/8;grid-row:2;background:#edf2ef;border-top:0;align-self:stretch;}
+body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-snapshot {grid-column:8/-1;grid-row:2;background:#edf2ef;align-self:stretch;}
+body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-generator {grid-column:1/-1;grid-row:3;}
+body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-record-browser {grid-column:1/-1;grid-row:4;}
+body.authenticated:has(#fitnessView.active) #fitnessView>details {grid-column:1/-1;}
+body.authenticated:has(#fitnessView.active) #fitnessView>details:last-of-type {grid-row:6;}
+body.authenticated:has(#fitnessView.active) #fitnessView>.disclosure-panel:not(:last-of-type) {grid-row:5;}
+body.authenticated:has(#fitnessView.active) #fitnessReportForm>.two-col {display:grid;grid-template-columns:1fr 1fr;}
+body.authenticated:has(#fitnessView.active) #fitnessReportForm #exercisePicker {display:grid;grid-template-columns:1fr 1fr;align-items:start;}
+body.authenticated:has(#fitnessView.active) .section-heading {margin-bottom:18px;gap:12px;align-items:center;}
+body.authenticated:has(#fitnessView.active) h2 {font-size:16px;font-weight:600;letter-spacing:0;line-height:1.4;}
+body.authenticated:has(#fitnessView.active) h3 {font-size:15px;font-weight:600;line-height:1.45;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation {gap:16px;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation>.list-card:first-child {padding:0 0 0 15px;border:0;border-left:3px solid var(--accent);border-radius:0;background:transparent;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation>.list-card:first-child .card-topline {align-items:flex-start;margin-bottom:8px;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation>.list-card:first-child h3 {font-size:21px;font-weight:500;letter-spacing:-.4px;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation .card-text {font-size:14px;line-height:1.65;margin-top:8px;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation details>summary {color:var(--muted);font-size:13px;min-height:30px;cursor:pointer;}
+body.authenticated:has(#fitnessView.active) #fitnessRecommendation details .list-card {margin-top:10px;background:rgba(255,255,255,.55);}
+body.authenticated:has(#fitnessView.active) #fitnessMetrics {gap:12px 20px;margin:0;grid-template-columns:1fr 1fr;}
+body.authenticated:has(#fitnessView.active) #fitnessMetrics .metric-card {padding:0;min-height:66px;background:transparent;border:0;border-radius:0;box-shadow:none;}
+body.authenticated:has(#fitnessView.active) #fitnessMetrics .label {font-size:12px;font-weight:400;}
+body.authenticated:has(#fitnessView.active) #fitnessMetrics .value {font-size:25px;line-height:1.2;font-weight:400;letter-spacing:-.6px;font-variant-numeric:tabular-nums;margin-top:3px;}
+body.authenticated:has(#fitnessView.active) #fitnessMetrics .hint {font-size:12px;font-weight:400;margin-top:2px;}
+body.authenticated:has(#fitnessView.active) .fitness-generator .eyebrow,body.authenticated:has(#fitnessView.active) .fitness-generator>.section-heading>.mini-status {display:none;}
+body.authenticated:has(#fitnessView.active) .fitness-generator>.muted {font-size:14px;line-height:1.65;margin:0 0 20px;}
+body.authenticated:has(#fitnessView.active) .form-stack {gap:16px;margin-top:0;}
+body.authenticated:has(#fitnessView.active) label {font-size:13px;font-weight:500;gap:7px;line-height:1.5;}
+body.authenticated:has(#fitnessView.active) input:not([type="checkbox"]):not([type="radio"]),body.authenticated:has(#fitnessView.active) select,body.authenticated:has(#fitnessView.active) textarea {border-color:var(--taste-control);border-radius:8px;font-size:16px;font-weight:400;background:#fff;min-height:46px;padding:10px 12px;}
+body.authenticated:has(#fitnessView.active) input::placeholder,body.authenticated:has(#fitnessView.active) textarea::placeholder {color:#637168;opacity:1;}
+body.authenticated:has(#fitnessView.active) :is(input,select,textarea,button,a,summary) {scroll-margin-block:100px;}
+body.authenticated:has(#fitnessView.active) :is(.segment-option,.check-chip,.switch-line) {position:relative;}
+body.authenticated:has(#fitnessView.active) :is(.segment-option,.check-chip,.switch-line) input {width:1px;height:1px;min-height:1px;padding:0;border:0;}
+body.authenticated:has(#fitnessView.active) .primary-action {background:#263d33;color:#fff;font-weight:500;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) .secondary-action {background:#fff;border-color:var(--taste-control);color:#344d40;font-weight:500;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) .danger-action {font-weight:500;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) .primary-action,body.authenticated:has(#fitnessView.active) .secondary-action,body.authenticated:has(#fitnessView.active) .danger-action {min-height:44px;}
+body.authenticated:has(#fitnessView.active) .two-col {gap:16px;}
+body.authenticated:has(#fitnessView.active) .segmented-control {gap:0;padding:4px;background:#edf1ee;border-radius:10px;}
+body.authenticated:has(#fitnessView.active) .segment-option span {border:0;border-radius:7px;background:transparent;color:#526259;font-weight:500;}
+body.authenticated:has(#fitnessView.active) .segment-option input:checked+span {background:#fff;color:var(--text);box-shadow:none;}
+body.authenticated:has(#fitnessView.active) .exercise-row {padding:16px;background:#f3f6f4;border:0;border-radius:10px;}
+body.authenticated:has(#fitnessView.active) .exercise-row .switch-line {font-weight:500;line-height:1.5;}
+body.authenticated:has(#fitnessView.active) .switch-line span::before {border-color:var(--taste-control);border-radius:4px;}
+body.authenticated:has(#fitnessView.active) .switch-line input:checked+span::before {background:var(--accent);border-color:var(--accent);}
+body.authenticated:has(#fitnessView.active) .exercise-fields {gap:12px;}
+body.authenticated:has(#fitnessView.active) .check-chip span {border-color:var(--taste-control);font-weight:500;}
+body.authenticated:has(#fitnessView.active) .stack-list {gap:12px;}
+body.authenticated:has(#fitnessView.active) .list-card,body.authenticated:has(#fitnessView.active) .plan-card {padding:14px;background:#f3f6f4;border:0;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) .record-browser-actions {gap:12px;}
+body.authenticated:has(#fitnessView.active) .record-browser-actions .record-withdrawn-toggle {font-weight:400;font-size:12px;}
+body.authenticated:has(#fitnessView.active) .record-calendar {background:#f3f6f4;border:0;border-radius:8px;padding:12px;}
+body.authenticated:has(#fitnessView.active) .record-calendar summary {font-size:13px;font-weight:500;}
+body.authenticated:has(#fitnessView.active) .recorded-date-shortcuts button {min-height:44px;}
+body.authenticated:has(#fitnessView.active) .fitness-record-browser>.section-heading {align-items:flex-start;}
+body.authenticated:has(#fitnessView.active) .fitness-record-browser>.section-heading .mini-status {white-space:normal;text-align:right;}
+body.authenticated:has(#fitnessView.active) .disclosure-panel>summary {padding:0;min-height:30px;font-size:14px;font-weight:500;}
+body.authenticated:has(#fitnessView.active) .disclosure-panel .disclosure-section {margin-top:20px;}
+body.authenticated:has(#fitnessView.active) .bottom-nav {left:50%;right:auto;transform:translateX(-50%);width:min(1100px,100%);padding-left:20px;padding-right:20px;background:#f4f6f5;border:0;box-shadow:none;gap:8px;}
+body.authenticated:has(#fitnessView.active) .nav-item {font-size:13px;font-weight:500;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) .nav-item.active {background:#e2e9e4;color:#233d30;}
+body.authenticated:has(#fitnessView.active) .toast {background:#263d33;font-weight:400;border-radius:8px;}
+body.authenticated:has(#fitnessView.active) button:focus-visible,body.authenticated:has(#fitnessView.active) a:focus-visible,body.authenticated:has(#fitnessView.active) summary:focus-visible,body.authenticated:has(#fitnessView.active) input:focus-visible,body.authenticated:has(#fitnessView.active) select:focus-visible,body.authenticated:has(#fitnessView.active) textarea:focus-visible {outline:3px solid #1b6e66;outline-offset:3px;}
+body.authenticated:has(#fitnessView.active) .segment-option input:focus-visible+span,body.authenticated:has(#fitnessView.active) .check-chip input:focus-visible+span,body.authenticated:has(#fitnessView.active) .switch-line input:focus-visible+span {outline:3px solid #1b6e66;outline-offset:3px;}
+body.authenticated:has(#fitnessView.active) .fitness-management-dialog {border-radius:16px;box-shadow:0 20px 65px #18302430;scroll-padding-block:100px;}
+body.authenticated:has(#fitnessView.active) .fitness-management-dialog .management-heading {position:static;}
+body.authenticated:has(#fitnessView.active) #fitnessRevisionForm textarea[name="reason"] {border-color:var(--taste-control);}
+body.authenticated:has(#fitnessView.active) #fitnessReportForm {scroll-margin-top:24px;}
+@media(max-width:1000px){
+ body.authenticated:has(#fitnessView.active) #fitnessView.active {grid-template-columns:minmax(0,1fr);}
+ body.authenticated:has(#fitnessView.active) #fitnessView.active>*:not(dialog) {grid-column:1!important;grid-row:auto!important;}
+ body.authenticated:has(#fitnessView.active) .fitness-identity {order:0;}
+ body.authenticated:has(#fitnessView.active) #fitnessView>.recommendation-panel {order:1;}
+ body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-snapshot {order:2;}
+ body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-generator {order:3;}
+ body.authenticated:has(#fitnessView.active) #fitnessView>.fitness-record-browser {order:4;}
+ body.authenticated:has(#fitnessView.active) #fitnessView>details {order:5;}
+ body.authenticated:has(#fitnessView.active) #fitnessMetrics {grid-template-columns:repeat(4,minmax(0,1fr));}
+}
+@media(max-width:600px){
+ body.authenticated:has(#fitnessView.active) .app-header {padding:20px 18px 16px;}
+ body.authenticated:has(#fitnessView.active) .app-header>div:first-child {gap:14px;}
+ body.authenticated:has(#fitnessView.active) .brand-wordmark span {display:none;}
+ body.authenticated:has(#fitnessView.active) #pageTitle {font-size:17px;padding-left:14px;}
+ body.authenticated:has(#fitnessView.active) .app-main {padding:0 16px 108px;}
+ body.authenticated:has(#fitnessView.active) #fitnessView.active {gap:14px;}
+ body.authenticated:has(#fitnessView.active) .panel {padding:20px;border-radius:14px;}
+ body.authenticated:has(#fitnessView.active) .fitness-identity {gap:10px;padding-bottom:8px;}
+ body.authenticated:has(#fitnessView.active) .workspace-note {font-size:14px;}
+ body.authenticated:has(#fitnessView.active) .workspace-note span {font-size:12px;}
+ body.authenticated:has(#fitnessView.active) .entry-link {padding:10px 14px;gap:12px;font-size:14px;}
+ body.authenticated:has(#fitnessView.active) #fitnessMetrics {grid-template-columns:1fr 1fr;gap:16px;}
+ body.authenticated:has(#fitnessView.active) #fitnessMetrics .value {font-size:25px;}
+ body.authenticated:has(#fitnessView.active) .section-heading {gap:10px;}
+ body.authenticated:has(#fitnessView.active) #recoveryBadge {font-size:11px;max-width:50%;white-space:normal;}
+ body.authenticated:has(#fitnessView.active) .bottom-nav {padding-left:12px;padding-right:12px;}
+ body.authenticated:has(#fitnessView.active) .fitness-generator>.muted {font-size:14px;}
+ body.authenticated:has(#fitnessView.active) #fitnessReportForm #exercisePicker {grid-template-columns:1fr;}
+}
+@media(prefers-reduced-motion:reduce){body.authenticated:has(#fitnessView.active) *{scroll-behavior:auto;transition:none;}}
