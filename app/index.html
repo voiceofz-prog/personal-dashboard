@@ -18,6 +18,8 @@
   <link rel="stylesheet" href="product.css">
   <link rel="stylesheet" href="fitness-taste.css">
   <link rel="stylesheet" href="home-journal.css">
+  <link rel="stylesheet" href="english-journal.css">
+  <link rel="stylesheet" href="settings-journal.css">
   <title>Jessica Dashboard</title>
 </head>
 <body class="login-only">
@@ -52,8 +54,12 @@
     </section>
 
     <section class="view" id="englishView">
-      <section class="panel review-workspace">
-        <div class="section-heading"><div><p class="eyebrow">Commute Review</p><h2>5-Minute Review</h2></div><span id="reviewTimer" class="mini-status">05:00</span></div>
+      <section class="panel review-workspace english-practice" aria-labelledby="englishPracticeTitle">
+        <div class="section-heading english-practice-heading"><h2 id="englishPracticeTitle">5-Minute Review</h2><span id="reviewTimer" class="mini-status">05:00</span></div>
+        <section class="english-today" aria-labelledby="englishFocusTitle">
+          <div class="section-heading"><h3 id="englishFocusTitle">Today's Speaking Focus</h3><span id="cefrBadge" class="mini-status">B1</span></div>
+          <p id="englishFocus" class="lead-text"></p><p id="englishJessicaReview" class="review-source muted"></p><div id="englishTags" class="tag-row"></div>
+        </section>
         <div id="reviewIdle"><p class="lead-text">One card at a time. Answer first, then reveal the hint.</p><button class="primary-action" id="startReviewSession" type="button">Start Review</button></div>
         <div id="reviewActive" hidden>
           <div class="review-progress"><span id="reviewProgress">Card 1</span><button class="secondary-action compact-action" id="finishReviewSession" type="button">Finish</button></div>
@@ -64,7 +70,6 @@
       </section>
       <section class="panel learning-map-panel learning-map-full" id="englishLearningMap" tabindex="-1" aria-live="polite"></section>
       <section class="panel"><div class="section-heading"><h2>Last 7 Days</h2><span id="englishProgressBadge" class="mini-status">Progress</span></div><div id="englishProgress" class="metric-grid"></div><div id="englishProgressDetail" class="stack-list"></div><button class="secondary-action" id="editEnglishSummary" type="button" hidden>Edit Latest Summary</button></section>
-      <section class="panel"><div class="section-heading"><h2>Today's Speaking Focus</h2><span id="cefrBadge" class="mini-status">B1</span></div><p id="englishFocus" class="lead-text"></p><p id="englishJessicaReview" class="review-source muted"></p><div id="englishTags" class="tag-row"></div></section>
       <section class="panel"><div class="section-heading"><h2>Review Sentences</h2><span class="mini-status">tap to copy</span></div><div id="sentenceList" class="sentence-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Mistake Cards</h2><span class="mini-status">repeat fixes</span></div><div id="mistakeCards" class="stack-list"></div></section>
       <section class="panel"><div class="section-heading"><h2>Speaking Warm-up</h2><span class="mini-status">before Mika</span></div><div id="warmupCards" class="stack-list"></div></section>
@@ -122,11 +127,11 @@
     </section>
 
     <section class="view" id="settingsView">
-      <section class="panel"><h2>Account</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
-      <section class="panel"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button" hidden>Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button></div></section>
-      <section class="panel"><div class="section-heading"><h2>Offline Data</h2><span id="offlineBadge" class="mini-status">PWA</span></div><div id="offlineState" class="stack-list"></div></section>
-      <section class="panel"><div class="section-heading"><h2>Version</h2><span id="versionBadge" class="mini-status">Loading</span></div><p id="versionText" class="muted"></p></section>
-      <details class="panel disclosure-panel"><summary><span>Diagnostics</span><span class="mini-status">advanced</span></summary><section class="disclosure-section"><div id="setupState" class="stack-list"></div><button id="clearLocalButton" class="danger-action" type="button" hidden>Clear Local Queue</button></section></details>
+      <section class="panel settings-sync"><h2>Sync</h2><p id="syncStatus" class="lead-text">Checking sync state...</p><div class="button-row"><button id="syncButton" class="primary-action" type="button" hidden>Sync Pending</button><button id="refreshButton" class="secondary-action" type="button">Refresh Data</button></div></section>
+      <section class="panel settings-offline"><div class="section-heading"><h2>Offline Data</h2><span id="offlineBadge" class="mini-status">PWA</span></div><div id="offlineState" class="stack-list"></div></section>
+      <section class="panel settings-account"><h2>Account</h2><p id="authStatus" class="muted">Checking auth state.</p><button id="logoutButton" class="secondary-action" type="button">Logout</button></section>
+      <section class="panel settings-version"><div class="section-heading"><h2>Version</h2><span id="versionBadge" class="mini-status">Loading</span></div><p id="versionText" class="muted"></p></section>
+      <details class="panel disclosure-panel settings-diagnostics"><summary><span>Diagnostics</span><span class="mini-status">advanced</span></summary><section class="disclosure-section"><div id="setupState" class="stack-list"></div><button id="clearLocalButton" class="danger-action" type="button" hidden>Clear Local Queue</button></section></details>
     </section>
   </main>
 

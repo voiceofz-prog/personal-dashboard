@@ -47,7 +47,7 @@ handleInstall({
   }
 });
 await installPromise;
-assert.equal(appShellRequests.length, 23);
+assert.equal(appShellRequests.length, 25);
 assert.ok(appShellRequests.every((request) => request.cache === "reload"));
 assert.ok(appShellRequests.some((request) => request.url === "https://example.com/personal-dashboard/fitness-taste.css"), "Fitness presentation is included in the complete installed shell");
 assert.ok(appShellRequests.some((request) => request.url === "https://example.com/personal-dashboard/home-journal.css"), "Home presentation is included in the complete installed shell");
@@ -80,5 +80,11 @@ assert.equal(offlineFitnessStyle.source, "complete-installed-shell");
 
 const offlineHomeStyle = await requestAppShell("https://example.com/personal-dashboard/home-journal.css");
 assert.equal(offlineHomeStyle.source, "complete-installed-shell");
+
+for (const stylesheet of ["english-journal.css", "settings-journal.css"]) {
+  const url = `https://example.com/personal-dashboard/${stylesheet}`;
+  assert.ok(appShellRequests.some((request) => request.url === url), `${stylesheet} is included in the installed shell`);
+  assert.equal((await requestAppShell(url)).source, "complete-installed-shell");
+}
 
 console.log("service worker tests passed");

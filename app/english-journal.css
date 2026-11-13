@@ -1,0 +1,271 @@
+/* Shared English and Settings journal shell, followed by English-only presentation. */
+body.authenticated:has(:is(#englishView, #settingsView).active) {
+  --bg: #f4f6f5;
+  --panel: #fff;
+  --panel-soft: #edf2ef;
+  --text: #202d27;
+  --muted: #536159;
+  --line: #dbe2dd;
+  --accent: #1b6e66;
+  --accent-strong: #225349;
+  --accent-soft: #e7f0ed;
+  --shadow: none;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) :is(.app-header, .app-main) {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .app-header {
+  align-items: center;
+  padding-block: 22px 16px;
+  background: var(--bg);
+  border: 0;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .app-header > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .app-header .eyebrow {
+  display: none;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .fitness-wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0;
+  color: var(--text);
+  font: 500 25px/1.2 Georgia, "Times New Roman", serif;
+  letter-spacing: -.7px;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .fitness-wordmark span {
+  color: var(--muted);
+  font: 400 12px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) #pageTitle {
+  margin: 0;
+  padding-inline-start: 20px;
+  border-inline-start: 1px solid var(--line);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .bottom-nav {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(1100px, 100%);
+  padding-inline: 20px;
+  gap: 8px;
+  background: var(--bg);
+  border: 0;
+  box-shadow: none;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .nav-item {
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body.authenticated:has(:is(#englishView, #settingsView).active) .nav-item.active {
+  background: #e2e9e4;
+  color: #233d30;
+}
+
+#englishView.active {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+#englishView.active > * {
+  grid-column: span 6;
+  min-width: 0;
+}
+
+#englishView.active > .english-practice {
+  grid-column: 1 / -1;
+}
+
+#englishView.active .panel {
+  min-width: 0;
+  margin: 0;
+  padding: 24px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: none;
+}
+
+#englishView.active .english-practice {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 18px 28px;
+  background: var(--panel-soft);
+}
+
+#englishView.active .english-practice-heading {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+#englishView.active h2 {
+  font-size: 17px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+#englishView.active .english-today {
+  min-width: 0;
+  padding-inline-start: 16px;
+  border-inline-start: 3px solid var(--accent);
+}
+
+#englishView.active .english-today .section-heading {
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#englishView.active #englishFocusTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#englishView.active #englishFocus {
+  margin: 0;
+  font-size: clamp(21px, 3vw, 32px);
+  line-height: 1.25;
+  font-weight: 400;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+
+#englishView.active .review-source {
+  overflow-wrap: anywhere;
+}
+
+#englishView.active #englishTags:empty {
+  display: none;
+}
+
+#englishView.active #reviewIdle p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+#englishView.active .review-focus-card {
+  min-height: 0;
+  padding: 16px;
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+
+#englishView.active :is(.primary-action, .secondary-action, .danger-action, .sentence-button, summary, select) {
+  min-height: 44px;
+}
+
+#englishView.active .primary-action {
+  background: #263d33;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+#englishView.active .mini-status {
+  background: #e4ece7;
+  color: #3f5448;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+#englishView.active #reviewTimer,
+#englishView.active .metric-card .value {
+  font-variant-numeric: tabular-nums;
+}
+
+#englishView.active :is(#englishProgress, #reviewSessionSummary) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#englishView.active .metric-card .value {
+  font-weight: 400;
+}
+
+#englishView.active :is(button, a, summary, select, textarea) {
+  scroll-margin-block: 90px;
+}
+
+#englishView.active :is(button, a, summary, select, textarea):focus-visible {
+  outline: 3px solid #1b6e66;
+  outline-offset: 3px;
+}
+
+@media (max-width: 860px) {
+  #englishView.active {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #englishView.active > * {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  body.authenticated:has(:is(#englishView, #settingsView).active) :is(.app-header, .app-main) {
+    padding-inline: 16px;
+  }
+
+  body.authenticated:has(:is(#englishView, #settingsView).active) .app-header > div:first-child {
+    gap: 14px;
+  }
+
+  body.authenticated:has(:is(#englishView, #settingsView).active) .fitness-wordmark span {
+    display: none;
+  }
+
+  body.authenticated:has(:is(#englishView, #settingsView).active) #pageTitle {
+    padding-inline-start: 14px;
+    font-size: 18px;
+  }
+
+  body.authenticated:has(:is(#englishView, #settingsView).active) .bottom-nav {
+    padding-inline: 12px;
+  }
+
+  #englishView.active {
+    gap: 14px;
+  }
+
+  #englishView.active .panel {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  #englishView.active .english-practice {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  #englishView.active #startReviewSession {
+    width: 100%;
+  }
+}

@@ -186,6 +186,19 @@ Rollback baseline: 825e800a1aa1cf1516bdac711fa9820b5948a432, build 2026.11.05.1.
 Use a new scoped revert with fresh paired versions and the same gate/deploy/actual
 render checks. No database changes or shared-history reset. Rollback is untested.
 
+### English and Settings presentation release — 2026-11-13
+
+Build `2026.11.13.1` uses app-shell cache `jessica-dashboard-v2026-11-13-1`.
+English groups the current speaking focus with the five-minute review.
+Settings puts Sync and Offline Data above Account, Version and Diagnostics.
+Both new stylesheets are part of the offline shell. Formal pages use the existing
+account data and controls. Candidate labels, scripts and fixtures are excluded.
+
+Use Settings to confirm the build after an ordinary online reload. Preserve
+drafts and pending operations during the update. The rollback baseline is
+`9f8f6a8ce071eb983a22f7c159fae5120315c9b2`. Revert the scoped presentation
+changes in a new commit and pair the resulting app with a fresh cache version.
+
 ## 4. iPhone PWA Test
 
 1. Open the GitHub Pages URL in Safari.
